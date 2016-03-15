@@ -3,6 +3,8 @@
 
 #include <boost/program_options.hpp>
 
+#include "PcapSource.h"
+
 namespace po = boost::program_options;
 
 struct Arguments {
@@ -15,6 +17,7 @@ static Arguments parse_options(int argc, const char *argv[]);
 int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
+    regexbench::PcapSource pcap(args.pcap_file);
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
