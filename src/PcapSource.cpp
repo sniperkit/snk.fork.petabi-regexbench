@@ -34,12 +34,14 @@ Pcap::Pcap(const std::string &filename) {
     throw std::runtime_error(errbuf.data());
 }
 
-PcapSource::PcapSource(const std::string &filename) {
+PcapSource::PcapSource(const std::string &filename) : nbytes(0) {
   Pcap pcap(filename);
   pcap_pkthdr *header;
   const unsigned char *packet;
   int result;
-  while ((result = pcap_next_ex(pcap(), &header, &packet)) == 1)
+  while ((result = pcap_next_ex(pcap(), &header, &packet)) == 1) {
     packets.emplace_back(
         std::string(reinterpret_cast<const char *>(packet), header->caplen));
+    nbytes += header->caplen + 24;
+  }
 }

@@ -8,6 +8,6 @@ if(NOT (PCAP_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
 endif()
 
 add_executable(regexbench
-  PcapSource.cpp regexbench.cpp)
+  match.cpp PcapSource.cpp regexbench.cpp)
 target_link_libraries(regexbench
   ${Boost_LIBRARIES} ${PCAP_LIB})

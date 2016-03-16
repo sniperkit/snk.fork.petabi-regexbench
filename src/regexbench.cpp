@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 
 #include "PcapSource.h"
+#include "regexbench.h"
 
 namespace po = boost::program_options;
 
@@ -18,6 +19,18 @@ int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
     regexbench::PcapSource pcap(args.pcap_file);
+    auto elapsed = match(pcap);
+    std::cout << static_cast<double>(elapsed.user) / 1000000000 << "s user "
+              << static_cast<double>(elapsed.system) / 1000000000 << "s system"
+              << std::endl;
+    std::cout
+      << static_cast<double>(pcap.getNumberOfBytes()) /
+      (elapsed.user + elapsed.system) * 1000 * 8
+      << " Mbps" << std::endl;
+    std::cout
+        << static_cast<double>(pcap.getNumberOfPackets()) /
+        (elapsed.user + elapsed.system) * 1000
+        << " Mpps" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;

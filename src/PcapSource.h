@@ -16,8 +16,15 @@ public:
   PcapSource &operator=(const PcapSource &) = default;
   PcapSource &operator=(PcapSource &&) = default;
 
+  auto begin() const { return packets.begin(); }
+  auto end() const {return packets.end(); }
+
+  size_t getNumberOfBytes() const { return nbytes; }
+  size_t getNumberOfPackets() const { return packets.size(); }
+
 private:
   std::vector<std::string> packets;
+  size_t nbytes;
 };
 
 } // namespace regexbench
