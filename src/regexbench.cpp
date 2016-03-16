@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -5,6 +6,7 @@
 
 #include "PcapSource.h"
 #include "regexbench.h"
+#include "Rule.h"
 
 namespace po = boost::program_options;
 
@@ -18,6 +20,13 @@ static Arguments parse_options(int argc, const char *argv[]);
 int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
+    std::ifstream ruleifs(args.rule_file);
+    if (!ruleifs) {
+      std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
+      return EXIT_FAILURE;
+    }
+    auto rules = regexbench::loadRules(ruleifs);
+    ruleifs.close();
     regexbench::PcapSource pcap(args.pcap_file);
     auto elapsed = match(pcap);
     std::cout << static_cast<double>(elapsed.user) / 1000000000 << "s user "
