@@ -48,4 +48,7 @@ find_package(Boost REQUIRED COMPONENTS program_options timer)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
 find_library(PCAP_LIB pcap)
 
+find_path(HYPERSCAN_INCLUDE_DIR hs/hs_compile.h)
+find_library(HYPERSCAN_LIB hs)
+
 subdirs(src)

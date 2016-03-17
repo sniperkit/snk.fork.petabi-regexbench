@@ -7,7 +7,17 @@ if(NOT (PCAP_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
     "${CMAKE_CXX_FLAGS} -isystem ${PCAP_INCLUDE_DIR}")
 endif()
 
+set(ENGINE_SRCS Engine.cpp)
+if(HYPERSCAN_INCLUDE_DIR)
+  include_directories("${HYPERSCAN_INCLUDE_DIR}")
+  set(ENGINE_SRCS ${ENGINE_SRCS} HyperscanEngine.cpp)
+endif()
+
 add_executable(regexbench
-  match.cpp PcapSource.cpp regexbench.cpp Rule.cpp)
+  match.cpp PcapSource.cpp regexbench.cpp Rule.cpp
+  ${ENGINE_SRCS})
 target_link_libraries(regexbench
   ${Boost_LIBRARIES} ${PCAP_LIB})
+if(HYPERSCAN_LIB)
+  target_link_libraries(regexbench ${HYPERSCAN_LIB})
+endif()

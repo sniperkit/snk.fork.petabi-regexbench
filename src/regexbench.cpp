@@ -4,6 +4,7 @@
 
 #include <boost/program_options.hpp>
 
+#include "HyperscanEngine.h"
 #include "PcapSource.h"
 #include "regexbench.h"
 #include "Rule.h"
@@ -25,10 +26,12 @@ int main(int argc, const char *argv[]) {
       std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
       return EXIT_FAILURE;
     }
+    regexbench::HyperscanEngine engine;
     auto rules = regexbench::loadRules(ruleifs);
     ruleifs.close();
+    engine.compile(rules);
     regexbench::PcapSource pcap(args.pcap_file);
-    auto elapsed = match(pcap);
+    auto elapsed = match(engine, pcap);
     std::cout << static_cast<double>(elapsed.user) / 1000000000 << "s user "
               << static_cast<double>(elapsed.system) / 1000000000 << "s system"
               << std::endl;
