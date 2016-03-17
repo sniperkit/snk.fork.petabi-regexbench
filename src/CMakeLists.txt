@@ -12,6 +12,10 @@ if(HYPERSCAN_INCLUDE_DIR)
   include_directories("${HYPERSCAN_INCLUDE_DIR}")
   set(ENGINE_SRCS ${ENGINE_SRCS} HyperscanEngine.cpp)
 endif()
+if(REMATCH_INCLUDE_DIR)
+  include_directories("${REMATCH_INCLUDE_DIR}")
+  set(ENGINE_SRCS ${ENGINE_SRCS} REmatchEngine.cpp)
+endif()
 
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp
@@ -20,4 +24,8 @@ target_link_libraries(regexbench
   ${Boost_LIBRARIES} ${PCAP_LIB})
 if(HYPERSCAN_LIB)
   target_link_libraries(regexbench ${HYPERSCAN_LIB})
+endif()
+if(REMATCHCOMP_LIB)
+  target_link_libraries(regexbench
+    ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${PCRE2_LIB})
 endif()
