@@ -9,7 +9,15 @@ namespace regexbench {
 class Engine;
 class PcapSource;
 
-boost::timer::cpu_times match(const Engine &, const PcapSource &);
+struct MatchResult {
+MatchResult() : nmatches(0) {}
+
+struct timeval udiff;
+struct timeval sdiff;
+size_t nmatches;
+};
+
+MatchResult match(const Engine &, const PcapSource &);
 
 }
 

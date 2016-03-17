@@ -1,3 +1,5 @@
+#include <sys/time.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -31,17 +33,25 @@ int main(int argc, const char *argv[]) {
     ruleifs.close();
     engine.compile(rules);
     regexbench::PcapSource pcap(args.pcap_file);
-    auto elapsed = match(engine, pcap);
-    std::cout << static_cast<double>(elapsed.user) / 1000000000 << "s user "
-              << static_cast<double>(elapsed.system) / 1000000000 << "s system"
-              << std::endl;
+    auto result = match(engine, pcap);
+    std::cout << result.nmatches << " packets matched." << std::endl;
+    std::cout << result.udiff.tv_sec << '.';
+    std::cout.width(6);
+    std::cout.fill('0');
+    std::cout << result.udiff.tv_usec << "s user " << std::endl;
+    std::cout << result.sdiff.tv_sec << '.';
+    std::cout.width(6);
+    std::cout.fill('0');
+    std::cout << result.sdiff.tv_usec << "s system" << std::endl;
+    struct timeval total;
+    timeradd(&result.udiff, &result.sdiff, &total);
     std::cout
-      << static_cast<double>(pcap.getNumberOfBytes()) /
-      (elapsed.user + elapsed.system) * 1000 * 8
-      << " Mbps" << std::endl;
+        << static_cast<double>(pcap.getNumberOfBytes()) /
+        (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8
+        << " Mbps" << std::endl;
     std::cout
         << static_cast<double>(pcap.getNumberOfPackets()) /
-        (elapsed.user + elapsed.system) * 1000
+        (total.tv_sec + total.tv_usec * 1e-6) / 1000000
         << " Mpps" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;

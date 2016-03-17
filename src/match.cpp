@@ -1,4 +1,5 @@
-#include <boost/timer/timer.hpp>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include "Engine.h"
 #include "PcapSource.h"
@@ -6,14 +7,17 @@
 
 using namespace regexbench;
 
-boost::timer::cpu_times regexbench::match(const Engine &engine,
-                                          const PcapSource &src) {
-  size_t nmatches = 0;
-  boost::timer::cpu_timer timer;
+MatchResult regexbench::match(const Engine &engine,
+                              const PcapSource &src) {
+  struct rusage begin, end;
+  MatchResult result;
+  getrusage(RUSAGE_SELF, &begin);
   for (auto packet : src) {
     if (engine.match(packet.data(), packet.size()))
-      nmatches++;
+      result.nmatches++;
   }
-  timer.stop();
-  return timer.elapsed();
+  getrusage(RUSAGE_SELF, &end);
+  timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
+  timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
+  return result;
 }
