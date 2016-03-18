@@ -11,7 +11,7 @@ namespace regexbench {
 
 class HyperscanEngine : public Engine {
 public:
-  HyperscanEngine() : db(nullptr) {}
+  HyperscanEngine() : db(nullptr), scratch(nullptr) {}
   HyperscanEngine(const HyperscanEngine &) = delete;
   HyperscanEngine(HyperscanEngine &&o) : db(o.db), scratch(o.scratch) {
     o.db = nullptr;
