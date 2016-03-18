@@ -10,10 +10,18 @@ endif()
 set(ENGINE_SRCS Engine.cpp)
 if(HYPERSCAN_INCLUDE_DIR)
   include_directories("${HYPERSCAN_INCLUDE_DIR}")
+  if(NOT (HYPERSCAN_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${HYPERSCAN_INCLUDE_DIR}")
+  endif()
   set(ENGINE_SRCS ${ENGINE_SRCS} HyperscanEngine.cpp)
 endif()
 if(REMATCH_INCLUDE_DIR)
   include_directories("${REMATCH_INCLUDE_DIR}")
+  if(NOT (REMATCH_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${REMATCH_INCLUDE_DIR}")
+  endif()
   set(ENGINE_SRCS ${ENGINE_SRCS} REmatchEngine.cpp)
 endif()
 
