@@ -18,7 +18,7 @@ MatchResult regexbench::match(Engine &engine,
   struct rusage begin, end;
   MatchResult result;
   getrusage(RUSAGE_SELF, &begin);
-  for (auto packet : src) {
+  for (const auto &packet : src) {
     uint16_t offset = 0;
     uint16_t ether_type =
         ntohs(reinterpret_cast<const ether_header *>(packet.data())->ether_type);
