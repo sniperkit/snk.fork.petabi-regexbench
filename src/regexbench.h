@@ -17,7 +17,7 @@ struct timeval sdiff;
 size_t nmatches;
 };
 
-MatchResult match(const Engine &, const PcapSource &);
+MatchResult match(Engine &, const PcapSource &);
 
 }
 

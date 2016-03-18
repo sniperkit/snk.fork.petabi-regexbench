@@ -30,7 +30,7 @@ public:
   }
 
   virtual void compile(const std::vector<Rule> &);
-  virtual bool match(const char *, size_t) const;
+  virtual bool match(const char *, size_t);
 
 private:
   hs_database_t *db;

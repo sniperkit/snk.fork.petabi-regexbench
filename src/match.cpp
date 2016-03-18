@@ -13,7 +13,7 @@
 
 using namespace regexbench;
 
-MatchResult regexbench::match(const Engine &engine,
+MatchResult regexbench::match(Engine &engine,
                               const PcapSource &src) {
   struct rusage begin, end;
   MatchResult result;

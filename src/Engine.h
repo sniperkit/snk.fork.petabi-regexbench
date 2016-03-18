@@ -13,7 +13,7 @@ public:
   virtual ~Engine();
 
   virtual void compile(const std::vector<Rule> &) = 0;
-  virtual bool match(const char *, size_t) const = 0;
+  virtual bool match(const char *, size_t) = 0;
 };
 
 } // namespace regexbench

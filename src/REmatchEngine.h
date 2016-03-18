@@ -12,7 +12,7 @@ class REmatchEngine : public Engine {
 public:
 
   virtual void compile(const std::vector<Rule> &);
-  virtual bool match(const char *, size_t) const;
+  virtual bool match(const char *, size_t);
 
 private:
   mregex_t *txtbl;
