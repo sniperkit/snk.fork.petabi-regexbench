@@ -11,7 +11,7 @@ namespace regexbench {
 
 class HyperscanEngine : public Engine {
 public:
-  HyperscanEngine() : db(nullptr), scratch(nullptr) {}
+  HyperscanEngine();
   HyperscanEngine(const HyperscanEngine &) = delete;
   HyperscanEngine(HyperscanEngine &&o) : db(o.db), scratch(o.scratch) {
     o.db = nullptr;
@@ -35,6 +35,7 @@ public:
 private:
   hs_database_t *db;
   hs_scratch_t *scratch;
+  hs_platform_info_t platform;
 };
 
 } // namespace regexbench

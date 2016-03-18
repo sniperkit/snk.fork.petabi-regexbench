@@ -14,6 +14,11 @@ static int onMatch(unsigned int, unsigned long long,
   return 0;
 }
 
+HyperscanEngine::HyperscanEngine()
+    : db(nullptr), scratch(nullptr),
+      platform{HS_TUNE_FAMILY_GENERIC, 0, 0, 0} {
+}
+
 HyperscanEngine::~HyperscanEngine() {
   hs_free_database(db);
   hs_free_scratch(scratch);
@@ -36,7 +41,7 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   hs_compile_error_t *err;
   auto result = hs_compile_multi(exps.data(), flags.data(), ids.data(),
                                  static_cast<unsigned>(exps.size()),
-                                 HS_MODE_BLOCK, nullptr, &db, &err);
+                                 HS_MODE_BLOCK, &platform, &db, &err);
   if (result != HS_SUCCESS) {
     std::stringstream msg;
     msg << err->message << " (" << err->expression << ')';
