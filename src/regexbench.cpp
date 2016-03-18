@@ -13,9 +13,15 @@
 
 namespace po = boost::program_options;
 
+enum EngineType : uint64_t {
+  ENGINE_HYPERSCAN,
+  ENGINE_REMATCH
+};
+
 struct Arguments {
   std::string rule_file;
   std::string pcap_file;
+  EngineType engine;
 };
 
 static Arguments parse_options(int argc, const char *argv[]);
@@ -63,6 +69,7 @@ int main(int argc, const char *argv[]) {
 
 Arguments parse_options(int argc, const char *argv[]) {
   Arguments args;
+  std::string engine;
 
   po::options_description posargs;
   posargs.add_options()("rule_file",
@@ -76,6 +83,10 @@ Arguments parse_options(int argc, const char *argv[]) {
 
   po::options_description optargs("Options");
   optargs.add_options()("help,h", "Print usage information.");
+  optargs.add_options()(
+    "engine,e",
+    po::value<std::string>(&engine)->default_value("hyperscan"),
+    "Matching engine to run.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
@@ -91,6 +102,15 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::cout << "Usage: regexbench <rule_file> <pcap_file>" << std::endl;
     std::exit(EXIT_SUCCESS);
   }
+  if (engine == "hyperscan")
+    args.engine = ENGINE_HYPERSCAN;
+  else if (engine == "rematch")
+    args.engine = ENGINE_REMATCH;
+  else {
+    std::cerr << "unknown engine: " << engine << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
   if (!vm.count("rule_file")) {
     std::cerr << "error: no rule file" << std::endl;
     std::exit(EXIT_FAILURE);
