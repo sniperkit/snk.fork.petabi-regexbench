@@ -35,8 +35,11 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE
-  "${CMAKE_CXX_FLAGS_RELEASE} -march=native -mtune=native")
+if(NOT CMAKE_CXX_FLAGS MATCHES .*march.* AND
+   NOT CMAKE_CXX_FLAGS_RELEASE MATCHES .*march.*)
+  set(CMAKE_CXX_FLAGS_RELEASE
+    "${CMAKE_CXX_FLAGS_RELEASE} -march=native -mtune=native")
+endif()
 if(NOT CMAKE_CXX_FLAGS_DEBUG MATCHES "-O")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 endif()
