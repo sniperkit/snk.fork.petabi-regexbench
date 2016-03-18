@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <boost/program_options.hpp>
@@ -9,6 +10,7 @@
 #include "HyperscanEngine.h"
 #include "PcapSource.h"
 #include "regexbench.h"
+#include "REmatchEngine.h"
 #include "Rule.h"
 
 namespace po = boost::program_options;
@@ -34,12 +36,20 @@ int main(int argc, const char *argv[]) {
       std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
       return EXIT_FAILURE;
     }
-    regexbench::HyperscanEngine engine;
+    std::unique_ptr<regexbench::Engine> engine;
+    switch (args.engine) {
+    case ENGINE_HYPERSCAN:
+      engine = std::make_unique<regexbench::HyperscanEngine>();
+      break;
+    case ENGINE_REMATCH:
+      engine = std::make_unique<regexbench::REmatchEngine>();
+      break;
+    }
     auto rules = regexbench::loadRules(ruleifs);
     ruleifs.close();
-    engine.compile(rules);
+    engine->compile(rules);
     regexbench::PcapSource pcap(args.pcap_file);
-    auto result = match(engine, pcap);
+    auto result = match(*engine, pcap);
     std::cout << result.nmatches << " packets matched." << std::endl;
     std::cout << result.udiff.tv_sec << '.';
     std::cout.width(6);
