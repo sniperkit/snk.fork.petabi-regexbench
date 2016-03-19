@@ -8,20 +8,38 @@
 
 namespace regexbench {
 
-class REmatchEngine : public Engine {
+class REmatchAutomataEngine : public Engine {
 public:
-  REmatchEngine();
-  virtual ~REmatchEngine();
+  REmatchAutomataEngine();
+  virtual ~REmatchAutomataEngine();
 
   virtual void compile(const std::vector<Rule> &);
-  virtual bool match(const char *, size_t);
   virtual void load(const std::string &);
+  virtual bool match(const char *, size_t);
 
 private:
   mregflow_t *flow;
   matcher_t *matcher;
   mregex_t *txtbl;
   mregmatch_t regmatch[1];
+};
+
+class REmatchSOEngine : public Engine {
+  using run_func_t = bool (*)(const char *, size_t, matchctx_t *);
+
+public:
+  REmatchSOEngine();
+  virtual ~REmatchSOEngine();
+
+  virtual void load(const std::string &);
+  virtual bool match(const char *data, size_t len) {
+    return run(data, len, ctx);
+  }
+
+private:
+  run_func_t run;
+  matchctx_t *ctx;
+  void *dlhandle;
 };
 
 } // namespace regexbench

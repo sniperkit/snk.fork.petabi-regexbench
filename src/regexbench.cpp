@@ -26,6 +26,8 @@ struct Arguments {
   EngineType engine;
 };
 
+static bool endsWith(const std::string &, const char *);
+static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
 
 int main(int argc, const char *argv[]) {
@@ -35,31 +37,22 @@ int main(int argc, const char *argv[]) {
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
+      engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_REMATCH:
-      engine = std::make_unique<regexbench::REmatchEngine>();
+      if (endsWith(args.rule_file, ".nfa")) {
+        engine = std::make_unique<regexbench::REmatchAutomataEngine>();
+        engine->load(args.rule_file);
+      } else if (endsWith(args.rule_file, ".so")) {
+        engine = std::make_unique<regexbench::REmatchSOEngine>();
+        engine->load(args.rule_file);
+      } else {
+        engine = std::make_unique<regexbench::REmatchAutomataEngine>();
+        engine->compile(loadRules(args.rule_file));
+      }
       break;
     }
 
-    auto pos = args.rule_file.find_last_of(".nfa");
-    if (pos != std::string::npos &&
-        (pos + 1 == args.rule_file.size())) {
-      try {
-        engine->load(args.rule_file);
-      } catch (std::exception const& e) {
-        std::cerr << e.what();
-        return EXIT_FAILURE;
-      }
-    } else {
-      std::ifstream ruleifs(args.rule_file);
-      if (!ruleifs) {
-        std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
-        return EXIT_FAILURE;
-      }
-      auto rules = regexbench::loadRules(ruleifs);
-      ruleifs.close();
-      engine->compile(rules);
-    }
     regexbench::PcapSource pcap(args.pcap_file);
     auto result = match(*engine, pcap);
     std::cout << result.nmatches << " packets matched." << std::endl;
@@ -87,6 +80,22 @@ int main(int argc, const char *argv[]) {
   }
 
   return EXIT_SUCCESS;
+}
+
+bool endsWith(const std::string &obj, const char *end) {
+  auto r = obj.rfind(end);
+  if ((r != std::string::npos) && (r == obj.size() - std::strlen(end)))
+    return true;
+  return false;
+}
+
+static std::vector<regexbench::Rule> loadRules(const std::string &filename) {
+  std::ifstream ruleifs(filename);
+  if (!ruleifs) {
+    std::cerr << "cannot open rule file: " << filename << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  return regexbench::loadRules(ruleifs);
 }
 
 Arguments parse_options(int argc, const char *argv[]) {

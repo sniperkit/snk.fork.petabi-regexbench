@@ -31,7 +31,6 @@ public:
 
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);
-  virtual void load(const std::string &) {}
 
 private:
   hs_database_t *db;
