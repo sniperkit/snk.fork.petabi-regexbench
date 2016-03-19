@@ -1,4 +1,5 @@
-#include <iostream>
+#include <stdexcept>
+
 #include <rematch/compile.h>
 #include <rematch/execute.h>
 #include <rematch/rematch.h>
@@ -40,13 +41,11 @@ bool REmatchEngine::match(const char *data, size_t len) {
   return matcher->matches > 0;
 }
 
-bool REmatchEngine::load(const std::string &NFAFile) {
+void REmatchEngine::load(const std::string &NFAFile) {
   txtbl = rematchload(NFAFile.c_str());
   if (txtbl == nullptr) {
-    std::cerr << "cannot load NFA: " << NFAFile << std::endl;
-    return false;
+    throw std::runtime_error("cannot load nfa\n");
   }
   flow = mregflow_new(txtbl->nstates, 1, 1);
   matcher = matcher_new(txtbl->nstates);
-  return true;
 }

@@ -44,8 +44,12 @@ int main(int argc, const char *argv[]) {
     auto pos = args.rule_file.find_last_of(".nfa");
     if (pos != std::string::npos &&
         (pos + 1 == args.rule_file.size())) {
-      if (!engine->load(args.rule_file))
+      try {
+        engine->load(args.rule_file);
+      } catch (std::exception const& e) {
+        std::cerr << e.what();
         return EXIT_FAILURE;
+      }
     } else {
       std::ifstream ruleifs(args.rule_file);
       if (!ruleifs) {

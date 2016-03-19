@@ -14,7 +14,7 @@ public:
 
   virtual void compile(const std::vector<Rule> &) = 0;
   virtual bool match(const char *, size_t) = 0;
-  virtual bool load(const std::string &) = 0;
+  virtual void load(const std::string &) = 0;
 };
 
 } // namespace regexbench
