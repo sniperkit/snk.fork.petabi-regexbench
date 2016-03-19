@@ -18,10 +18,8 @@ public:
   virtual void load(const std::string &);
 
 private:
-  mregflow_t *flow;
-  matcher_t *matcher;
+  matchctx_t *context;
   mregex_t *txtbl;
-  mregmatch_t regmatch[1];
 };
 
 } // namespace regexbench

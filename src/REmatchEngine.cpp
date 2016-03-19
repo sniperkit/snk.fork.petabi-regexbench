@@ -9,14 +9,12 @@
 using namespace regexbench;
 
 REmatchEngine::REmatchEngine()
-    : flow(nullptr), matcher(nullptr), txtbl(nullptr) {
+    : context(nullptr), txtbl(nullptr) {
 }
 
 REmatchEngine::~REmatchEngine() {
-  if (flow)
-    mregflow_delete(flow);
-  if (matcher)
-    matcher_delete(matcher);
+  if (context)
+    destroy_matchctx(context);
   if (txtbl)
     mregfree(txtbl);
 }
@@ -31,14 +29,13 @@ void REmatchEngine::compile(const std::vector<Rule> &rules) {
     mods.push_back(rule.getPCRE2Options());
   }
   txtbl = rematch_compile(ids.data(), exps.data(), mods.data(), ids.size());
-  flow = mregflow_new(txtbl->nstates, 1, 1);
-  matcher = matcher_new(txtbl->nstates);
+  context = create_matchctx(txtbl->nstates);
+  if (context == nullptr)
+    throw std::bad_alloc();
 }
 
 bool REmatchEngine::match(const char *data, size_t len) {
-  MATCHER_SINGLE_CLEAN(matcher);
-  mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
-  return matcher->matches > 0;
+  return rematch_execute(txtbl, data, len, context) != nullptr;
 }
 
 void REmatchEngine::load(const std::string &NFAFile) {
@@ -46,6 +43,7 @@ void REmatchEngine::load(const std::string &NFAFile) {
   if (txtbl == nullptr) {
     throw std::runtime_error("cannot load nfa\n");
   }
-  flow = mregflow_new(txtbl->nstates, 1, 1);
-  matcher = matcher_new(txtbl->nstates);
+  context = create_matchctx(txtbl->nstates);
+  if (context == nullptr)
+    throw std::bad_alloc();
 }
