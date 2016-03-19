@@ -33,7 +33,7 @@ void REmatchEngine::compile(const std::vector<Rule> &rules) {
 }
 
 bool REmatchEngine::match(const char *data, size_t len) {
-  matcher->matches = 0;
+  MATCHER_SINGLE_CLEAN(matcher);
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches > 0;
 }
