@@ -31,11 +31,6 @@ static Arguments parse_options(int argc, const char *argv[]);
 int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
-    std::ifstream ruleifs(args.rule_file);
-    if (!ruleifs) {
-      std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
-      return EXIT_FAILURE;
-    }
     std::unique_ptr<regexbench::Engine> engine;
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
@@ -45,9 +40,22 @@ int main(int argc, const char *argv[]) {
       engine = std::make_unique<regexbench::REmatchEngine>();
       break;
     }
-    auto rules = regexbench::loadRules(ruleifs);
-    ruleifs.close();
-    engine->compile(rules);
+
+    auto pos = args.rule_file.find_last_of(".nfa");
+    if (pos != std::string::npos &&
+        (pos + 1 == args.rule_file.size())) {
+      if (!engine->load(args.rule_file))
+        return EXIT_FAILURE;
+    } else {
+      std::ifstream ruleifs(args.rule_file);
+      if (!ruleifs) {
+        std::cerr << "cannot open rule file: " << args.rule_file << std::endl;
+        return EXIT_FAILURE;
+      }
+      auto rules = regexbench::loadRules(ruleifs);
+      ruleifs.close();
+      engine->compile(rules);
+    }
     regexbench::PcapSource pcap(args.pcap_file);
     auto result = match(*engine, pcap);
     std::cout << result.nmatches << " packets matched." << std::endl;

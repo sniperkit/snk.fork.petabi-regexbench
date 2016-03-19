@@ -15,6 +15,7 @@ public:
 
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);
+  virtual bool load(const std::string &);
 
 private:
   mregflow_t *flow;
