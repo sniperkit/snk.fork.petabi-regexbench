@@ -24,6 +24,7 @@ struct Arguments {
   std::string rule_file;
   std::string pcap_file;
   EngineType engine;
+  long repeat;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -54,7 +55,7 @@ int main(int argc, const char *argv[]) {
     }
 
     regexbench::PcapSource pcap(args.pcap_file);
-    auto result = match(*engine, pcap);
+    auto result = match(*engine, pcap, args.repeat);
     std::cout << result.nmatches << " packets matched." << std::endl;
     std::cout << result.udiff.tv_sec << '.';
     std::cout.width(6);
@@ -67,11 +68,13 @@ int main(int argc, const char *argv[]) {
     struct timeval total;
     timeradd(&result.udiff, &result.sdiff, &total);
     std::cout
-        << static_cast<double>(pcap.getNumberOfBytes()) /
+      << static_cast<double>(pcap.getNumberOfBytes() *
+                             static_cast<unsigned long>(args.repeat)) /
         (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8
         << " Mbps" << std::endl;
     std::cout
-        << static_cast<double>(pcap.getNumberOfPackets()) /
+        << static_cast<double>(pcap.getNumberOfPackets() *
+                               static_cast<unsigned long>(args.repeat)) /
         (total.tv_sec + total.tv_usec * 1e-6) / 1000000
         << " Mpps" << std::endl;
   } catch (const std::exception &e) {
@@ -118,6 +121,10 @@ Arguments parse_options(int argc, const char *argv[]) {
     "engine,e",
     po::value<std::string>(&engine)->default_value("hyperscan"),
     "Matching engine to run.");
+  optargs.add_options()(
+    "repeat,r",
+    po::value<long>(&args.repeat)->default_value(1),
+    "Repeat pcap multiple times.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
@@ -139,6 +146,10 @@ Arguments parse_options(int argc, const char *argv[]) {
     args.engine = ENGINE_REMATCH;
   else {
     std::cerr << "unknown engine: " << engine << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if (args.repeat <= 0) {
+    std::cerr << "invalid repeat value: " << args.repeat << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
