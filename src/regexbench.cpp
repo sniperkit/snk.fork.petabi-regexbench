@@ -32,6 +32,7 @@ struct Arguments {
 static bool endsWith(const std::string &, const char *);
 static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
+static bool compareByLength(const std::string &a, const std::string &b);
 
 int main(int argc, const char *argv[]) {
   try {
@@ -47,7 +48,7 @@ int main(int argc, const char *argv[]) {
       for (auto r : rList) {
         regexbench::tokenizeRules(r, ruleTokList);
       }
-
+      std::sort(ruleTokList.begin(), ruleTokList.end(), compareByLength);
       regexbench::PcapGenerator(args.pcap_file, ruleTokList, static_cast<size_t>(args.pktlen), static_cast<size_t>(args.pcapsize));
       return EXIT_SUCCESS;
     }
@@ -196,4 +197,9 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
   return args;
+}
+
+bool compareByLength(const std::string &a, const std::string &b)
+{
+  return a.size() < b.size();
 }
