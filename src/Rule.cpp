@@ -5,6 +5,8 @@
 #include <string>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/split.hpp>
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
@@ -128,4 +130,15 @@ std::vector<Rule> regexbench::loadRules(std::istream &is) {
     throw std::runtime_error("cannot parse rules");
   }
   return rules;
+}
+
+void regexbench::tokenizeRules(Rule &rule, std::vector<std::string> &tokList) {
+  std::vector<std::pair<std::string::const_iterator,
+                        std::string::const_iterator>> tokens;
+  boost::split(tokens, rule.getRegexp(), boost::is_any_of(",.*()[]{}^$"));
+  for(auto beg=tokens.begin(); beg!=tokens.end();++beg){
+    std::cout << std::string(beg->first,beg->second) << std::endl;
+    tokList.push_back(std::string(beg->first, beg->second));
+  }
+
 }

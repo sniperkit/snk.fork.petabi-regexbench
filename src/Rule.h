@@ -41,7 +41,7 @@ private:
 };
 
 std::vector<Rule> loadRules(std::istream &);
-
+void tokenizeRules(Rule &, std::vector<std::string> &);
 } // namespace regexbench
 
 #endif

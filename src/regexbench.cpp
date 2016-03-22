@@ -25,6 +25,7 @@ struct Arguments {
   std::string pcap_file;
   EngineType engine;
   long repeat;
+  long pcapsize;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -35,6 +36,27 @@ int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
     std::unique_ptr<regexbench::Engine> engine;
+
+    if (args.pcapsize) {
+      std::cout << "Hello\n";
+      if (!endsWith(args.rule_file, ".re")) {
+        return EXIT_FAILURE;
+      }
+      auto rList = loadRules(args.rule_file);
+      std::vector<std::string> ruleTokList;
+      for (auto r : rList) {
+        regexbench::tokenizeRules(r, ruleTokList);
+      }
+      std::ofstream pcapstream;
+      pcapstream.open(args.pcap_file, std::ios::out | std::ios::binary);
+      if (!pcapstream.is_open())
+        throw std::runtime_error("Could not open file :" + args.pcap_file);
+
+      if (pcapstream.is_open())
+        pcapstream.close();
+      return EXIT_SUCCESS;
+    }
+
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
@@ -125,6 +147,10 @@ Arguments parse_options(int argc, const char *argv[]) {
     "repeat,r",
     po::value<long>(&args.repeat)->default_value(1),
     "Repeat pcap multiple times.");
+  optargs.add_options()(
+                        "generate,g",
+                        po::value<long>(&args.pcapsize)->default_value(0),
+                        "Generate pcap file with specified number of packets.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
@@ -150,6 +176,10 @@ Arguments parse_options(int argc, const char *argv[]) {
   }
   if (args.repeat <= 0) {
     std::cerr << "invalid repeat value: " << args.repeat << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if (args.pcapsize < 0) {
+    std::cerr << "invalid generate value: " << args.pcapsize << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
