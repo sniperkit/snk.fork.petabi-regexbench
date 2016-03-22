@@ -137,8 +137,11 @@ void regexbench::tokenizeRules(Rule &rule, std::vector<std::string> &tokList) {
                         std::string::const_iterator>> tokens;
   boost::split(tokens, rule.getRegexp(), boost::is_any_of(",.*()[]{}^$"));
   for(auto beg=tokens.begin(); beg!=tokens.end();++beg){
-    std::cout << std::string(beg->first,beg->second) << std::endl;
-    tokList.push_back(std::string(beg->first, beg->second));
+    //   std::cout << std::string(beg->first,beg->second) << std::endl;
+    if (beg->second > beg->first) {
+      tokList.push_back(std::string(beg->first, beg->second));
+    }
+
   }
 
 }

@@ -26,6 +26,7 @@ struct Arguments {
   EngineType engine;
   long repeat;
   long pcapsize;
+  long pktlen;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -38,7 +39,6 @@ int main(int argc, const char *argv[]) {
     std::unique_ptr<regexbench::Engine> engine;
 
     if (args.pcapsize) {
-      std::cout << "Hello\n";
       if (!endsWith(args.rule_file, ".re")) {
         return EXIT_FAILURE;
       }
@@ -47,13 +47,8 @@ int main(int argc, const char *argv[]) {
       for (auto r : rList) {
         regexbench::tokenizeRules(r, ruleTokList);
       }
-      std::ofstream pcapstream;
-      pcapstream.open(args.pcap_file, std::ios::out | std::ios::binary);
-      if (!pcapstream.is_open())
-        throw std::runtime_error("Could not open file :" + args.pcap_file);
 
-      if (pcapstream.is_open())
-        pcapstream.close();
+      regexbench::PcapGenerator(args.pcap_file, ruleTokList, static_cast<size_t>(args.pktlen), static_cast<size_t>(args.pcapsize));
       return EXIT_SUCCESS;
     }
 
@@ -94,6 +89,7 @@ int main(int argc, const char *argv[]) {
                              static_cast<unsigned long>(args.repeat)) /
         (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8
         << " Mbps" << std::endl;
+    std::cout << "total # of packets in pcap: " << pcap.getNumberOfPackets() << std::endl;
     std::cout
         << static_cast<double>(pcap.getNumberOfPackets() *
                                static_cast<unsigned long>(args.repeat)) /
@@ -151,6 +147,10 @@ Arguments parse_options(int argc, const char *argv[]) {
                         "generate,g",
                         po::value<long>(&args.pcapsize)->default_value(0),
                         "Generate pcap file with specified number of packets.");
+  optargs.add_options()(
+                        "packet_len,p",
+                        po::value<long>(&args.pktlen)->default_value(1024),
+                        "Set pcap file packet length.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
@@ -179,6 +179,10 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
   if (args.pcapsize < 0) {
+    std::cerr << "invalid generate value: " << args.pcapsize << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if (args.pktlen <= 54) {
     std::cerr << "invalid generate value: " << args.pcapsize << std::endl;
     std::exit(EXIT_FAILURE);
   }
