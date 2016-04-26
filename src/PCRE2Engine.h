@@ -1,6 +1,6 @@
 // -*- c++ -*-
-#ifndef REGEXBENCH_PCRE_H
-#define REGEXBENCH_PCRE_H
+#ifndef REGEXBENCH_PCRE2_H
+#define REGEXBENCH_PCRE2_H
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -9,10 +9,10 @@
 
 namespace regexbench {
 
-class PCREEngine : public Engine {
+class PCRE2Engine : public Engine {
 public:
-  PCREEngine();
-  virtual ~PCREEngine();
+  PCRE2Engine();
+  virtual ~PCRE2Engine();
 
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);
@@ -20,6 +20,7 @@ public:
 private:
   std::vector<pcre2_code *>res;
   pcre2_match_data *pcre_matching_data;
+  uint32_t convert_to_pcre2_options(const Rule &);
 };
 
 } // namespace regexbench

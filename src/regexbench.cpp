@@ -12,12 +12,14 @@
 #include "regexbench.h"
 #include "REmatchEngine.h"
 #include "Rule.h"
+#include "PCRE2Engine.h"
 
 namespace po = boost::program_options;
 
 enum EngineType : uint64_t {
   ENGINE_HYPERSCAN,
-  ENGINE_REMATCH
+  ENGINE_REMATCH,
+  ENGINE_PCRE2
 };
 
 struct Arguments {
@@ -52,6 +54,9 @@ int main(int argc, const char *argv[]) {
         engine->compile(loadRules(args.rule_file));
       }
       break;
+    case ENGINE_PCRE2:
+      engine = std::make_unique<regexbench::PCRE2Engine>();
+     break;
     }
 
     regexbench::PcapSource pcap(args.pcap_file);
