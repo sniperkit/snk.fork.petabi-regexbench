@@ -25,6 +25,8 @@ if(REMATCH_INCLUDE_DIR)
   set(ENGINE_SRCS ${ENGINE_SRCS} REmatchEngine.cpp)
 endif()
 
+set(ENGINE_SRCS ${ENGINE_SRCS} PCRE.cpp)
+
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp
   ${ENGINE_SRCS})

@@ -34,7 +34,7 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
     ids.push_back(static_cast<unsigned>(rule.getID()));
     mods.push_back(rule.getPCRE2Options());
   }
-  txtbl = rematch_compile(ids.data(), exps.data(), mods.data(), ids.size());
+  txtbl = rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
   flow = mregflow_new(txtbl->nstates, 1, 1);
   matcher = matcher_new(txtbl->nstates);
 }
