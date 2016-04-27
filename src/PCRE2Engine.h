@@ -18,7 +18,7 @@ public:
   virtual bool match(const char *, size_t);
 
 private:
-  std::vector<pcre2_code *>res;
+  std::vector<std::unique_ptr<pcre2_code, std::function<void(pcre2_code*)>>> res;
   pcre2_match_data *pcre_matching_data;
   uint32_t convert_to_pcre2_options(const Rule &);
 };

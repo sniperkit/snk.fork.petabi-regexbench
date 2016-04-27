@@ -5,10 +5,7 @@ using namespace regexbench;
 
 PCRE2Engine::PCRE2Engine() : pcre_matching_data{nullptr} {}
 
-PCRE2Engine::~PCRE2Engine() {
-  for (const auto &re : res)
-    pcre2_code_free(re);
-}
+PCRE2Engine::~PCRE2Engine() {}
 
 void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   PCRE2_SIZE erroffset = 0;
@@ -19,7 +16,8 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
                          &errcode, &erroffset, nullptr);
     if (re == nullptr)
       throw std::runtime_error("PCRE2 Compile failed.");
-    res.push_back(re);
+    std::unique_ptr<pcre2_code, std::function<void(pcre2_code*)>>t(re, pcre2_code_free);
+    res.push_back(std::move(t));
   }
 }
 
@@ -36,18 +34,15 @@ uint32_t PCRE2Engine::convert_to_pcre2_options(const Rule &rule) {
 
 bool PCRE2Engine::match(const char *data, size_t len) {
   for (const auto &re : res) {
-    pcre_matching_data = pcre2_match_data_create_from_pattern(re, nullptr);
-    int rc = pcre2_match(re,
+    pcre_matching_data = pcre2_match_data_create_from_pattern(re.get(), nullptr);
+    int rc = pcre2_match(re.get(),
                          reinterpret_cast<PCRE2_SPTR>(data),
                          len, 0, PCRE2_NOTEMPTY_ATSTART |
                          PCRE2_NOTEMPTY,
                          pcre_matching_data, nullptr);
     pcre2_match_data_free(pcre_matching_data);   /* Release memory used for the match */
-    if (rc < 0) {
-      continue;
-    } else {
+    if (rc >=0)
       return true;
-    }
   }
   return false;
 }
