@@ -42,14 +42,10 @@ bool PCRE2Engine::match(const char *data, size_t len) {
                          len, 0, PCRE2_NOTEMPTY_ATSTART |
                          PCRE2_NOTEMPTY,
                          pcre_matching_data, nullptr);
-    /* Matching failed: handle error cases */
+    pcre2_match_data_free(pcre_matching_data);   /* Release memory used for the match */
     if (rc < 0) {
-      if (rc == PCRE2_ERROR_NOMATCH) {
-        pcre2_match_data_free(pcre_matching_data);   /* Release memory used for the match */
-        continue;
-      }
+      continue;
     } else {
-      pcre2_match_data_free(pcre_matching_data);
       return true;
     }
   }
