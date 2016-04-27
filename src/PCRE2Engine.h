@@ -18,8 +18,17 @@ public:
   virtual bool match(const char *, size_t);
 
 private:
-  std::vector<std::unique_ptr<pcre2_code, std::function<void(pcre2_code*)>>> res;
-  pcre2_match_data *pcre_matching_data;
+  struct PCRE2_DATA {
+    pcre2_code *re;
+    pcre2_match_data *mdata;
+    PCRE2_DATA(pcre2_code *re_, pcre2_match_data *mdata_) : re{re_}, mdata{mdata_} {}
+    ~PCRE2_DATA() {
+      pcre2_code_free(re);
+      pcre2_match_data_free(mdata);
+    }
+  };
+
+  std::vector<std::unique_ptr<PCRE2_DATA>> res;
   uint32_t convert_to_pcre2_options(const Rule &);
 };
 
