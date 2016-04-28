@@ -11,8 +11,8 @@ namespace regexbench {
 
 class PCRE2Engine : public Engine {
 public:
-  PCRE2Engine();
-  virtual ~PCRE2Engine();
+  PCRE2Engine() = default;
+  virtual ~PCRE2Engine() = default;
 
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);

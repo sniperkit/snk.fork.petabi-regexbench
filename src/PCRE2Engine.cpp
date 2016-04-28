@@ -3,10 +3,6 @@
 
 using namespace regexbench;
 
-PCRE2Engine::PCRE2Engine() {}
-
-PCRE2Engine::~PCRE2Engine() {}
-
 void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   PCRE2_SIZE erroffset = 0;
   int errcode = 0;
