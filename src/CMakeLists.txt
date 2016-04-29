@@ -32,6 +32,14 @@ if(REMATCH_INCLUDE_DIR)
   endif()
   set(ENGINE_SRCS ${ENGINE_SRCS} REmatchEngine.cpp)
 endif()
+if(RE2_INCLUDE_DIR)
+  include_directories("${RE2_INCLUDE_DIR}")
+  if(NOT (RE2_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${RE2_INCLUDE_DIR}")
+  endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} RE2.cpp)
+endif()
 
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp

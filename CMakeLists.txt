@@ -58,5 +58,8 @@ find_library(PCRE2_LIB pcre2-8)
 find_path(REMATCH_INCLUDE_DIR rematch/rematch.h)
 find_library(REMATCHCOMP_LIB rematchcomp)
 find_library(REMATCHEXEC_LIB rematchexec)
+find_library(PCRE2_LIB pcre2-8)
+find_path(RE2_INCLUDE_DIR re2/re2.h)
+find_library(RE2_LIB re2)
 
 subdirs(src)
