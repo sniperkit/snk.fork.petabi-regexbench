@@ -38,7 +38,7 @@ if(RE2_INCLUDE_DIR)
     set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} -isystem ${RE2_INCLUDE_DIR}")
   endif()
-  set(ENGINE_SRCS ${ENGINE_SRCS} RE2.cpp)
+  set(ENGINE_SRCS ${ENGINE_SRCS} RE2Engine.cpp)
 endif()
 
 add_executable(regexbench
@@ -54,4 +54,7 @@ if(PCRE2_LIB)
 endif()
 if(REMATCHCOMP_LIB)
   target_link_libraries(regexbench ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
+endif()
+if(RE2_LIB)
+  target_link_libraries(regexbench ${RE2_LIB})
 endif()
