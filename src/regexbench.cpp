@@ -46,9 +46,11 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
+      engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
+      engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_REMATCH:
       if (endsWith(args.rule_file, ".nfa")) {
@@ -152,6 +154,10 @@ Arguments parse_options(int argc, const char *argv[]) {
   }
   if (engine == "hyperscan")
     args.engine = ENGINE_HYPERSCAN;
+  else if (engine == "pcre2")
+    args.engine = ENGINE_PCRE2;
+  else if (engine == "re2")
+    args.engine = ENGINE_RE2;
   else if (engine == "rematch")
     args.engine = ENGINE_REMATCH;
   else {
