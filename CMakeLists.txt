@@ -53,9 +53,10 @@ find_library(PCAP_LIB pcap)
 
 find_path(HYPERSCAN_INCLUDE_DIR hs/hs_compile.h)
 find_library(HYPERSCAN_LIB hs)
+find_path(PCRE2_INCLUDE_DIR pcre2.h)
+find_library(PCRE2_LIB pcre2-8)
 find_path(REMATCH_INCLUDE_DIR rematch/rematch.h)
 find_library(REMATCHCOMP_LIB rematchcomp)
 find_library(REMATCHEXEC_LIB rematchexec)
-find_library(PCRE2_LIB pcre2-8)
 
 subdirs(src)

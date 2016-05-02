@@ -16,6 +16,14 @@ if(HYPERSCAN_INCLUDE_DIR)
   endif()
   set(ENGINE_SRCS ${ENGINE_SRCS} HyperscanEngine.cpp)
 endif()
+if(PCRE2_INCLUDE_DIR)
+  include_directories("${PCRE2_INCLUDE_DIR}")
+  if(NOT (PCRE2_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${PCRE2_INCLUDE_DIR}")
+  endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} PCRE2Engine.cpp)
+endif()
 if(REMATCH_INCLUDE_DIR)
   include_directories("${REMATCH_INCLUDE_DIR}")
   if(NOT (REMATCH_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
@@ -25,8 +33,6 @@ if(REMATCH_INCLUDE_DIR)
   set(ENGINE_SRCS ${ENGINE_SRCS} REmatchEngine.cpp)
 endif()
 
-set(ENGINE_SRCS ${ENGINE_SRCS} PCRE2Engine.cpp)
-
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp
   ${ENGINE_SRCS})
@@ -35,7 +41,9 @@ target_link_libraries(regexbench
 if(HYPERSCAN_LIB)
   target_link_libraries(regexbench ${HYPERSCAN_LIB})
 endif()
+if(PCRE2_LIB)
+  target_link_libraries(regexbench ${PCRE2_LIB})
+endif()
 if(REMATCHCOMP_LIB)
-  target_link_libraries(regexbench
-    ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${PCRE2_LIB})
+  target_link_libraries(regexbench ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
 endif()
