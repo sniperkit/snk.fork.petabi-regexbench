@@ -7,8 +7,13 @@ RE2Engine::RE2Engine() = default;
 RE2Engine::~RE2Engine() = default;
 
 void RE2Engine::compile(const std::vector<Rule> &rules) {
+  RE2::Options op;
+  op.set_dot_nl(true);
+  op.set_case_sensitive(false);
+  op.set_one_line(false);
+
   for (const auto &rule : rules) {
-    res.push_back(std::unique_ptr<::RE2>(new RE2{rule.getRegexp().data()}));
+    res.push_back(std::unique_ptr<RE2>(new RE2{rule.getRegexp().data(), op}));
   }
 }
 
