@@ -9,6 +9,7 @@
 
 #include "HyperscanEngine.h"
 #include "PcapSource.h"
+#include "PCRE2Engine.h"
 #include "regexbench.h"
 #include "REmatchEngine.h"
 #include "Rule.h"
@@ -17,6 +18,7 @@ namespace po = boost::program_options;
 
 enum EngineType : uint64_t {
   ENGINE_HYPERSCAN,
+  ENGINE_PCRE2,
   ENGINE_REMATCH
 };
 
@@ -39,6 +41,9 @@ int main(int argc, const char *argv[]) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
       engine->compile(loadRules(args.rule_file));
+      break;
+    case ENGINE_PCRE2:
+      engine = std::make_unique<regexbench::PCRE2Engine>();
       break;
     case ENGINE_REMATCH:
       if (endsWith(args.rule_file, ".nfa")) {
