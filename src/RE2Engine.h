@@ -17,7 +17,7 @@ public:
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);
 private:
-  std::vector<std::unique_ptr<::RE2>> res;
+  std::vector<std::unique_ptr<re2::RE2>> res;
 };
 
 } // namespace regexbench
