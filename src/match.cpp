@@ -11,6 +11,7 @@
 #include "PcapSource.h"
 #include "regexbench.h"
 
+#include <iostream>
 using namespace regexbench;
 
 MatchResult regexbench::match(Engine &engine,
@@ -75,6 +76,7 @@ MatchResult regexbench::match(Engine &engine,
     }
   }
   getrusage(RUSAGE_SELF, &end);
+  std::cout << "mem usage " << end.ru_maxrss / 1024 << "k\n";
   timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
   return result;

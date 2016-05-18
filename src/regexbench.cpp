@@ -1,3 +1,4 @@
+#include <sys/resource.h>
 #include <sys/time.h>
 
 #include <fstream>
@@ -20,6 +21,7 @@ namespace po = boost::program_options;
 enum EngineType : uint64_t {
   ENGINE_HYPERSCAN,
   ENGINE_PCRE2,
+  ENGINE_PCRE2JIT,
   ENGINE_RE2,
   ENGINE_REMATCH
 };
@@ -54,6 +56,10 @@ int main(int argc, const char *argv[]) {
         concatRules(rules);
         engine->compile(rules);
       }
+      break;
+    case ENGINE_PCRE2JIT:
+      engine = std::make_unique<regexbench::PCRE2JITEngine>();
+      engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
@@ -101,6 +107,10 @@ int main(int argc, const char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  struct rusage stat;
+  getrusage(RUSAGE_SELF, &stat);
+  std::cout << "mem usage " << stat.ru_maxrss / 1024 << "k ixrss " << stat.ru_ixrss << " stack " << stat.ru_isrss << " data " << stat.ru_idrss << "\n";
+  
   return EXIT_SUCCESS;
 }
 
@@ -167,6 +177,8 @@ Arguments parse_options(int argc, const char *argv[]) {
     args.engine = ENGINE_HYPERSCAN;
   else if (engine == "pcre2")
     args.engine = ENGINE_PCRE2;
+  else if (engine == "pcre2jit")
+    args.engine = ENGINE_PCRE2JIT;
   else if (engine == "re2")
     args.engine = ENGINE_RE2;
   else if (engine == "rematch")
