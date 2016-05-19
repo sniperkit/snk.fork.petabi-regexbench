@@ -129,3 +129,16 @@ std::vector<Rule> regexbench::loadRules(std::istream &is) {
   }
   return rules;
 }
+
+void regexbench::concatRules(std::vector<Rule> &rules) {
+  std::string concatResult;
+  for (const auto &rule : rules) {
+    concatResult += "(";
+    concatResult += rule.getRegexp();
+    concatResult += ")|";
+  }
+
+  rules.clear();
+  concatResult[concatResult.size()-1] = '\0';
+  rules.emplace_back(Rule(concatResult, 0));
+}
