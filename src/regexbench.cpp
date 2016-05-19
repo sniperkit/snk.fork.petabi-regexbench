@@ -43,6 +43,7 @@ int main(int argc, const char *argv[]) {
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
+      engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();

@@ -40,8 +40,9 @@ private:
   std::bitset<NMODS> mods;
 };
 
-  std::vector<Rule> loadRules(std::istream &);
-  void concatRules(std::vector<Rule> &);
+std::vector<Rule> loadRules(std::istream &);
+void concatRules(std::vector<Rule> &);
+
 } // namespace regexbench
 
 #endif
