@@ -37,8 +37,7 @@ public:
   virtual ~PCRE2JITEngine() = default;
 
   virtual void compile(const std::vector<Rule> &);
-  // virtual bool match(const char *, size_t);
-};  
+};
 
 } // namespace regexbench
 

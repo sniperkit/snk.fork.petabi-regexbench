@@ -109,8 +109,7 @@ int main(int argc, const char *argv[]) {
 
   struct rusage stat;
   getrusage(RUSAGE_SELF, &stat);
-  std::cout << "mem usage " << stat.ru_maxrss / 1024 << "k ixrss " << stat.ru_ixrss << " stack " << stat.ru_isrss << " data " << stat.ru_idrss << "\n";
-  
+  std::cout << stat.ru_maxrss / 1000 << " kB\n";
   return EXIT_SUCCESS;
 }
 
