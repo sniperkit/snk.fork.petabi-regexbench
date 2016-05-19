@@ -139,6 +139,8 @@ void regexbench::concatRules(std::vector<Rule> &rules) {
   }
 
   rules.clear();
-  concatResult[concatResult.size()-1] = '\0';
+
+  // call resize to remove the tailing '|' character
+  concatResult.resize(concatResult.size() - 1);
   rules.emplace_back(Rule(concatResult, 0));
 }
