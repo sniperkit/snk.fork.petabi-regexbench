@@ -29,7 +29,6 @@ private:
   };
 
   std::vector<std::unique_ptr<PCRE2_DATA>> res;
-  uint32_t convert_to_pcre2_options(const Rule &);
 };
 
 } // namespace regexbench
