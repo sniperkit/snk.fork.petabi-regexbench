@@ -37,6 +37,7 @@ struct Arguments {
 static bool endsWith(const std::string &, const char *);
 static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
+static void compilePCRE2(const Arguments &, std::unique_ptr<regexbench::Engine> &);
 
 int main(int argc, const char *argv[]) {
   try {
@@ -49,17 +50,11 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
-      if (!args.pcre2_concat)
-        engine->compile(loadRules(args.rule_file));
-      else {
-        auto rules = loadRules(args.rule_file);
-        concatRules(rules);
-        engine->compile(rules);
-      }
+      compilePCRE2(args, engine);
       break;
     case ENGINE_PCRE2JIT:
       engine = std::make_unique<regexbench::PCRE2JITEngine>();
-      engine->compile(loadRules(args.rule_file));
+      compilePCRE2(args, engine);
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
@@ -200,4 +195,15 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
   return args;
+}
+
+static void compilePCRE2(const Arguments &args,
+                         std::unique_ptr<regexbench::Engine> &engine) {
+  if (!args.pcre2_concat)
+    engine->compile(loadRules(args.rule_file));
+  else {
+    auto rules = loadRules(args.rule_file);
+    concatRules(rules);
+    engine->compile(rules);
+  }
 }
