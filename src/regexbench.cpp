@@ -28,7 +28,8 @@ struct Arguments {
   std::string rule_file;
   std::string pcap_file;
   EngineType engine;
-  long repeat;
+  int32_t repeat;
+  uint32_t pcre2_concat;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -46,7 +47,13 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
-      engine->compile(loadRules(args.rule_file));
+      if (!args.pcre2_concat)
+        engine->compile(loadRules(args.rule_file));
+      else {
+        auto rules = loadRules(args.rule_file);
+        concatRules(rules);
+        engine->compile(rules);
+      }
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
@@ -135,8 +142,12 @@ Arguments parse_options(int argc, const char *argv[]) {
     "Matching engine to run.");
   optargs.add_options()(
     "repeat,r",
-    po::value<long>(&args.repeat)->default_value(1),
+    po::value<int32_t>(&args.repeat)->default_value(1),
     "Repeat pcap multiple times.");
+  optargs.add_options()(
+    "concat,c",
+    po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
+    "Concatenate PCRE2 rules.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);

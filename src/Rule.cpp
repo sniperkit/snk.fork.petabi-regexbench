@@ -23,8 +23,19 @@ Rule::Rule(const std::string &rule) {
   parseRule(rule, colon_pos + 1);
 }
 
-Rule::Rule(const std::string &rule, size_t ruleid) : id(ruleid) {
+Rule::Rule(const std::string &rule, size_t ruleid, uint32_t ops) : id(ruleid) {
   parseRule(rule, 0);
+  if (ops)
+    setOptions(ops);
+}
+
+void Rule::setOptions(uint32_t pcre2ops) {
+  if (pcre2ops & PCRE2_CASELESS)
+    mods.set(MOD_CASELESS);
+  if (pcre2ops & PCRE2_MULTILINE)
+    mods.set(MOD_MULTILINE);
+  if (pcre2ops & PCRE2_DOTALL)
+    mods.set(MOD_DOTALL);
 }
 
 uint32_t Rule::getPCRE2Options() const {
@@ -128,4 +139,21 @@ std::vector<Rule> regexbench::loadRules(std::istream &is) {
     throw std::runtime_error("cannot parse rules");
   }
   return rules;
+}
+
+void regexbench::concatRules(std::vector<Rule> &rules) {
+  std::string concatResult;
+  uint32_t ops = 0;
+  for (const auto &rule : rules) {
+    concatResult += "(";
+    concatResult += rule.getRegexp();
+    concatResult += ")|";
+    ops |= rule.getPCRE2Options();
+  }
+
+  rules.clear();
+
+  // call resize to remove the tailing '|' character
+  concatResult.resize(concatResult.size() - 1);
+  rules.emplace_back(Rule(concatResult, 0, ops));
 }

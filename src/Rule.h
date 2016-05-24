@@ -21,7 +21,7 @@ public:
   Rule(const Rule &) = default;
   Rule(Rule &&) = default;
   explicit Rule(const std::string &);
-  explicit Rule(const std::string &, size_t);
+  explicit Rule(const std::string &, size_t, uint32_t = 0);
   ~Rule() = default;
   Rule &operator=(const Rule &) = default;
   Rule &operator=(Rule &&) = default;
@@ -34,6 +34,7 @@ public:
 
 private:
   void parseRule(const std::string &, size_t);
+  void setOptions(uint32_t);
 
   size_t id;
   std::string regexp;
@@ -41,6 +42,7 @@ private:
 };
 
 std::vector<Rule> loadRules(std::istream &);
+void concatRules(std::vector<Rule> &);
 
 } // namespace regexbench
 
