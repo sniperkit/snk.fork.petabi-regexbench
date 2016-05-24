@@ -17,7 +17,7 @@ public:
   virtual void compile(const std::vector<Rule> &);
   virtual bool match(const char *, size_t);
 
-private:
+protected:
   struct PCRE2_DATA {
     pcre2_code *re;
     pcre2_match_data *mdata;
@@ -29,6 +29,14 @@ private:
   };
 
   std::vector<std::unique_ptr<PCRE2_DATA>> res;
+};
+
+class PCRE2JITEngine : public PCRE2Engine {
+public:
+  PCRE2JITEngine() = default;
+  virtual ~PCRE2JITEngine() = default;
+
+  virtual void compile(const std::vector<Rule> &);
 };
 
 } // namespace regexbench

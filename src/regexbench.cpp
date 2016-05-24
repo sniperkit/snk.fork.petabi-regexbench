@@ -1,3 +1,4 @@
+#include <sys/resource.h>
 #include <sys/time.h>
 
 #include <fstream>
@@ -20,6 +21,7 @@ namespace po = boost::program_options;
 enum EngineType : uint64_t {
   ENGINE_HYPERSCAN,
   ENGINE_PCRE2,
+  ENGINE_PCRE2JIT,
   ENGINE_RE2,
   ENGINE_REMATCH
 };
@@ -35,6 +37,7 @@ struct Arguments {
 static bool endsWith(const std::string &, const char *);
 static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
+static void compilePCRE2(const Arguments &, std::unique_ptr<regexbench::Engine> &);
 
 int main(int argc, const char *argv[]) {
   try {
@@ -47,13 +50,11 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
-      if (!args.pcre2_concat)
-        engine->compile(loadRules(args.rule_file));
-      else {
-        auto rules = loadRules(args.rule_file);
-        concatRules(rules);
-        engine->compile(rules);
-      }
+      compilePCRE2(args, engine);
+      break;
+    case ENGINE_PCRE2JIT:
+      engine = std::make_unique<regexbench::PCRE2JITEngine>();
+      compilePCRE2(args, engine);
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
@@ -101,6 +102,9 @@ int main(int argc, const char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  struct rusage stat;
+  getrusage(RUSAGE_SELF, &stat);
+  std::cout << stat.ru_maxrss / 1000 << " kB\n";
   return EXIT_SUCCESS;
 }
 
@@ -167,6 +171,8 @@ Arguments parse_options(int argc, const char *argv[]) {
     args.engine = ENGINE_HYPERSCAN;
   else if (engine == "pcre2")
     args.engine = ENGINE_PCRE2;
+  else if (engine == "pcre2jit")
+    args.engine = ENGINE_PCRE2JIT;
   else if (engine == "re2")
     args.engine = ENGINE_RE2;
   else if (engine == "rematch")
@@ -189,4 +195,15 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::exit(EXIT_FAILURE);
   }
   return args;
+}
+
+static void compilePCRE2(const Arguments &args,
+                         std::unique_ptr<regexbench::Engine> &engine) {
+  if (!args.pcre2_concat)
+    engine->compile(loadRules(args.rule_file));
+  else {
+    auto rules = loadRules(args.rule_file);
+    concatRules(rules);
+    engine->compile(rules);
+  }
 }
