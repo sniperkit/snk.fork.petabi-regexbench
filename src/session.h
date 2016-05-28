@@ -13,74 +13,61 @@
 #include <unordered_map>
 
 #include "PcapSource.h"
+#include <pius/session.h>
+#include <pius/netmap.h>
 
-#if defined(BOOST_BIG_ENDIAN)
-constexpr uint16_t ETHERTYPE_IP_MD = 0x0800u;
-constexpr uint16_t ETHERTYPE_ARP_MD = 0x0806u;
-constexpr uint16_t ETHERTYPE_IPV6_MD = 0x86ddu;
-#else
-constexpr uint16_t ETHERTYPE_IP_MD = 0x0008u;
-constexpr uint16_t ETHERTYPE_ARP_MD = 0x0608u;
-constexpr uint16_t ETHERTYPE_IPV6_MD = 0xdd86u;
-#endif
+
 
 namespace regexbench {
+
+  constexpr inline uint16_t EXT_SPORT(const uint8_t *pkt, uint16_t size_iphdr) {
+    return ntohs(*reinterpret_cast<const uint16_t *>(pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_sport)));
+  }
+
+  constexpr inline uint16_t EXT_DPORT(const uint8_t *pkt, uint16_t size_iphdr) {
+    return ntohs(*reinterpret_cast<const uint16_t *>(pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_dport)));
+  }
+
+
+  constexpr inline uint32_t EXT_SIP(const uint8_t *pkt) {
+    return ntohl(*reinterpret_cast<const uint16_t *>(pkt + ETHER_HDR_LEN + offsetof(struct ip, ip_src)));
+  }
+
+  constexpr inline uint32_t EXT_DIP(const uint8_t *pkt) {
+    return ntohl(*reinterpret_cast<const uint16_t *>(pkt + ETHER_HDR_LEN + offsetof(struct ip, ip_dst)));
+  }
+
+  inline const struct ip6_addr *EXT_SIP6(const uint8_t *pkt) {
+    return reinterpret_cast<const struct ip6_addr *>(pkt + ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_src));
+  }
+
+  inline const struct ip6_addr *EXT_DIP6(const uint8_t *pkt) {
+    return reinterpret_cast<const struct ip6_addr *>(pkt + ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_dst));
+  }
+
   class Session {
   public:
-    Session();
+    Session() = delete;
+    Session(const uint8_t *pkt);
     ~Session() {}
   private:
-    uint32_t id;
-    bool direction;
+    SESSION s;
+    uint16_t pl_off;
+    static uint16_t getPLOff(uint16_t proto) {}
+    // bool direction;
     // matcher
   };
 
-  inline uint16_t getEtherTypeMD(const uint8_t *rawpkt) {
-    return reinterpret_cast<const ether_header *>(rawpkt)->ether_type;
-  }
+  uint32_t pkt_hash(const uint8_t *pkt);
 
-  uint32_t pkt_hash(const uint8_t *pkt) {
-    uint32_t key;
-    const uint8_t *nexthdr;
-    uint16_t protocol;
-    uint16_t ether_type = getEtherTypeMD(pkt);
-    if (ether_type == ETHERTYPE_IP_MD) {
-          const struct ip *ih =
-            reinterpret_cast<const struct ip *>(pkt + sizeof(struct ether_header));
-          protocol = ih->ip_p;
-          key = protocol + ih->ip_src.s_addr + ih->ip_dst.s_addr;
-          nexthdr = pkt + sizeof(struct ether_header) + (ih->ip_hl << 2);
-
-    } else if (ether_type == ETHERTYPE_IPV6_MD) {
-      const struct ip6_hdr *ipv6 = reinterpret_cast<const struct ip6_hdr *>(
-                                                                            pkt + sizeof(struct ether_header));
-      protocol = ipv6->ip6_nxt;
-      key = protocol;
-      int i;
-      for (i = 0; i < 16; i++) {
-        key += ipv6->ip6_dst.s6_addr[i] + ipv6->ip6_src.s6_addr[i];
-      }
-      nexthdr = pkt + sizeof(struct ether_header) + 40;
-    } else {
-      return 0;
-    }
-    if (protocol == IPPROTO_TCP || protocol == IPPROTO_UDP) {
-      const struct tcphdr *th = reinterpret_cast<const struct tcphdr *>(nexthdr);
-      key += th->th_sport + th->th_dport;
-    } else if (protocol == IPPROTO_ICMP || protocol == IPPROTO_ICMPV6) {
-      const struct icmp *icmph = reinterpret_cast<const struct icmp *>(nexthdr);
-      key += icmph->icmp_type + icmph->icmp_code;
-    }
-    return key;
-  }
-
-  class SessionTable {
+  gclass SessionTable {
   public:
     SessionTable() = default;
     ~SessionTable() = default;
-    void insert(const char *);
+    void insert(const uint8_t *);
+    void find(const uint8_t *);
   private:
-    std::unordered_multimap<uint32_t, Session, std::function<decltype(pkt_hash)>> sessionTable;
+    std::unordered_multimap<uint32_t, session> sessionTable;
   };
 } // namespace regexbench
 

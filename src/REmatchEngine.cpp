@@ -7,7 +7,6 @@
 #include <rematch/rematch.h>
 
 #include "REmatchEngine.h"
-#include "session.h"
 
 using namespace regexbench;
 

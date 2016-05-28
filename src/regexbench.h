@@ -18,7 +18,7 @@ size_t nmatches;
 };
 
 MatchResult match(Engine &, const PcapSource &, long);
-
+MatchResult sessionMatch(Engine &, const PcapSource &, long);
 }
 
 #endif // REGEXBENCH_H

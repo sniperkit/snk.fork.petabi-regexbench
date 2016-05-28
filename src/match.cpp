@@ -10,8 +10,27 @@
 #include "Engine.h"
 #include "PcapSource.h"
 #include "regexbench.h"
+#include "session.h"
 
 using namespace regexbench;
+
+MatchResult regexbench::sessionMatch(Engine &engine,
+                              const PcapSource &src,
+                              long repeat) {
+  struct rusage begin, end;
+  MatchResult result;
+  SessionTable sessionTable;
+  getrusage(RUSAGE_SELF, &begin);
+  for (long i = 0; i < repeat; ++i) {
+    for (const auto &packet : src) {
+    }
+  }
+  getrusage(RUSAGE_SELF, &end);
+  timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
+  timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
+  return result;
+}
+
 
 MatchResult regexbench::match(Engine &engine,
                               const PcapSource &src,

@@ -42,7 +42,7 @@ if(RE2_INCLUDE_DIR)
 endif()
 
 add_executable(regexbench
-  match.cpp PcapSource.cpp regexbench.cpp Rule.cpp
+  match.cpp PcapSource.cpp regexbench.cpp Rule.cpp session.cpp
   ${ENGINE_SRCS})
 target_link_libraries(regexbench
   ${Boost_LIBRARIES} ${PCAP_LIB})
