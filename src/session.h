@@ -45,29 +45,54 @@ namespace regexbench {
     return reinterpret_cast<const struct ip6_addr *>(pkt + ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_dst));
   }
 
+
+  inline uint8_t EXT_ICMP_TP(const uint8_t *pkt, uint16_t size_iphdr) {
+    return *(pkt + size_iphdr + ETHER_HDR_LEN +
+             offsetof(struct icmp, icmp_type));
+  }
+
+  inline uint8_t EXT_ICMP_CD(const uint8_t *pkt, uint16_t size_iphdr) {
+    return *(pkt + size_iphdr + ETHER_HDR_LEN +
+             offsetof(struct icmp, icmp_code));
+  }
+
   class Session {
   public:
     Session() = delete;
     Session(const uint8_t *pkt);
+    bool operator==(const Session &);
+    uint32_t getHashval() const { return s.hashval; }
     ~Session() {}
   private:
     SESSION s;
+    uint16_t ether_type;
     uint16_t pl_off;
-    static uint16_t getPLOff(uint16_t proto) {}
-    // bool direction;
+    //static uint16_t getPLOff(uint16_t);
+    bool direction;
+    int cmp_in6_addr(const struct in6_addr *a1, const struct in6_addr *a2) {
+      int i;
+    for (i = 0; i < 16; i++) {
+      if (a1->s6_addr[i] != a2->s6_addr[i]) {
+        return 0;
+      }
+    }
+    return 1;
+  }
+
+
     // matcher
   };
 
   uint32_t pkt_hash(const uint8_t *pkt);
 
-  gclass SessionTable {
+  class SessionTable {
   public:
     SessionTable() = default;
     ~SessionTable() = default;
     void insert(const uint8_t *);
     void find(const uint8_t *);
   private:
-    std::unordered_multimap<uint32_t, session> sessionTable;
+    std::unordered_multimap<uint32_t, Session> sessionTable;
   };
 } // namespace regexbench
 
