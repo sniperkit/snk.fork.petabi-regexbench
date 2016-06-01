@@ -32,6 +32,7 @@ struct Arguments {
   EngineType engine;
   int32_t repeat;
   uint32_t pcre2_concat;
+  uint32_t rematch_session;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -61,7 +62,10 @@ int main(int argc, const char *argv[]) {
       engine->compile(loadRules(args.rule_file));
       break;
     case ENGINE_REMATCH:
-      if (endsWith(args.rule_file, ".nfa")) {
+      if (args.rematch_session) {
+        engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
+        engine->compile(loadRules(args.rule_file));
+      } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
         engine->load(args.rule_file);
       } else if (endsWith(args.rule_file, ".so")) {
@@ -78,7 +82,6 @@ int main(int argc, const char *argv[]) {
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
     regexbench::MatchResult result = match(*engine, pcap, args.repeat, match_info);
-
     std::cout << result.nmatches << " packets matched." << std::endl;
     std::cout << result.udiff.tv_sec << '.';
     std::cout.width(6);
@@ -155,6 +158,10 @@ Arguments parse_options(int argc, const char *argv[]) {
     "concat,c",
     po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
     "Concatenate PCRE2 rules.");
+  optargs.add_options()(
+    "session,s",
+    po::value<uint32_t>(&args.rematch_session)->default_value(0),
+    "Rematch session mode.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);

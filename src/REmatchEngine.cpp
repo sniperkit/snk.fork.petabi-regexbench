@@ -95,3 +95,64 @@ void REmatchSOEngine::load(const std::string &filename) {
     throw std::runtime_error("cannot find symol");
   }
 }
+
+REmatchAutomataEngineSession::REmatchAutomataEngineSession() : parent{nullptr}, child{nullptr} {}
+
+void REmatchAutomataEngineSession::compile(const std::vector<Rule> &rules) {
+  REmatchAutomataEngine::compile(rules);
+  parent = mregSession_create_parent(3, REmatchAutomataEngine::txtbl->nstates);
+  child = mregSession_create_child(parent, 10);
+}
+
+// REmatchAutomataEngineSession::~REmatchAutomataEngineSession() { }
+
+bool REmatchAutomataEngineSession::match(const char *pkt , size_t len) {
+  matcher_t *cur = nullptr;
+  Session s(pkt);
+  sessionTable.find(s);
+  cur = child->mindex[s.getMatcher()] + (s.getDirection() ? 1 : 0);
+
+  if (!cur->num_active) {
+    if (child->active1 < MNULL) {
+      MATCHER_SESSION_SET_NEW(cur, child);
+      //      rematch_flows++;
+    }
+  }
+
+  switch (mregexec_session(txtbl,
+                           pkt + s.getPLOff(), len , 1,
+                           regmatch, cur, child)) {
+  case MREG_FINISHED: // finished
+    // later, this path should led to release of the flow
+    // if certain alarm is touched
+    // currently, leave it there and reset
+    // if (cur->matches)
+    //   rematch_matched_pkts++;
+    // rematch_matches += cur->matches;
+    cur->num_active = 0; // this flow is finished: last exec is either match or deadend
+    // rematch_flows--;
+    // mark match
+    // if ((flags & FLAG_MARK_ENABLE) && cur->matches > 0 && m_regmatch) {
+    //   match = true;
+    //   finalId = m_regmatch->fid;
+    // }
+    break;
+  case MREG_NOT_FINISHED: // not finished
+    // if (cur->matches)
+    //   rematch_matched_pkts++;
+    // rematch_matches += cur->matches;
+    // // mark match
+    // if ((flags & FLAG_MARK_ENABLE) && cur->matches > 0 && m_regmatch) {
+    //   match = true;
+    //   finalId = m_regmatch->fid;
+    // }
+    break;
+  case MREG_FAILURE:
+  default:
+    ;
+    // cur->num_active = 0;
+    // rematch_flows--;
+    // goto backup;
+  }
+  return false;
+}
