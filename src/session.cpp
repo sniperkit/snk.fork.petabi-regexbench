@@ -1,11 +1,12 @@
 #include "session.h"
 
+#include <iostream>
 #include <string>
 
 using namespace regexbench;
 
-Session::Session(const uint8_t *pkt) {
-  s.hashval = pius::computeRSSHash(pkt);
+Session::Session(const char *pkt) : matcher_idx(0) {
+  s.hashval = pius::computeRSSHash(reinterpret_cast<const uint8_t *>(pkt));
 
   ether_type = ntohs(reinterpret_cast<const ether_header *>(pkt)->ether_type);
   uint16_t size_iphdr = 0;
@@ -103,15 +104,37 @@ bool Session::operator==(const Session &rhs) {
   return false;
 }
 
-void SessionTable::find(const uint8_t *pkt) {
-  Session s(pkt);
+void Session::setMatcher(uint32_t matcher_idx_) {
+  matcher_idx = matcher_idx_;
+}
+
+uint32_t Session::getMatcher() const {
+  return matcher_idx;
+}
+
+bool SessionTable::find(Session &s) {
+  std::cout << "find session s" << "\n";
   auto its = sessionTable.equal_range(s.getHashval());
   auto it = its.first;
   for (; it != its.second; ++it) {
-    if (s == (*it).second)
-      break;;
+    if ((*it).second == s) {
+      s = (*it).second;
+      std::cout << "found " << (*it).second.getDirection() << "\n";
+      return true;
+    }
   }
   if (it == its.second) {
+    s.setMatcher(SessionTable::nextMatcher());
     sessionTable.insert(std::make_pair(s.getHashval(), s));
+    std::cout << "not found, insert\n";
   }
+  return false;
 }
+
+uint32_t SessionTable::nextMatcher() {
+  auto t = nmatchers;
+  nmatchers += 2;
+  return t;
+}
+
+uint32_t SessionTable::nmatchers = 0;
