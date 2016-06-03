@@ -33,7 +33,16 @@ struct Arguments {
   int32_t repeat;
   uint32_t pcre2_concat;
   uint32_t rematch_session;
+  char paddings[4];
 };
+
+template<typename Derived, typename Base, typename Del>
+std::unique_ptr<Derived, Del>
+static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
+{
+  auto d = static_cast<Derived *>(p.release());
+  return std::unique_ptr<Derived, Del>(d, std::move(p.get_deleter()));
+}
 
 static bool endsWith(const std::string &, const char *);
 static std::vector<regexbench::Rule> loadRules(const std::string &);
@@ -81,7 +90,14 @@ int main(int argc, const char *argv[]) {
     size_t nsessions = 0;
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
-    regexbench::MatchResult result = match(*engine, pcap, args.repeat, match_info);
+    engine->init(pcap);
+
+    regexbench::MatchResult result;
+    if (args.engine == ENGINE_REMATCH && args.rematch_session) {
+      result = sessionMatch(*engine, pcap, args.repeat);
+    } else {
+      result = match(*engine, pcap, args.repeat, match_info);
+    }
     std::cout << result.nmatches << " packets matched." << std::endl;
     std::cout << result.udiff.tv_sec << '.';
     std::cout.width(6);

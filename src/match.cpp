@@ -85,6 +85,24 @@ std::vector<MatchMeta> regexbench::buildMatchMeta(const PcapSource &src,
   return matcher_info;
 }
 
+MatchResult regexbench::sessionMatch(Engine &engine, const PcapSource &src,
+                              long repeat, const std::vector<MatchMeta> &meta) {
+  struct rusage begin, end;
+  MatchResult result;
+
+  getrusage(RUSAGE_SELF, &begin);
+  for (long i = 0; i < repeat; ++i) {
+    for (size_t j = 0; j < src.getNumberOfPackets(); j++) {
+      if (engine.match(src[j].data() + meta[j].oft, meta[j].len, meta[j].sid))
+        result.nmatches++;
+    }
+  }
+  getrusage(RUSAGE_SELF, &end);
+  timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
+  timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
+  return result;
+}
+
 MatchResult regexbench::match(Engine &engine, const PcapSource &src,
                               long repeat, const std::vector<MatchMeta> &meta) {
   struct rusage begin, end;

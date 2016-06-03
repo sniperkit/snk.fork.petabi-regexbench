@@ -104,24 +104,10 @@ void REmatchAutomataEngineSession::compile(const std::vector<Rule> &rules) {
   child = mregSession_create_child(parent, 10);
 }
 
-// REmatchAutomataEngineSession::~REmatchAutomataEngineSession() { }
-
-bool REmatchAutomataEngineSession::match(const char *pkt , size_t len) {
-  matcher_t *cur = nullptr;
-  Session s(pkt);
-  sessionTable.find(s);
-  cur = child->mindex[s.getMatcher()] + (s.getDirection() ? 1 : 0);
-
-  if (!cur->num_active) {
-    if (child->active1 < MNULL) {
-      MATCHER_SESSION_SET_NEW(cur, child);
-      //      rematch_flows++;
-    }
-  }
-
+bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t idx) {
   switch (mregexec_session(txtbl,
-                           pkt + s.getPLOff(), len , 1,
-                           regmatch, cur, child)) {
+                           pkt, len , 1,
+                           regmatch, matchers[idx], child)) {
   case MREG_FINISHED: // finished
     // later, this path should led to release of the flow
     // if certain alarm is touched
@@ -129,7 +115,7 @@ bool REmatchAutomataEngineSession::match(const char *pkt , size_t len) {
     // if (cur->matches)
     //   rematch_matched_pkts++;
     // rematch_matches += cur->matches;
-    cur->num_active = 0; // this flow is finished: last exec is either match or deadend
+    matchers[idx]->num_active = 0; // this flow is finished: last exec is either match or deadend
     // rematch_flows--;
     // mark match
     // if ((flags & FLAG_MARK_ENABLE) && cur->matches > 0 && m_regmatch) {
@@ -155,4 +141,22 @@ bool REmatchAutomataEngineSession::match(const char *pkt , size_t len) {
     // goto backup;
   }
   return false;
+}
+
+void REmatchAutomataEngineSession::init(const PcapSource &src) {
+  for (const auto &pkt : src) {
+      matcher_t *cur = nullptr;
+      Session s(pkt.data());
+      auto result = sessionTable.find(s);
+      cur = child->mindex[s.getMatcher()] + (s.getDirection() ? 1 : 0);
+
+      if (!result && !cur->num_active) {
+        if (child->active1 < MNULL) {
+          MATCHER_SESSION_SET_NEW(cur, child);
+          //      rematch_flows++;
+        }
+      }
+
+      matchers.push_back(cur);
+  }
 }

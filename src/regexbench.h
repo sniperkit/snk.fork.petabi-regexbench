@@ -32,6 +32,8 @@ MatchResult match(Engine &, const PcapSource &, long,
                   const std::vector<MatchMeta> &);
 std::vector<MatchMeta> buildMatchMeta(const PcapSource &, size_t &);
 uint32_t getPLOffset(const std::string &);
+MatchResult sessionMatch(Engine &, const PcapSource &, long,
+                         const std::vector<MatchMeta> &);
 }
 
 #endif // REGEXBENCH_H
