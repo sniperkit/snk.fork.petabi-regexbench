@@ -10,7 +10,7 @@
 #include "Engine.h"
 #include "PcapSource.h"
 #include "regexbench.h"
-#include "session.h"
+#include "Session.h"
 
 using namespace regexbench;
 

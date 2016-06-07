@@ -1,6 +1,5 @@
 #include "Session.h"
 
-#include <iostream>
 #include <string>
 
 using namespace regexbench;
@@ -104,7 +103,6 @@ bool SessionTable::find(Session &s, size_t &sid) {
   auto it = its.first;
   for (; it != its.second; ++it) {
     if (s == (*it).second) {
-      std::cout << "found " << s.getDirection() << "\n";
       sid = s.getSession() * 2 + (s.getDirection() ? 1 : 0);
       return true;
     }
@@ -113,7 +111,6 @@ bool SessionTable::find(Session &s, size_t &sid) {
     s.setSession(nsessions++);
     sessionTable.insert(std::make_pair(s.getHashval(), s));
     sid = s.getSession() * 2;
-    std::cout << "not found, insert\n";
   }
   return false;
 }

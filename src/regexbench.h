@@ -20,6 +20,9 @@ struct MatchResult {
 struct MatchMeta {
   MatchMeta(size_t sid_ = 0, size_t oft_ = 0, size_t len_ = 0)
       : sid(sid_), oft(oft_), len(len_) {}
+  bool operator==(const MatchMeta &rhs) {
+    return sid == rhs.sid && oft == rhs.oft && len == rhs.len;
+  }
   size_t sid;
   size_t oft;
   size_t len;
