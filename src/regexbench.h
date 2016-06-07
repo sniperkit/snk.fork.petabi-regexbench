@@ -30,13 +30,13 @@ struct MatchMeta {
   size_t len;
 };
 
-MatchResult match(Engine &, const PcapSource &, long,
-                  const std::vector<MatchMeta> &);
 std::vector<MatchMeta> buildMatchMeta(const PcapSource &, size_t &);
 uint32_t getPLOffset(const std::string &);
+std::vector<Rule> loadRules(const std::string &);
+MatchResult match(Engine &, const PcapSource &, long,
+                  const std::vector<MatchMeta> &);
 MatchResult sessionMatch(Engine &, const PcapSource &, long,
                          const std::vector<MatchMeta> &);
-std::vector<Rule> loadRules(const std::string &);
 }
 
 #endif // REGEXBENCH_H

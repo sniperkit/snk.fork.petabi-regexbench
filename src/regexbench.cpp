@@ -136,7 +136,6 @@ bool endsWith(const std::string &obj, const char *end) {
   return false;
 }
 
-
 Arguments parse_options(int argc, const char *argv[]) {
   Arguments args;
   std::string engine;
