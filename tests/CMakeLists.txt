@@ -33,4 +33,3 @@ if(REMATCHCOMP_LIB)
   target_link_libraries(t_session ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
 endif()
 target_link_libraries(t_session ${ATF_LIB})
-
