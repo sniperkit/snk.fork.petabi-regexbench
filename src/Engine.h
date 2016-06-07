@@ -5,8 +5,6 @@
 #include <vector>
 
 #include "Rule.h"
-#include "PcapSource.h"
-#include "session.h"
 
 namespace regexbench {
 

@@ -55,7 +55,7 @@ int main(int argc, const char *argv[]) {
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
-      engine->compile(loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
@@ -67,12 +67,12 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
-      engine->compile(loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
     case ENGINE_REMATCH:
       if (args.rematch_session) {
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
-        engine->compile(loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file));
       } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
         engine->load(args.rule_file);
@@ -81,7 +81,7 @@ int main(int argc, const char *argv[]) {
         engine->load(args.rule_file);
       } else {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
-        engine->compile(loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file));
       }
       break;
     }
@@ -89,11 +89,11 @@ int main(int argc, const char *argv[]) {
     size_t nsessions = 0;
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
-    engine->init(pcap);
+    engine->init(nsessions);
 
     regexbench::MatchResult result;
     if (args.engine == ENGINE_REMATCH && args.rematch_session) {
-      result = sessionMatch(*engine, pcap, args.repeat);
+      result = sessionMatch(*engine, pcap, args.repeat, match_info);
     } else {
       result = match(*engine, pcap, args.repeat, match_info);
     }
@@ -217,9 +217,9 @@ Arguments parse_options(int argc, const char *argv[]) {
 static void compilePCRE2(const Arguments &args,
                          std::unique_ptr<regexbench::Engine> &engine) {
   if (!args.pcre2_concat)
-    engine->compile(loadRules(args.rule_file));
+    engine->compile(regexbench::loadRules(args.rule_file));
   else {
-    auto rules = loadRules(args.rule_file);
+    auto rules = regexbench::loadRules(args.rule_file);
     concatRules(rules);
     engine->compile(rules);
   }

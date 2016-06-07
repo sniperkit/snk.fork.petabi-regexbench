@@ -5,7 +5,7 @@
 #include <rematch/rematch.h>
 
 #include "Engine.h"
-#include "session.h"
+#include "Session.h"
 
 namespace regexbench {
 

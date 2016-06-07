@@ -1,7 +1,6 @@
 #include <dlfcn.h>
 
 #include <stdexcept>
-#include <iostream>
 
 #include <rematch/compile.h>
 #include <rematch/execute.h>
@@ -15,7 +14,7 @@ const char NFA_FUNC_NAME[] = "run";
 const char NFA_NSTATES_NAME[] = "nstates";
 
 REmatchAutomataEngine::REmatchAutomataEngine()
-  : flow(nullptr), matcher(nullptr), txtbl(nullptr) {}
+    : flow(nullptr), matcher(nullptr), txtbl(nullptr) {}
 
 REmatchAutomataEngine::~REmatchAutomataEngine() {
   if (flow)
@@ -35,7 +34,8 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
     ids.push_back(static_cast<unsigned>(rule.getID()));
     mods.push_back(rule.getPCRE2Options());
   }
-  txtbl = rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
+  txtbl =
+      rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
   flow = mregflow_new(txtbl->nstates, 1, 1);
   matcher = matcher_new(txtbl->nstates);
 }
@@ -60,8 +60,7 @@ bool REmatchAutomataEngine::match(const char *data, size_t len) {
 }
 
 REmatchSOEngine::REmatchSOEngine()
-  : run(nullptr), ctx(nullptr), dlhandle(nullptr) {
-}
+    : run(nullptr), ctx(nullptr), dlhandle(nullptr) {}
 
 REmatchSOEngine::~REmatchSOEngine() {
   if (ctx)
@@ -97,18 +96,18 @@ void REmatchSOEngine::load(const std::string &filename) {
   }
 }
 
-REmatchAutomataEngineSession::REmatchAutomataEngineSession() : parent{nullptr}, child{nullptr} {}
+REmatchAutomataEngineSession::REmatchAutomataEngineSession()
+    : parent{nullptr}, child{nullptr} {}
 REmatchAutomataEngineSession::~REmatchAutomataEngineSession() {
   mregSession_delete_parent(parent);
   mregSession_delete_child(child);
 }
 
-bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t idx) {
+bool REmatchAutomataEngineSession::match(const char *pkt, size_t len,
+                                         size_t idx) {
   matcher_t *cur = child->mindex[idx];
   bool ret = false;
-  switch (mregexec_session(txtbl,
-                           pkt, len , 1,
-                           regmatch, cur, child)) {
+  switch (mregexec_session(txtbl, pkt, len, 1, regmatch, cur, child)) {
   case MREG_FINISHED: // finished
     cur->num_active = 0;
     ret = true;
@@ -125,7 +124,8 @@ bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t id
 }
 
 void REmatchAutomataEngineSession::init(size_t nsessions) {
-  parent = mregSession_create_parent(static_cast<uint32_t>(nsessions*2), txtbl->nstates);
+  parent = mregSession_create_parent(static_cast<uint32_t>(nsessions * 2),
+                                     txtbl->nstates);
   child = mregSession_create_child(parent, unit_total);
 
   for (size_t i = 0; i < nsessions * 2; i++) {
