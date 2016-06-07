@@ -51,6 +51,12 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
 find_library(PCAP_LIB pcap)
 
+find_library(ATF_LIB atf-c++)
+
+if(ATF_LIB)
+  subdirs(tests)
+endif()
+
 find_path(HYPERSCAN_INCLUDE_DIR hs/hs_compile.h)
 find_library(HYPERSCAN_LIB hs)
 find_path(PCRE2_INCLUDE_DIR pcre2.h)
@@ -61,5 +67,9 @@ find_library(REMATCHEXEC_LIB rematchexec)
 find_library(PCRE2_LIB pcre2-8)
 find_path(RE2_INCLUDE_DIR re2/re2.h)
 find_library(RE2_LIB re2)
+
+# suppress warnings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro")
 
 subdirs(src)
