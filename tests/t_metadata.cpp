@@ -22,11 +22,11 @@ ATF_TEST_CASE_BODY(metadata_content) {
   ATF_REQUIRE_EQ(2, nsessions);
   ATF_REQUIRE_EQ(17, match_meta.size());
 
-  ATF_REQUIRE((MatchMeta{0, 54, 3} == match_meta[2]));
-  ATF_REQUIRE((MatchMeta{0, 54, 4} == match_meta[3]));
-  ATF_REQUIRE((MatchMeta{2, 54, 3} == match_meta[10]));
-  ATF_REQUIRE((MatchMeta{2, 54, 3} == match_meta[11]));
-  ATF_REQUIRE((MatchMeta{2, 54, 4} == match_meta[12]));
+  ATF_REQUIRE(MatchMeta(0, 54, 3) == match_meta[2]);
+  ATF_REQUIRE(MatchMeta(0, 54, 4) == match_meta[3]);
+  ATF_REQUIRE(MatchMeta(2, 54, 3) == match_meta[10]);
+  ATF_REQUIRE(MatchMeta(2, 54, 3) == match_meta[11]);
+  ATF_REQUIRE(MatchMeta(2, 54, 4) == match_meta[12]);
 }
 
 ATF_INIT_TEST_CASES(tcs) {
