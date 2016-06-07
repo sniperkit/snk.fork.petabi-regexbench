@@ -7,6 +7,9 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "Engine.h"
 #include "PcapSource.h"
 #include "regexbench.h"
@@ -118,4 +121,13 @@ MatchResult regexbench::match(Engine &engine, const PcapSource &src,
   timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
   return result;
+}
+
+std::vector<regexbench::Rule> regexbench::loadRules(const std::string &filename) {
+  std::ifstream ruleifs(filename);
+  if (!ruleifs) {
+    std::cerr << "cannot open rule file: " << filename << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  return regexbench::loadRules(ruleifs);
 }

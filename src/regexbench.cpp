@@ -45,7 +45,6 @@ static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
 }
 
 static bool endsWith(const std::string &, const char *);
-static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
 static void compilePCRE2(const Arguments &, std::unique_ptr<regexbench::Engine> &);
 
@@ -137,14 +136,6 @@ bool endsWith(const std::string &obj, const char *end) {
   return false;
 }
 
-static std::vector<regexbench::Rule> loadRules(const std::string &filename) {
-  std::ifstream ruleifs(filename);
-  if (!ruleifs) {
-    std::cerr << "cannot open rule file: " << filename << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  return regexbench::loadRules(ruleifs);
-}
 
 Arguments parse_options(int argc, const char *argv[]) {
   Arguments args;

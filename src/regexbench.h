@@ -3,6 +3,8 @@
 #define REGEXBENCH_H
 
 #include <boost/timer/timer.hpp>
+#include <vector>
+#include "Rule.h"
 
 namespace regexbench {
 
@@ -34,6 +36,7 @@ std::vector<MatchMeta> buildMatchMeta(const PcapSource &, size_t &);
 uint32_t getPLOffset(const std::string &);
 MatchResult sessionMatch(Engine &, const PcapSource &, long,
                          const std::vector<MatchMeta> &);
+std::vector<Rule> loadRules(const std::string &);
 }
 
 #endif // REGEXBENCH_H
