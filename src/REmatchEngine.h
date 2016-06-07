@@ -48,12 +48,12 @@ class REmatchAutomataEngineSession : public REmatchAutomataEngine {
 public:
   REmatchAutomataEngineSession();
   virtual ~REmatchAutomataEngineSession();
-  virtual void compile(const std::vector<Rule> &);
   virtual void init(size_t);
 
   using Engine::match;
   virtual bool match(const char *, size_t, size_t);
 private:
+  static constexpr size_t unit_total = 1u << 17;
   mregSession_t *parent;
   mregSession_t *child;
 };

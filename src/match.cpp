@@ -92,7 +92,6 @@ MatchResult regexbench::sessionMatch(Engine &engine, const PcapSource &src,
                               long repeat, const std::vector<MatchMeta> &meta) {
   struct rusage begin, end;
   MatchResult result;
-
   getrusage(RUSAGE_SELF, &begin);
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src.getNumberOfPackets(); j++) {

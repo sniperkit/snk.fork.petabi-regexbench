@@ -103,12 +103,6 @@ REmatchAutomataEngineSession::~REmatchAutomataEngineSession() {
   mregSession_delete_child(child);
 }
 
-void REmatchAutomataEngineSession::compile(const std::vector<Rule> &rules) {
-  REmatchAutomataEngine::compile(rules);
-  parent = mregSession_create_parent(3, REmatchAutomataEngine::txtbl->nstates);
-  child = mregSession_create_child(parent, 10);
-}
-
 bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t idx) {
   matcher_t *cur = child->mindex[idx];
   bool ret = false;
@@ -131,6 +125,9 @@ bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t id
 }
 
 void REmatchAutomataEngineSession::init(size_t nsessions) {
+  parent = mregSession_create_parent(static_cast<uint32_t>(nsessions*2), txtbl->nstates);
+  child = mregSession_create_child(parent, unit_total);
+
   for (size_t i = 0; i < nsessions * 2; i++) {
     matcher_t *cur = child->mindex[i];
     if (cur->num_active) {
