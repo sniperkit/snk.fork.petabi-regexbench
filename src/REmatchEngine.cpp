@@ -130,18 +130,13 @@ bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t id
   return ret;
 }
 
-void REmatchAutomataEngineSession::init(const PcapSource &src) {
-  for (const auto &pkt : src) {
-      matcher_t *cur = nullptr;
-      Session s(pkt.data());
-      auto result = sessionTable.find(s);
-      cur = child->mindex[s.getMatcher()] + (s.getDirection() ? 1 : 0);
-
-      if (!result && !cur->num_active) {
-        if (child->active1 < MNULL) {
-          MATCHER_SESSION_SET_NEW(cur, child);
-          //      rematch_flows++;
-        }
+void REmatchAutomataEngineSession::init(size_t nsessions) {
+  for (size_t i = 0; i < nsessions * 2; i++) {
+    matcher_t *cur = child->mindex[i];
+    if (cur->num_active) {
+      if (child->active1 < MNULL) {
+        MATCHER_SESSION_SET_NEW(cur, child);
       }
+    }
   }
 }

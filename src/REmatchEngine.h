@@ -49,12 +49,11 @@ public:
   REmatchAutomataEngineSession();
   virtual ~REmatchAutomataEngineSession();
   virtual void compile(const std::vector<Rule> &);
-  virtual void init(const PcapSource &);
+  virtual void init(size_t);
 
   using Engine::match;
   virtual bool match(const char *, size_t, size_t);
 private:
-  SessionTable sessionTable;
   mregSession_t *parent;
   mregSession_t *child;
 };
