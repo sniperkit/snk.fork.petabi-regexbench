@@ -47,7 +47,7 @@ private:
 class REmatchAutomataEngineSession : public REmatchAutomataEngine {
 public:
   REmatchAutomataEngineSession();
-  virtual ~REmatchAutomataEngineSession() = default;
+  virtual ~REmatchAutomataEngineSession();
   virtual void compile(const std::vector<Rule> &);
   virtual void init(const PcapSource &);
 

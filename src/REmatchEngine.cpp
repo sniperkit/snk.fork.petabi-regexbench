@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 
 #include <stdexcept>
+#include <iostream>
 
 #include <rematch/compile.h>
 #include <rematch/execute.h>
@@ -97,6 +98,10 @@ void REmatchSOEngine::load(const std::string &filename) {
 }
 
 REmatchAutomataEngineSession::REmatchAutomataEngineSession() : parent{nullptr}, child{nullptr} {}
+REmatchAutomataEngineSession::~REmatchAutomataEngineSession() {
+  mregSession_delete_parent(parent);
+  mregSession_delete_child(child);
+}
 
 void REmatchAutomataEngineSession::compile(const std::vector<Rule> &rules) {
   REmatchAutomataEngine::compile(rules);
@@ -105,42 +110,24 @@ void REmatchAutomataEngineSession::compile(const std::vector<Rule> &rules) {
 }
 
 bool REmatchAutomataEngineSession::match(const char *pkt , size_t len, size_t idx) {
+  matcher_t *cur = child->mindex[idx];
+  bool ret = false;
   switch (mregexec_session(txtbl,
                            pkt, len , 1,
-                           regmatch, matchers[idx], child)) {
+                           regmatch, cur, child)) {
   case MREG_FINISHED: // finished
-    // later, this path should led to release of the flow
-    // if certain alarm is touched
-    // currently, leave it there and reset
-    // if (cur->matches)
-    //   rematch_matched_pkts++;
-    // rematch_matches += cur->matches;
-    matchers[idx]->num_active = 0; // this flow is finished: last exec is either match or deadend
-    // rematch_flows--;
-    // mark match
-    // if ((flags & FLAG_MARK_ENABLE) && cur->matches > 0 && m_regmatch) {
-    //   match = true;
-    //   finalId = m_regmatch->fid;
-    // }
+    cur->num_active = 0;
+    ret = true;
     break;
   case MREG_NOT_FINISHED: // not finished
-    // if (cur->matches)
-    //   rematch_matched_pkts++;
-    // rematch_matches += cur->matches;
-    // // mark match
-    // if ((flags & FLAG_MARK_ENABLE) && cur->matches > 0 && m_regmatch) {
-    //   match = true;
-    //   finalId = m_regmatch->fid;
-    // }
+    ret = false;
     break;
   case MREG_FAILURE:
   default:
-    ;
-    // cur->num_active = 0;
-    // rematch_flows--;
-    // goto backup;
+    cur->num_active = 0;
+    ret = false;
   }
-  return false;
+  return ret;
 }
 
 void REmatchAutomataEngineSession::init(const PcapSource &src) {
@@ -156,7 +143,5 @@ void REmatchAutomataEngineSession::init(const PcapSource &src) {
           //      rematch_flows++;
         }
       }
-
-      matchers.push_back(cur);
   }
 }
