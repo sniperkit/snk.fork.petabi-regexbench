@@ -1,4 +1,4 @@
-#include "session.h"
+#include "Session.h"
 
 #include <iostream>
 #include <string>
@@ -11,13 +11,12 @@ Session::Session(const char *pkt) : matcher_idx(0) {
   ether_type = ntohs(reinterpret_cast<const ether_header *>(pkt)->ether_type);
   uint16_t size_iphdr = 0;
   if (ether_type == ETHERTYPE_IPV6) {
-     s.protocol =
-      reinterpret_cast<const ip6_hdr *>(pkt + ETHER_HDR_LEN)
-      ->ip6_nxt;
+    s.protocol =
+        reinterpret_cast<const ip6_hdr *>(pkt + ETHER_HDR_LEN)->ip6_nxt;
 
-     size_iphdr = 40;
-     memcpy(&s.addr.ipv6.src, EXT_SIP6(pkt), 16);
-     memcpy(&s.addr.ipv6.dst, EXT_DIP6(pkt), 16);
+    size_iphdr = 40;
+    memcpy(&s.addr.ipv6.src, EXT_SIP6(pkt), 16);
+    memcpy(&s.addr.ipv6.dst, EXT_DIP6(pkt), 16);
   } else if (ether_type == ETHERTYPE_IP) {
     auto ih = reinterpret_cast<const ip *>(pkt + ETHER_HDR_LEN);
     s.protocol = ih->ip_p;
@@ -49,8 +48,7 @@ bool Session::operator==(const Session &rhs) {
           direction = false;
           return true;
         }
-      } else if (s.si.sport == rhs.s.si.sport &&
-                 s.di.dport == rhs.s.di.dport) {
+      } else if (s.si.sport == rhs.s.si.sport && s.di.dport == rhs.s.di.dport) {
         direction = false;
         return true;
       }
@@ -63,8 +61,7 @@ bool Session::operator==(const Session &rhs) {
           direction = true;
           return true;
         }
-      } else if (s.si.sport == rhs.s.di.dport &&
-                 s.di.dport == rhs.s.si.sport) {
+      } else if (s.si.sport == rhs.s.di.dport && s.di.dport == rhs.s.si.sport) {
         direction = true;
         return true;
       }
@@ -81,8 +78,7 @@ bool Session::operator==(const Session &rhs) {
         direction = false;
         return true;
       }
-    } else if (s.si.sport == rhs.s.si.sport &&
-               s.di.dport == rhs.s.di.dport) {
+    } else if (s.si.sport == rhs.s.si.sport && s.di.dport == rhs.s.di.dport) {
       direction = false;
       return true;
     }
@@ -90,13 +86,12 @@ bool Session::operator==(const Session &rhs) {
   if (cmp_in6_addr(&s.addr.ipv6.src, &rhs.s.addr.ipv6.dst) &&
       cmp_in6_addr(&s.addr.ipv6.dst, &rhs.s.addr.ipv6.src)) {
     if (__builtin_expect(s.protocol == IPPROTO_ICMP, false)) {
-        if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
-            s.di.icmp_cd == rhs.s.di.icmp_cd) {
-          direction = true;
-          return true;
+      if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
+          s.di.icmp_cd == rhs.s.di.icmp_cd) {
+        direction = true;
+        return true;
       }
-    } else if (s.si.sport == rhs.s.di.dport &&
-               s.di.dport == rhs.s.si.sport) {
+    } else if (s.si.sport == rhs.s.di.dport && s.di.dport == rhs.s.si.sport) {
       direction = true;
       return true;
     }
@@ -104,37 +99,23 @@ bool Session::operator==(const Session &rhs) {
   return false;
 }
 
-void Session::setMatcher(uint32_t matcher_idx_) {
-  matcher_idx = matcher_idx_;
-}
-
-uint32_t Session::getMatcher() const {
-  return matcher_idx;
-}
-
-bool SessionTable::find(Session &s) {
-  std::cout << "find session s" << "\n";
+bool SessionTable::find(Session &s, size_t &sid) {
   auto its = sessionTable.equal_range(s.getHashval());
   auto it = its.first;
   for (; it != its.second; ++it) {
-    if ((*it).second == s) {
-      s = (*it).second;
-      std::cout << "found " << (*it).second.getDirection() << "\n";
+    if (s == (*it).second) {
+      std::cout << "found " << s.getDirection() << "\n";
+      sid = s.getSession() * 2 + (s.getDirection() ? 1 : 0);
       return true;
     }
   }
   if (it == its.second) {
-    s.setMatcher(SessionTable::nextMatcher());
+    s.setSession(nsessions++);
     sessionTable.insert(std::make_pair(s.getHashval(), s));
+    sid = s.getSession() * 2;
     std::cout << "not found, insert\n";
   }
   return false;
 }
 
-uint32_t SessionTable::nextMatcher() {
-  auto t = nmatchers;
-  nmatchers += 2;
-  return t;
-}
-
-uint32_t SessionTable::nmatchers = 0;
+uint32_t SessionTable::nsessions = 0;

@@ -74,8 +74,11 @@ int main(int argc, const char *argv[]) {
       break;
     }
 
+    size_t nsessions = 0;
     regexbench::PcapSource pcap(args.pcap_file);
-    auto result = match(*engine, pcap, args.repeat);
+    auto match_info = buildMatchMeta(pcap, nsessions);
+    regexbench::MatchResult result = match(*engine, pcap, args.repeat, match_info);
+
     std::cout << result.nmatches << " packets matched." << std::endl;
     std::cout << result.udiff.tv_sec << '.';
     std::cout.width(6);

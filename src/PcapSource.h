@@ -15,6 +15,9 @@ public:
   ~PcapSource() = default;
   PcapSource &operator=(const PcapSource &) = default;
   PcapSource &operator=(PcapSource &&) = default;
+  const std::string &operator[](size_t idx) const {
+    return packets[idx];
+  }
 
   auto begin() const { return packets.begin(); }
   auto end() const {return packets.end(); }
