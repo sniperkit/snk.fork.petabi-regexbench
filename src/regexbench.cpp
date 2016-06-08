@@ -39,6 +39,7 @@ struct Arguments {
   EngineType engine;
   int32_t repeat;
   uint32_t pcre2_concat;
+  std::string output_file;
 };
 
 static bool endsWith(const std::string &, const char *);
@@ -127,7 +128,7 @@ int main(int argc, const char *argv[]) {
 
     std::ostringstream buf;
     write_json(buf, pt, false);
-    std::ofstream outputFile("JsonOutput.txt");
+    std::ofstream outputFile(args.output_file);
     outputFile << buf.str();
 
     for (const auto &it : reportFields) {
@@ -179,7 +180,10 @@ Arguments parse_options(int argc, const char *argv[]) {
   optargs.add_options()(
       "concat,c", po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
       "Concatenate PCRE2 rules.");
-
+  optargs.add_options()(
+      "output,o",
+      po::value<std::string>(&args.output_file)->default_value("output.json"),
+      "Output JSON file.");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;
