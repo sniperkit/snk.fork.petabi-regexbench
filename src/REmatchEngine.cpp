@@ -133,6 +133,8 @@ void REmatchAutomataEngineSession::init(size_t nsessions) {
     if (cur->num_active) {
       if (child->active1 < MNULL) {
         MATCHER_SESSION_SET_NEW(cur, child);
+      } else {
+        throw std::bad_alloc();
       }
     }
   }
