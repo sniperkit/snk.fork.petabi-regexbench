@@ -4,17 +4,24 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include <boost/program_options.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "HyperscanEngine.h"
-#include "PcapSource.h"
 #include "PCRE2Engine.h"
-#include "regexbench.h"
+#include "PcapSource.h"
 #include "RE2Engine.h"
 #include "REmatchEngine.h"
 #include "Rule.h"
+#include "regexbench.h"
+
+using boost::property_tree::ptree;
+using boost::property_tree::read_json;
+using boost::property_tree::write_json;
 
 namespace po = boost::program_options;
 
@@ -37,7 +44,8 @@ struct Arguments {
 static bool endsWith(const std::string &, const char *);
 static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
-static void compilePCRE2(const Arguments &, std::unique_ptr<regexbench::Engine> &);
+static void compilePCRE2(const Arguments &,
+                         std::unique_ptr<regexbench::Engine> &);
 
 int main(int argc, const char *argv[]) {
   try {
@@ -74,40 +82,61 @@ int main(int argc, const char *argv[]) {
       break;
     }
 
+    std::string reportFields[]{
+        "TotalMatches", "TotalMatchedPackets",  "UserTime",     "SystemTime",
+        "TotalTime",    "TotalBytes",           "TotalPackets", "Mbps",
+        "Mpps",         "MaximumMemoryUsed(kB)"};
     size_t nsessions = 0;
+    std::string prefix = "regexbench.";
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
-    regexbench::MatchResult result = match(*engine, pcap, args.repeat, match_info);
-
-    std::cout << result.nmatches << " packets matched." << std::endl;
-    std::cout << result.udiff.tv_sec << '.';
-    std::cout.width(6);
-    std::cout.fill('0');
-    std::cout << result.udiff.tv_usec << "s user " << std::endl;
-    std::cout << result.sdiff.tv_sec << '.';
-    std::cout.width(6);
-    std::cout.fill('0');
-    std::cout << result.sdiff.tv_usec << "s system" << std::endl;
+    regexbench::MatchResult result =
+        match(*engine, pcap, args.repeat, match_info);
+    boost::property_tree::ptree pt;
+    pt.put(prefix + "TotalMatches", result.nmatches);
+    pt.put(prefix + "TotalMatchedPackets", result.nmatched_pkts);
+    std::stringstream ss;
+    ss << result.udiff.tv_sec << "." << result.udiff.tv_usec;
+    pt.put(prefix + "UserTime", ss.str());
+    ss.str("");
+    ss << result.sdiff.tv_sec << "." << result.sdiff.tv_usec;
+    pt.put(prefix + "SystemTime", ss.str());
+    ss.str("");
     struct timeval total;
     timeradd(&result.udiff, &result.sdiff, &total);
-    std::cout
-      << static_cast<double>(pcap.getNumberOfBytes() *
-                             static_cast<unsigned long>(args.repeat)) /
-        (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8
-        << " Mbps" << std::endl;
-    std::cout
-        << static_cast<double>(pcap.getNumberOfPackets() *
-                               static_cast<unsigned long>(args.repeat)) /
-        (total.tv_sec + total.tv_usec * 1e-6) / 1000000
-        << " Mpps" << std::endl;
+    ss << total.tv_sec << "." << total.tv_usec;
+    pt.put(prefix + "TotalTime", ss.str());
+    pt.put(prefix + "TotalBytes", pcap.getNumberOfBytes());
+    pt.put(prefix + "TotalPackets", pcap.getNumberOfPackets());
+    ss.str("");
+    ss << boost::format("%1$.6f") %
+              (static_cast<double>(pcap.getNumberOfBytes() *
+                                   static_cast<unsigned long>(args.repeat)) /
+               (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
+    pt.put(prefix + "Mbps", ss.str());
+
+    ss.str("");
+    ss << boost::format("%1$.6f") %
+              (static_cast<double>(pcap.getNumberOfPackets() *
+                                   static_cast<unsigned long>(args.repeat)) /
+               (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
+    pt.put(prefix + "Mpps", ss.str());
+    struct rusage stat;
+    getrusage(RUSAGE_SELF, &stat);
+    pt.put(prefix + "MaximumMemoryUsed(kB)", stat.ru_maxrss / 1000);
+
+    std::ostringstream buf;
+    write_json(buf, pt, false);
+    std::ofstream outputFile("JsonOutput.txt");
+    outputFile << buf.str();
+
+    for (const auto &it : reportFields) {
+      std::cout << it << " : " << pt.get<std::string>(prefix + it) << "\n";
+    }
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
   }
-
-  struct rusage stat;
-  getrusage(RUSAGE_SELF, &stat);
-  std::cout << stat.ru_maxrss / 1000 << " kB\n";
   return EXIT_SUCCESS;
 }
 
@@ -132,11 +161,9 @@ Arguments parse_options(int argc, const char *argv[]) {
   std::string engine;
 
   po::options_description posargs;
-  posargs.add_options()("rule_file",
-                        po::value<std::string>(&args.rule_file),
+  posargs.add_options()("rule_file", po::value<std::string>(&args.rule_file),
                         "Rule (regular expression) file name");
-  posargs.add_options()("pcap_file",
-                        po::value<std::string>(&args.pcap_file),
+  posargs.add_options()("pcap_file", po::value<std::string>(&args.pcap_file),
                         "pcap file name");
   po::positional_options_description positions;
   positions.add("rule_file", 1).add("pcap_file", 1);
@@ -144,25 +171,22 @@ Arguments parse_options(int argc, const char *argv[]) {
   po::options_description optargs("Options");
   optargs.add_options()("help,h", "Print usage information.");
   optargs.add_options()(
-    "engine,e",
-    po::value<std::string>(&engine)->default_value("hyperscan"),
-    "Matching engine to run.");
+      "engine,e", po::value<std::string>(&engine)->default_value("hyperscan"),
+      "Matching engine to run.");
+  optargs.add_options()("repeat,r",
+                        po::value<int32_t>(&args.repeat)->default_value(1),
+                        "Repeat pcap multiple times.");
   optargs.add_options()(
-    "repeat,r",
-    po::value<int32_t>(&args.repeat)->default_value(1),
-    "Repeat pcap multiple times.");
-  optargs.add_options()(
-    "concat,c",
-    po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
-    "Concatenate PCRE2 rules.");
+      "concat,c", po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
+      "Concatenate PCRE2 rules.");
 
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;
   po::store(po::command_line_parser(argc, argv)
-            .options(cliargs)
-            .positional(positions)
-            .run(),
+                .options(cliargs)
+                .positional(positions)
+                .run(),
             vm);
   po::notify(vm);
 
