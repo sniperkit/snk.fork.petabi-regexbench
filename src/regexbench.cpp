@@ -196,6 +196,7 @@ Arguments parse_options(int argc, const char *argv[]) {
 
   if (vm.count("help")) {
     std::cout << "Usage: regexbench <rule_file> <pcap_file>" << std::endl;
+    std::cout << posargs << "\n" << optargs << "\n";
     std::exit(EXIT_SUCCESS);
   }
   if (engine == "hyperscan")
