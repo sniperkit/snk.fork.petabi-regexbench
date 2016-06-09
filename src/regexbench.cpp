@@ -187,9 +187,6 @@ Arguments parse_options(int argc, const char *argv[]) {
                         po::value<int32_t>(&args.repeat)->default_value(1),
                         "Repeat pcap multiple times.");
   optargs.add_options()(
-      "concat,c", po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
-      "Concatenate PCRE2 rules.");
-  optargs.add_options()(
     "concat,c",
     po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
     "Concatenate PCRE2 rules.");
