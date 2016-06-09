@@ -12,11 +12,12 @@ class Engine;
 class PcapSource;
 
 struct MatchResult {
-  MatchResult() : nmatches(0) {}
+  MatchResult() : nmatches(0), nmatched_pkts(0) {}
 
   struct timeval udiff;
   struct timeval sdiff;
   size_t nmatches;
+  size_t nmatched_pkts;
 };
 
 struct MatchMeta {
