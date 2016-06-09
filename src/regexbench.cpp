@@ -34,16 +34,25 @@ enum EngineType : uint64_t {
 };
 
 struct Arguments {
-  std::string rule_file;
+  std::string output_file;
   std::string pcap_file;
+  std::string rule_file;
   EngineType engine;
   int32_t repeat;
   uint32_t pcre2_concat;
-  std::string output_file;
+  uint32_t rematch_session;
+  char paddings[4];
 };
 
+template<typename Derived, typename Base, typename Del>
+std::unique_ptr<Derived, Del>
+static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
+{
+  auto d = static_cast<Derived *>(p.release());
+  return std::unique_ptr<Derived, Del>(d, std::move(p.get_deleter()));
+}
+
 static bool endsWith(const std::string &, const char *);
-static std::vector<regexbench::Rule> loadRules(const std::string &);
 static Arguments parse_options(int argc, const char *argv[]);
 static void compilePCRE2(const Arguments &,
                          std::unique_ptr<regexbench::Engine> &);
@@ -55,7 +64,7 @@ int main(int argc, const char *argv[]) {
     switch (args.engine) {
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
-      engine->compile(loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
@@ -67,10 +76,13 @@ int main(int argc, const char *argv[]) {
       break;
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
-      engine->compile(loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
     case ENGINE_REMATCH:
-      if (endsWith(args.rule_file, ".nfa")) {
+      if (args.rematch_session) {
+        engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
+        engine->compile(regexbench::loadRules(args.rule_file));
+      } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
         engine->load(args.rule_file);
       } else if (endsWith(args.rule_file, ".so")) {
@@ -78,7 +90,7 @@ int main(int argc, const char *argv[]) {
         engine->load(args.rule_file);
       } else {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
-        engine->compile(loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file));
       }
       break;
     }
@@ -91,8 +103,14 @@ int main(int argc, const char *argv[]) {
     std::string prefix = "regexbench.";
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
-    regexbench::MatchResult result =
-        match(*engine, pcap, args.repeat, match_info);
+    engine->init(nsessions);
+
+    regexbench::MatchResult result;
+    if (args.engine == ENGINE_REMATCH && args.rematch_session) {
+      result = sessionMatch(*engine, pcap, args.repeat, match_info);
+    } else {
+      result = match(*engine, pcap, args.repeat, match_info);
+    }
     boost::property_tree::ptree pt;
     pt.put(prefix + "TotalMatches", result.nmatches);
     pt.put(prefix + "TotalMatchedPackets", result.nmatched_pkts);
@@ -148,15 +166,6 @@ bool endsWith(const std::string &obj, const char *end) {
   return false;
 }
 
-static std::vector<regexbench::Rule> loadRules(const std::string &filename) {
-  std::ifstream ruleifs(filename);
-  if (!ruleifs) {
-    std::cerr << "cannot open rule file: " << filename << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  return regexbench::loadRules(ruleifs);
-}
-
 Arguments parse_options(int argc, const char *argv[]) {
   Arguments args;
   std::string engine;
@@ -178,8 +187,13 @@ Arguments parse_options(int argc, const char *argv[]) {
                         po::value<int32_t>(&args.repeat)->default_value(1),
                         "Repeat pcap multiple times.");
   optargs.add_options()(
-      "concat,c", po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
-      "Concatenate PCRE2 rules.");
+    "concat,c",
+    po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
+    "Concatenate PCRE2 rules.");
+  optargs.add_options()(
+    "session,s",
+    po::value<uint32_t>(&args.rematch_session)->default_value(0),
+    "Rematch session mode.");
   optargs.add_options()(
       "output,o",
       po::value<std::string>(&args.output_file)->default_value("output.json"),
@@ -232,9 +246,9 @@ Arguments parse_options(int argc, const char *argv[]) {
 static void compilePCRE2(const Arguments &args,
                          std::unique_ptr<regexbench::Engine> &engine) {
   if (!args.pcre2_concat)
-    engine->compile(loadRules(args.rule_file));
+    engine->compile(regexbench::loadRules(args.rule_file));
   else {
-    auto rules = loadRules(args.rule_file);
+    auto rules = regexbench::loadRules(args.rule_file);
     concatRules(rules);
     engine->compile(rules);
   }

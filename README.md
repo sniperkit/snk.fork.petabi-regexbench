@@ -28,10 +28,13 @@ regexbench supports the following options:
 
 * -r repeat pcap multiple times.
 
-* -c concatnate pcre2 rules. To turn on, one should specify *-c 1*,
-   default off.
+* -c concatnate pcre2 rules. To turn on, one should specify *-e pcre2
+   -c 1* or *-e pcre2jit -c 1*, default off.
 
 * -o output json file, default (*output.json*)
+
+* -s rematch session mode. To turn on, one should specify *-e rematch
+   -s 1*, default off.
 
 # Output #
 

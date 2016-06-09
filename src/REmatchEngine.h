@@ -5,6 +5,7 @@
 #include <rematch/rematch.h>
 
 #include "Engine.h"
+#include "Session.h"
 
 namespace regexbench {
 
@@ -20,6 +21,7 @@ public:
 private:
   mregflow_t *flow;
   matcher_t *matcher;
+protected:
   mregex_t *txtbl;
   mregmatch_t regmatch[1];
 };
@@ -40,6 +42,20 @@ private:
   run_func_t run;
   matchctx_t *ctx;
   void *dlhandle;
+};
+
+class REmatchAutomataEngineSession : public REmatchAutomataEngine {
+public:
+  REmatchAutomataEngineSession();
+  virtual ~REmatchAutomataEngineSession();
+  virtual void init(size_t);
+
+  using Engine::match;
+  virtual bool match(const char *, size_t, size_t);
+private:
+  static constexpr size_t unit_total = 1u << 17;
+  mregSession_t *parent;
+  mregSession_t *child;
 };
 
 } // namespace regexbench
