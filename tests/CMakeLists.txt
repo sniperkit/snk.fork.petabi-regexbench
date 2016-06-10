@@ -18,11 +18,11 @@ endif()
 add_definitions(-DDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(t_metadata t_metadata.cpp
-  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/session.cpp)
+  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 
 target_link_libraries(t_metadata ${ATF_LIB} ${PCAP_LIB})
 add_executable(t_session t_session.cpp
-  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/session.cpp
+  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp
   ${ENGINE_SRCS})
 
 target_link_libraries(t_session ${PCAP_LIB})

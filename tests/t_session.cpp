@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../src/session.h"
+#include "../src/Session.h"
 #include "../src/regexbench.h"
 #include "../src/REmatchEngine.h"
 
