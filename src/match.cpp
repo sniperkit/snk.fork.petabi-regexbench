@@ -95,8 +95,12 @@ MatchResult regexbench::sessionMatch(Engine &engine, const PcapSource &src,
   getrusage(RUSAGE_SELF, &begin);
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src.getNumberOfPackets(); j++) {
-      if (engine.match(src[j].data() + meta[j].oft, meta[j].len, meta[j].sid))
-        result.nmatches++;
+      auto matches = engine.match(src[j].data() + meta[j].oft, meta[j].len, meta[j].sid);
+
+      if (matches) {
+        result.nmatches += matches;
+        result.nmatched_pkts++;
+      }
     }
   }
   getrusage(RUSAGE_SELF, &end);
@@ -112,8 +116,12 @@ MatchResult regexbench::match(Engine &engine, const PcapSource &src,
   getrusage(RUSAGE_SELF, &begin);
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src.getNumberOfPackets(); j++) {
-      if (engine.match(src[j].data() + meta[j].oft, meta[j].len))
-        result.nmatches++;
+      auto matches = engine.match(src[j].data() + meta[j].oft, meta[j].len, meta[j].sid);
+
+      if (matches) {
+        result.nmatches += matches;
+        result.nmatched_pkts++;
+      }
     }
   }
   getrusage(RUSAGE_SELF, &end);

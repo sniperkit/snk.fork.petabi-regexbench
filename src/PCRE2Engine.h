@@ -15,7 +15,7 @@ public:
   virtual ~PCRE2Engine() = default;
 
   virtual void compile(const std::vector<Rule> &);
-  virtual bool match(const char *, size_t);
+  virtual size_t match(const char *, size_t);
 
 protected:
   struct PCRE2_DATA {
