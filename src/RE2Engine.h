@@ -11,11 +11,12 @@ namespace regexbench {
 
 class RE2Engine : public Engine {
 public:
-  RE2Engine();
-  virtual ~RE2Engine();
+  RE2Engine() = default;
+  virtual ~RE2Engine() = default;
 
   virtual void compile(const std::vector<Rule> &);
   virtual size_t match(const char *, size_t);
+  size_t getRuleSize() const { return res.size(); }
 private:
   std::vector<std::unique_ptr<re2::RE2>> res;
 };
