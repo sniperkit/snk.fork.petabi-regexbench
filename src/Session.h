@@ -12,9 +12,6 @@
 #include <sys/time.h>
 #include <unordered_map>
 
-#include <pius/netmap.h>
-#include <pius/session.h>
-
 #include "PcapSource.h"
 
 namespace regexbench {
@@ -66,26 +63,52 @@ constexpr inline int cmp_in6_addr(const struct in6_addr *a1,
   return 1;
 }
 
-constexpr inline uint32_t pkt_hash(const char *);
+  template<typename T>
+  class AddrPair {
+  public:
+    T src;
+    T dst;
+  };
+
+  inline bool operator==(const AddrPair<in_addr> &lhs,
+                         const AddrPair<in_addr> &rhs) {
+    return *reinterpret_cast<const uint64_t *>(&lhs) ==
+      *reinterpret_cast<const uint64_t *>(&rhs);
+  };
 
 class Session {
 public:
   Session() = delete;
   Session(const char *pkt);
   bool operator==(const Session &);
-  uint32_t getHashval() const { return s.hashval; }
+  uint32_t getHashval() const { return hashval; }
   bool getDirection() const { return direction; }
   void setSession(uint32_t sid) { session_idx = sid; }
   uint32_t getSession() const { return session_idx; }
 
 private:
-  SESSION s;
+  inline uint32_t computeRSSHash(const uint8_t *);
+  union {
+    class AddrPair<in_addr> ipv4;
+    class AddrPair<in6_addr> ipv6;
+  } addr;
+  uint32_t hashval;   /* Hashvalue */
+  union {
+    uint16_t sport;
+    uint16_t icmp_tp;
+  } si;
+  union {
+    uint16_t dport;
+    uint16_t icmp_cd;
+  } di;
   uint32_t session_idx;
   uint16_t ether_type;
   uint16_t pl_off;
   uint32_t matcher_idx;
   bool direction;
-  char paddings[51];
+  uint8_t protocol;
+  uint8_t ver;      /* IPv4 or IPv6 */
+  char paddings[9];
 };
 
 class SessionTable {
