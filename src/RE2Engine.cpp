@@ -21,6 +21,8 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
 
     if (re->ok()) {
       res.push_back(std::move(re));
+    } else {
+      throw std::runtime_error("fail to compile rule: " + rule.getRegexp());
     }
   }
 }
