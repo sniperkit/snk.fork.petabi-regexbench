@@ -23,14 +23,17 @@ if(REMATCH_INCLUDE_DIR)
 endif()
 
 add_executable(t_metadata t_metadata.cpp
-  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/session.cpp)
+  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 target_link_libraries(t_metadata ${ATF_LIB} ${PCAP_LIB})
 
 add_executable(t_session t_session.cpp ../src/REmatchEngine.cpp ../src/Engine.cpp
-  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/session.cpp)
+  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 target_link_libraries(t_session ${ATF_LIB} ${PCAP_LIB} ${PCRE2_LIB})
 
 if(REMATCHCOMP_LIB)
   target_link_libraries(t_session ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
 endif()
 
+add_executable(t_re2 t_re2.cpp ../src/RE2Engine.cpp ../src/Engine.cpp
+  ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
+  target_link_libraries(t_re2 ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB})
