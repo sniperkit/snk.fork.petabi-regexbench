@@ -53,7 +53,7 @@ void REmatchAutomataEngine::load(const std::string &filename) {
     throw std::bad_alloc();
 }
 
-size_t REmatchAutomataEngine::match(const char *data, size_t len) {
+size_t REmatchAutomataEngine::match(const char *data, size_t len, size_t) {
   MATCHER_SINGLE_CLEAN(matcher);
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches;

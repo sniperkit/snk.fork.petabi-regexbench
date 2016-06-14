@@ -105,12 +105,8 @@ int main(int argc, const char *argv[]) {
     auto match_info = buildMatchMeta(pcap, nsessions);
     engine->init(nsessions);
 
-    regexbench::MatchResult result;
-    if (args.engine == ENGINE_REMATCH && args.rematch_session) {
-      result = sessionMatch(*engine, pcap, args.repeat, match_info);
-    } else {
-      result = match(*engine, pcap, args.repeat, match_info);
-    }
+    regexbench::MatchResult result =
+      match(*engine, pcap, args.repeat, match_info);
     boost::property_tree::ptree pt;
     pt.put(prefix + "TotalMatches", result.nmatches);
     pt.put(prefix + "TotalMatchedPackets", result.nmatched_pkts);

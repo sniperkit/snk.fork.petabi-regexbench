@@ -17,7 +17,7 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t PCRE2Engine::match(const char *data, size_t len) {
+size_t PCRE2Engine::match(const char *data, size_t len, size_t) {
   for (const auto &re : res) {
     int rc = pcre2_match(re->re,
                          reinterpret_cast<PCRE2_SPTR>(data),

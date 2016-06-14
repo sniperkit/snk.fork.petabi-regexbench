@@ -27,7 +27,7 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t RE2Engine::match(const char *data, size_t len) {
+size_t RE2Engine::match(const char *data, size_t len, size_t) {
   len = 0;
   for (const auto &re : res) {
     if (re2::RE2::PartialMatch(data, *re)) {

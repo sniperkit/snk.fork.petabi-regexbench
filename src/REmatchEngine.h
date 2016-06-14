@@ -16,7 +16,7 @@ public:
 
   virtual void compile(const std::vector<Rule> &);
   virtual void load(const std::string &);
-  virtual size_t match(const char *, size_t);
+  virtual size_t match(const char *, size_t, size_t);
 
 private:
   mregflow_t *flow;
@@ -34,7 +34,7 @@ public:
   virtual ~REmatchSOEngine();
 
   virtual void load(const std::string &);
-  virtual size_t match(const char *data, size_t len) {
+  virtual size_t match(const char *data, size_t len, size_t) {
     return run(data, len, ctx);
   }
 
