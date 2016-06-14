@@ -53,10 +53,10 @@ void REmatchAutomataEngine::load(const std::string &filename) {
     throw std::bad_alloc();
 }
 
-bool REmatchAutomataEngine::match(const char *data, size_t len) {
+size_t REmatchAutomataEngine::match(const char *data, size_t len) {
   MATCHER_SINGLE_CLEAN(matcher);
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
-  return matcher->matches > 0;
+  return matcher->matches;
 }
 
 REmatchSOEngine::REmatchSOEngine()
@@ -103,22 +103,22 @@ REmatchAutomataEngineSession::~REmatchAutomataEngineSession() {
   mregSession_delete_child(child);
 }
 
-bool REmatchAutomataEngineSession::match(const char *pkt, size_t len,
+size_t REmatchAutomataEngineSession::match(const char *pkt, size_t len,
                                          size_t idx) {
   matcher_t *cur = child->mindex[idx];
-  bool ret = false;
+  size_t ret = 0;
   switch (mregexec_session(txtbl, pkt, len, 1, regmatch, cur, child)) {
   case MREG_FINISHED: // finished
     cur->num_active = 0;
-    ret = true;
+    ret = cur->matches;
     break;
   case MREG_NOT_FINISHED: // not finished
-    ret = false;
+    ret = 0;
     break;
   case MREG_FAILURE:
   default:
     cur->num_active = 0;
-    ret = false;
+    ret = 0;
   }
   return ret;
 }
