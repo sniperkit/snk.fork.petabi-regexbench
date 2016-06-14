@@ -3,10 +3,6 @@
 #include <rematch/compile.h>
 using namespace regexbench;
 
-RE2Engine::RE2Engine() = default;
-
-RE2Engine::~RE2Engine() = default;
-
 void RE2Engine::compile(const std::vector<Rule> &rules) {
   for (const auto &rule : rules) {
     RE2::Options op;
@@ -21,7 +17,11 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
       op.set_dot_nl(true);
     }
 
-    res.push_back(std::make_unique<re2::RE2>(rule.getRegexp(), op));
+    auto re = std::make_unique<re2::RE2>(rule.getRegexp(), op);
+
+    if (re->ok()) {
+      res.push_back(std::move(re));
+    }
   }
 }
 
