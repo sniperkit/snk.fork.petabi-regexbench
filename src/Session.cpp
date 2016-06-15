@@ -1,7 +1,6 @@
 #include "Session.h"
 
 #include <string>
-#include <iostream>
 
 using namespace regexbench;
 
@@ -46,7 +45,6 @@ Session::Session(const char *pkt) : hashval(0), matcher_idx(0) {
     di.dport = EXT_DPORT(pkt, size_iphdr);
     hashval ^= static_cast<uint32_t>(si.sport) << 16 | di.dport;
   }
-  // std::cout << hashval << "\n";
 }
 
 bool Session::operator==(const Session &rhs) {
@@ -86,8 +84,8 @@ bool SessionTable::find(Session &s, size_t &sid) {
   auto its = sessionTable.equal_range(s.getHashval());
   auto it = its.first;
   for (; it != its.second; ++it) {
-    if (s == (*it).second) {
-      sid = (*it).second.getSession();
+    if (s == it->second) {
+      sid = it->second.getSession();
       return true;
     }
   }
