@@ -4,64 +4,61 @@
 
 using namespace regexbench;
 
-Session::Session(const char *pkt) : matcher_idx(0) {
-  s.hashval = pius::computeRSSHash(reinterpret_cast<const uint8_t *>(pkt));
-
+Session::Session(const char *pkt) : hashval(0), matcher_idx(0) {
   ether_type = ntohs(reinterpret_cast<const ether_header *>(pkt)->ether_type);
   uint16_t size_iphdr = 0;
   if (ether_type == ETHERTYPE_IPV6) {
-    s.protocol =
+    protocol =
         reinterpret_cast<const ip6_hdr *>(pkt + ETHER_HDR_LEN)->ip6_nxt;
 
     size_iphdr = 40;
-    memcpy(&s.addr.ipv6.src, EXT_SIP6(pkt), 16);
-    memcpy(&s.addr.ipv6.dst, EXT_DIP6(pkt), 16);
+    memcpy(&addr.ipv6.src, EXT_SIP6(pkt), 16);
+    memcpy(&addr.ipv6.dst, EXT_DIP6(pkt), 16);
+
+    auto oft = ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_dst);
+    for (size_t i = 0; i < 16; i+=4)
+      hashval ^= *reinterpret_cast<const uint32_t *>(&pkt[oft+i]);
+
+    oft = ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_src);
+    for (size_t i = 0; i < 16; i+=4)
+      hashval ^= *reinterpret_cast<const uint32_t *>(&pkt[oft+i]);
+
+    hashval ^= protocol;
   } else if (ether_type == ETHERTYPE_IP) {
     auto ih = reinterpret_cast<const ip *>(pkt + ETHER_HDR_LEN);
-    s.protocol = ih->ip_p;
+    protocol = ih->ip_p;
     size_iphdr = static_cast<uint16_t>(ih->ip_hl << 2);
-    s.addr.ipv4.src.s_addr = EXT_SIP(pkt);
-    s.addr.ipv4.dst.s_addr = EXT_DIP(pkt);
+    addr.ipv4.src.s_addr = EXT_SIP(pkt);
+    addr.ipv4.dst.s_addr = EXT_DIP(pkt);
+
+    hashval ^= addr.ipv4.src.s_addr;
+    hashval ^= addr.ipv4.dst.s_addr;
+    hashval ^= protocol;
   }
 
-  if (s.protocol == IPPROTO_ICMP) {
-    s.si.icmp_tp = EXT_ICMP_TP(pkt, size_iphdr);
-    s.di.icmp_cd = EXT_ICMP_CD(pkt, size_iphdr);
+  if (protocol == IPPROTO_ICMP) {
+    si.icmp_tp = EXT_ICMP_TP(pkt, size_iphdr);
+    di.icmp_cd = EXT_ICMP_CD(pkt, size_iphdr);
+    hashval ^= static_cast<uint32_t>(si.icmp_tp) << 16 | di.icmp_cd;
   } else {
-    s.si.sport = EXT_SPORT(pkt, size_iphdr);
-    s.di.dport = EXT_DPORT(pkt, size_iphdr);
+    si.sport = EXT_SPORT(pkt, size_iphdr);
+    di.dport = EXT_DPORT(pkt, size_iphdr);
+    hashval ^= static_cast<uint32_t>(si.sport) << 16 | di.dport;
   }
-
-  // pl_off = getPLOff(s.protocol);
 }
 
 bool Session::operator==(const Session &rhs) {
-  if (ether_type != rhs.ether_type || s.protocol != rhs.s.protocol)
+  if (ether_type != rhs.ether_type || protocol != rhs.protocol)
     return false;
   if (ether_type == ETHERTYPE_IP) {
-    if (s.addr.ipv4.src.s_addr == rhs.s.addr.ipv4.src.s_addr &&
-        s.addr.ipv4.dst.s_addr == rhs.s.addr.ipv4.dst.s_addr) {
-      if (__builtin_expect(s.protocol == IPPROTO_ICMP, false)) {
-        if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
-            s.di.icmp_cd == rhs.s.di.icmp_cd) {
-          direction = false;
+    if (addr.ipv4.src.s_addr == rhs.addr.ipv4.src.s_addr &&
+        addr.ipv4.dst.s_addr == rhs.addr.ipv4.dst.s_addr) {
+      if (__builtin_expect(protocol == IPPROTO_ICMP, false)) {
+        if (si.icmp_tp == rhs.si.icmp_tp &&
+            di.icmp_cd == rhs.di.icmp_cd) {
           return true;
         }
-      } else if (s.si.sport == rhs.s.si.sport && s.di.dport == rhs.s.di.dport) {
-        direction = false;
-        return true;
-      }
-    }
-    if (s.addr.ipv4.src.s_addr == rhs.s.addr.ipv4.dst.s_addr &&
-        s.addr.ipv4.dst.s_addr == rhs.s.addr.ipv4.src.s_addr) {
-      if (__builtin_expect(s.protocol == IPPROTO_ICMP, false)) {
-        if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
-            s.di.icmp_cd == rhs.s.di.icmp_cd) {
-          direction = true;
-          return true;
-        }
-      } else if (s.si.sport == rhs.s.di.dport && s.di.dport == rhs.s.si.sport) {
-        direction = true;
+      } else if (si.sport == rhs.si.sport && di.dport == rhs.di.dport) {
         return true;
       }
     }
@@ -69,29 +66,14 @@ bool Session::operator==(const Session &rhs) {
   }
 
   // IPv6
-  if (cmp_in6_addr(&s.addr.ipv6.src, &rhs.s.addr.ipv6.src) &&
-      cmp_in6_addr(&s.addr.ipv6.dst, &rhs.s.addr.ipv6.dst)) {
-    if (__builtin_expect(s.protocol == IPPROTO_ICMP, false)) {
-      if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
-          s.di.icmp_cd == rhs.s.di.icmp_cd) {
-        direction = false;
+  if (cmp_in6_addr(&addr.ipv6.src, &rhs.addr.ipv6.src) &&
+      cmp_in6_addr(&addr.ipv6.dst, &rhs.addr.ipv6.dst)) {
+    if (__builtin_expect(protocol == IPPROTO_ICMP, false)) {
+      if (si.icmp_tp == rhs.si.icmp_tp &&
+          di.icmp_cd == rhs.di.icmp_cd) {
         return true;
       }
-    } else if (s.si.sport == rhs.s.si.sport && s.di.dport == rhs.s.di.dport) {
-      direction = false;
-      return true;
-    }
-  }
-  if (cmp_in6_addr(&s.addr.ipv6.src, &rhs.s.addr.ipv6.dst) &&
-      cmp_in6_addr(&s.addr.ipv6.dst, &rhs.s.addr.ipv6.src)) {
-    if (__builtin_expect(s.protocol == IPPROTO_ICMP, false)) {
-      if (s.si.icmp_tp == rhs.s.si.icmp_tp &&
-          s.di.icmp_cd == rhs.s.di.icmp_cd) {
-        direction = true;
-        return true;
-      }
-    } else if (s.si.sport == rhs.s.di.dport && s.di.dport == rhs.s.si.sport) {
-      direction = true;
+    } else if (si.sport == rhs.si.sport && di.dport == rhs.di.dport) {
       return true;
     }
   }
@@ -102,15 +84,15 @@ bool SessionTable::find(Session &s, size_t &sid) {
   auto its = sessionTable.equal_range(s.getHashval());
   auto it = its.first;
   for (; it != its.second; ++it) {
-    if (s == (*it).second) {
-      sid = s.getSession() * 2 + (s.getDirection() ? 1 : 0);
+    if (s == it->second) {
+      sid = it->second.getSession();
       return true;
     }
   }
   if (it == its.second) {
     s.setSession(nsessions++);
     sessionTable.insert(std::make_pair(s.getHashval(), s));
-    sid = s.getSession() * 2;
+    sid = s.getSession();
   }
   return false;
 }
