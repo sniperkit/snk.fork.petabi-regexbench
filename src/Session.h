@@ -82,17 +82,14 @@ public:
   Session(const char *pkt);
   bool operator==(const Session &);
   uint32_t getHashval() const { return hashval; }
-  bool getDirection() const { return direction; }
   void setSession(uint32_t sid) { session_idx = sid; }
   uint32_t getSession() const { return session_idx; }
 
 private:
-  inline uint32_t computeRSSHash(const uint8_t *);
   union {
     class AddrPair<in_addr> ipv4;
     class AddrPair<in6_addr> ipv6;
   } addr;
-  uint32_t hashval;   /* Hashvalue */
   union {
     uint16_t sport;
     uint16_t icmp_tp;
@@ -101,14 +98,14 @@ private:
     uint16_t dport;
     uint16_t icmp_cd;
   } di;
+  uint32_t hashval;
   uint32_t session_idx;
   uint16_t ether_type;
   uint16_t pl_off;
   uint32_t matcher_idx;
-  bool direction;
   uint8_t protocol;
   uint8_t ver;      /* IPv4 or IPv6 */
-  char paddings[9];
+  char paddings[2];
 };
 
 class SessionTable {

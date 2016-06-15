@@ -27,7 +27,7 @@ ATF_TEST_CASE_BODY(session2) {
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session2.pcap");
   auto match_info = buildMatchMeta(pcap, nsessions);
-  ATF_REQUIRE_EQ(2, nsessions);
+  ATF_REQUIRE_EQ(4, nsessions);
   engine.init(nsessions);
   regexbench::MatchResult result = sessionMatch(engine, pcap, 1, match_info);
   ATF_REQUIRE_EQ(2, result.nmatches);

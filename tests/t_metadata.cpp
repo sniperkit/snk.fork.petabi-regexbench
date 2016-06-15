@@ -10,7 +10,7 @@ ATF_TEST_CASE_BODY(metadata_create) {
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session.pcap");
   auto match_meta = buildMatchMeta(pcap, nsessions);
-  ATF_REQUIRE_EQ(1, nsessions);
+  ATF_REQUIRE_EQ(2, nsessions);
   ATF_REQUIRE_EQ(8, match_meta.size());
 }
 
@@ -19,7 +19,7 @@ ATF_TEST_CASE_BODY(metadata_content) {
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session2.pcap");
   auto match_meta = buildMatchMeta(pcap, nsessions);
-  ATF_REQUIRE_EQ(2, nsessions);
+  ATF_REQUIRE_EQ(4, nsessions);
   ATF_REQUIRE_EQ(17, match_meta.size());
 
   ATF_REQUIRE(MatchMeta(0, 54, 3) == match_meta[2]);
