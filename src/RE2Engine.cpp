@@ -7,13 +7,13 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
   for (const auto &rule : rules) {
     RE2::Options op;
 
-    if (rule.isSet(REMATCH_MOD_CASELESS)) {
+    if (rule.isSet(MOD_CASELESS)) {
       op.set_case_sensitive(false);
     }
-    if (rule.isSet(REMATCH_MOD_MULTILINE)) {
+    if (rule.isSet(MOD_MULTILINE)) {
       op.set_one_line(false);
     }
-    if (rule.isSet(REMATCH_MOD_DOTALL)) {
+    if (rule.isSet(MOD_DOTALL)) {
       op.set_dot_nl(true);
     }
 
