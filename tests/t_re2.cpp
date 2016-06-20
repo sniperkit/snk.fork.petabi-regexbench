@@ -11,8 +11,8 @@ using namespace regexbench;
 ATF_TEST_CASE_WITHOUT_HEAD(rule_compile);
 ATF_TEST_CASE_BODY(rule_compile) {
   RE2Engine engine;
-  engine.compile(regexbench::loadRules(DATA_DIR "/rule/malformat.re"));
-  ATF_REQUIRE_EQ(0, engine.getRuleSize());
+  ATF_REQUIRE_THROW(std::runtime_error,
+                    engine.compile(regexbench::loadRules(DATA_DIR "/rule/malformat.re")););
 }
 
 ATF_INIT_TEST_CASES(tcs) {
