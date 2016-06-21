@@ -32,7 +32,11 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
   for (const auto &rule : rules) {
     exps.push_back(rule.getRegexp().data());
     ids.push_back(static_cast<unsigned>(rule.getID()));
-    mods.push_back(rule.getPCRE2Options());
+    uint32_t opt = 0;
+    if (rule.isSet(MOD_CASELESS)) opt |= REMATCH_MOD_CASELESS;
+    if (rule.isSet(MOD_MULTILINE)) opt |= REMATCH_MOD_MULTILINE;
+    if (rule.isSet(MOD_DOTALL)) opt |= REMATCH_MOD_DOTALL;
+    mods.push_back(opt);
   }
   txtbl =
       rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
