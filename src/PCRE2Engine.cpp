@@ -25,7 +25,7 @@ size_t PCRE2Engine::match(const char *data, size_t len, size_t) {
                          PCRE2_NOTEMPTY,
                          re->mdata, nullptr);
     if (rc >=0)
-      return static_cast<size_t>(rc);
+      return 1;
   }
   return 0;
 }
