@@ -17,7 +17,7 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t PCRE2Engine::match(const char *data, size_t len) {
+size_t PCRE2Engine::match(const char *data, size_t len, size_t) {
   for (const auto &re : res) {
     int rc = pcre2_match(re->re,
                          reinterpret_cast<PCRE2_SPTR>(data),
@@ -25,7 +25,7 @@ size_t PCRE2Engine::match(const char *data, size_t len) {
                          PCRE2_NOTEMPTY,
                          re->mdata, nullptr);
     if (rc >=0)
-      return static_cast<size_t>(rc);
+      return 1;
   }
   return 0;
 }

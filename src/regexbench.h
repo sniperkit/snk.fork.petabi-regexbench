@@ -36,8 +36,6 @@ uint32_t getPLOffset(const std::string &);
 std::vector<Rule> loadRules(const std::string &);
 MatchResult match(Engine &, const PcapSource &, long,
                   const std::vector<MatchMeta> &);
-MatchResult sessionMatch(Engine &, const PcapSource &, long,
-                         const std::vector<MatchMeta> &);
 }
 
 #endif // REGEXBENCH_H

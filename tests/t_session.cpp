@@ -16,7 +16,7 @@ ATF_TEST_CASE_BODY(session1) {
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session.pcap");
   auto match_info = buildMatchMeta(pcap, nsessions);
   engine.init(nsessions);
-  regexbench::MatchResult result = sessionMatch(engine, pcap, 1, match_info);
+  regexbench::MatchResult result = match(engine, pcap, 1, match_info);
   ATF_REQUIRE_EQ(1, result.nmatches);
 }
 
@@ -29,7 +29,7 @@ ATF_TEST_CASE_BODY(session2) {
   auto match_info = buildMatchMeta(pcap, nsessions);
   ATF_REQUIRE_EQ(4, nsessions);
   engine.init(nsessions);
-  regexbench::MatchResult result = sessionMatch(engine, pcap, 1, match_info);
+  regexbench::MatchResult result = match(engine, pcap, 1, match_info);
   ATF_REQUIRE_EQ(2, result.nmatches);
 }
 

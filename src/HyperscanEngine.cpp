@@ -55,9 +55,9 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
     throw std::bad_alloc();
 }
 
-size_t HyperscanEngine::match(const char *data, size_t len) {
+size_t HyperscanEngine::match(const char *data, size_t len, size_t) {
   size_t nmatches = 0;
   hs_scan(db, data, static_cast<unsigned>(len), 0, scratch,
           onMatch, &nmatches);
-  return nmatches;
+  return nmatches > 0;
 }
