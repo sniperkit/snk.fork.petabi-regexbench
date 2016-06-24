@@ -1,6 +1,8 @@
 language: cpp
 
 before_script:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libboost-program-options-dev
   - mkdir build
   - cd build
   - cmake ..
