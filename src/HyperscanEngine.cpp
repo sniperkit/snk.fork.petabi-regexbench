@@ -31,7 +31,7 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   for (const auto &rule : rules) {
     exps.push_back(rule.getRegexp().data());
     ids.push_back(static_cast<unsigned>(rule.getID()));
-    unsigned flag = 0;
+    unsigned flag = HS_FLAG_ALLOWEMPTY;
     if (rule.isSet(MOD_CASELESS)) flag |= HS_FLAG_CASELESS;
     if (rule.isSet(MOD_MULTILINE)) flag |= HS_FLAG_MULTILINE;
     if (rule.isSet(MOD_DOTALL)) flag |= HS_FLAG_DOTALL;
