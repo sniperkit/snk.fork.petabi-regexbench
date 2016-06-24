@@ -3,5 +3,6 @@ syntax(2)
 test_suite('regexbench')
 
 atf_test_program{name='t_metadata'}
+atf_test_program{name='t_option'}
 atf_test_program{name='t_re2'}
 atf_test_program{name='t_session'}
