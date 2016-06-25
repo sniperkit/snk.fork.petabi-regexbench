@@ -11,6 +11,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include "CPPEngine.h"
 #include "HyperscanEngine.h"
 #include "PCRE2Engine.h"
 #include "PcapSource.h"
@@ -26,6 +27,7 @@ using boost::property_tree::write_json;
 namespace po = boost::program_options;
 
 enum EngineType : uint64_t {
+  ENGINE_CPP,
   ENGINE_HYPERSCAN,
   ENGINE_PCRE2,
   ENGINE_PCRE2JIT,
@@ -62,6 +64,10 @@ int main(int argc, const char *argv[]) {
     auto args = parse_options(argc, argv);
     std::unique_ptr<regexbench::Engine> engine;
     switch (args.engine) {
+    case ENGINE_CPP:
+      engine = std::make_unique<regexbench::CPPEngine>();
+      engine->compile(regexbench::loadRules(args.rule_file));
+      break;
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
       engine->compile(regexbench::loadRules(args.rule_file));
@@ -212,7 +218,9 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::cout << posargs << "\n" << optargs << "\n";
     std::exit(EXIT_SUCCESS);
   }
-  if (engine == "hyperscan")
+  if (engine == "cpp")
+    args.engine = ENGINE_CPP;
+  else if (engine == "hyperscan")
     args.engine = ENGINE_HYPERSCAN;
   else if (engine == "pcre2")
     args.engine = ENGINE_PCRE2;
