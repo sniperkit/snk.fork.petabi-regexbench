@@ -16,6 +16,7 @@ public:
 
   virtual void compile(const std::vector<Rule> &);
   virtual size_t match(const char *, size_t, size_t);
+
 private:
   std::vector<std::unique_ptr<boost::regex>> res;
 };
