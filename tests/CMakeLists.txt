@@ -40,6 +40,6 @@ target_link_libraries(t_re2 ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB})
 
 add_executable(t_option t_option.cpp ../src/RE2Engine.cpp ../src/Engine.cpp ../src/REMatchEngine.cpp
   ../src/RE2Engine.cpp ../src/PCRE2Engine.cpp ../src/HyperscanEngine.cpp ../src/match.cpp
-  ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp ../src/CPPEngine.cpp)
+  ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp ../src/CPPEngine.cpp ../src/BoostEngine.cpp)
 target_link_libraries(t_option ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB} ${REMATCHCOMP_LIB}
-  ${REMATCHEXEC_LIB} ${PCRE2_LIB} ${HYPERSCAN_LIB})
+  ${REMATCHEXEC_LIB} ${PCRE2_LIB} ${HYPERSCAN_LIB} ${Boost_LIBRARIES})
