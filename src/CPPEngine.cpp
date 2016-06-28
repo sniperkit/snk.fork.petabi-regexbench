@@ -15,7 +15,6 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-
 size_t CPPEngine::match(const char *data, size_t, size_t) {
   std::cmatch m;
   for (const auto &re : res) {
