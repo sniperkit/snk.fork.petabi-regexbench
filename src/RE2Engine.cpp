@@ -1,6 +1,5 @@
 #include "RE2Engine.h"
 
-#include <rematch/compile.h>
 using namespace regexbench;
 
 void RE2Engine::compile(const std::vector<Rule> &rules) {

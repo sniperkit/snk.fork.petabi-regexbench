@@ -41,6 +41,8 @@ if(RE2_INCLUDE_DIR)
   set(ENGINE_SRCS ${ENGINE_SRCS} RE2Engine.cpp)
 endif()
 
+set(ENGINE_SRCS ${ENGINE_SRCS} CPPEngine.cpp)
+
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp
   ${ENGINE_SRCS})
