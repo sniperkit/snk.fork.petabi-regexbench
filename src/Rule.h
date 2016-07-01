@@ -42,8 +42,6 @@ private:
 };
 
 std::vector<Rule> loadRules(std::istream &);
-void concatRules(std::vector<Rule> &);
-
 } // namespace regexbench
 
 #endif

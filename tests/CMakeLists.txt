@@ -26,7 +26,7 @@ endif()
 
 add_executable(t_re2 t_re2.cpp ../src/Engine.cpp
   ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
-target_link_libraries(t_re2 engines ${ATF_LIB} ${PCAP_LIB})
+target_link_libraries(t_re2 engines ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB})
 
 add_executable(t_option t_option.cpp ${ENGINE_SRCS}
   ../src/match.cpp
