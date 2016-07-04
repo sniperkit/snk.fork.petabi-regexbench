@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "../src/BoostEngine.h"
 #include "../src/CPPEngine.h"
 #include "../src/HyperscanEngine.h"
 #include "../src/PcapSource.h"
@@ -23,25 +24,31 @@ regexbench::MatchResult opTest(Engine *engine) {
 
 ATF_TEST_CASE_WITHOUT_HEAD(t_option);
 ATF_TEST_CASE_BODY(t_option) {
-  RE2Engine re2engine;
-  auto result = opTest(&re2engine);
+  regexbench::MatchResult result;
+
+  BoostEngine bengine;
+  result = opTest(&bengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
+
+  CPPEngine cengine;
+  result = opTest(&cengine);
+  ATF_REQUIRE_EQ(2, result.nmatches);
 
   HyperscanEngine hsengine;
   result = opTest(&hsengine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
-
-  REmatchAutomataEngine rengine;
-  result = opTest(&rengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
 
   PCRE2Engine pengine;
   result = opTest(&pengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
 
-  CPPEngine cengine;
-  result = opTest(&cengine);
-  ATF_REQUIRE_EQ(2, result.nmatches);
+  RE2Engine re2engine;
+  result = opTest(&re2engine);
+  ATF_REQUIRE_EQ(3, result.nmatches);
+
+  REmatchAutomataEngine rengine;
+  result = opTest(&rengine);
+  ATF_REQUIRE_EQ(3, result.nmatches);
 }
 
 ATF_INIT_TEST_CASES(tcs) {
