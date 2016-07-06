@@ -32,7 +32,7 @@ protected:
   };
 
   uint32_t buildRuleOffset(std::vector<Rule> &);
-  void concatCompile(std::string, size_t, size_t, uint32_t);
+  void binaryCompile(std::string, size_t, size_t, uint32_t);
   std::vector<std::unique_ptr<PCRE2_DATA>> res;
   std::vector<size_t> ruleOffset;
   size_t isConcat;

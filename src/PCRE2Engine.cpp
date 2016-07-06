@@ -4,7 +4,7 @@ using namespace regexbench;
 
 void PCRE2Engine::init(size_t mode) { isConcat = mode; }
 
-void PCRE2Engine::concatCompile(std::string ruleStr, size_t nrules,
+void PCRE2Engine::binaryCompile(std::string ruleStr, size_t nrules,
                                 size_t offset, uint32_t ops) {
   PCRE2_SIZE erroffset = 0;
   int errcode = 0;
@@ -16,8 +16,8 @@ void PCRE2Engine::concatCompile(std::string ruleStr, size_t nrules,
       throw std::runtime_error("PCRE2 Compile failed.");
 
     auto splitOft = ruleOffset[offset + nrules / 2] - ruleOffset[offset];
-    concatCompile(ruleStr.substr(0, splitOft - 1), nrules / 2, offset, ops);
-    concatCompile(ruleStr.substr(splitOft), nrules / 2 + (nrules & 1),
+    binaryCompile(ruleStr.substr(0, splitOft - 1), nrules / 2, offset, ops);
+    binaryCompile(ruleStr.substr(splitOft), nrules / 2 + (nrules & 1),
                   offset + nrules / 2, 0);
   } else {
     auto mdata = pcre2_match_data_create_from_pattern(re, nullptr);
@@ -30,7 +30,7 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   if (isConcat) {
     auto ruleSize = rules.size();
     auto ops = buildRuleOffset(const_cast<std::vector<Rule> &>(rules));
-    concatCompile(rules[0].getRegexp(), ruleSize, 0, ops);
+    binaryCompile(rules[0].getRegexp(), ruleSize, 0, ops);
     return;
   }
 
