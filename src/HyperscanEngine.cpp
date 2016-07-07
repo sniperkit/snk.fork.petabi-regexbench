@@ -42,12 +42,27 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   auto result = hs_compile_multi(exps.data(), flags.data(), ids.data(),
                                  static_cast<unsigned>(exps.size()),
                                  HS_MODE_BLOCK, &platform, &db, &err);
+  // if multi rule compilation fails, compile a single rule at a time
   if (result != HS_SUCCESS) {
-    std::stringstream msg;
-    msg << err->message << " (" << err->expression << ')';
-    std::runtime_error error(msg.str());
-    hs_free_compile_error(err);
-    throw error;
+    exps.clear();
+    ids.clear();
+    flags.clear();
+    for (const auto &rule : rules) {
+      exps.push_back(rule.getRegexp().data());
+      ids.push_back(static_cast<unsigned>(rule.getID()));
+      unsigned flag = HS_FLAG_ALLOWEMPTY;
+      if (rule.isSet(MOD_CASELESS)) flag |= HS_FLAG_CASELESS;
+      if (rule.isSet(MOD_MULTILINE)) flag |= HS_FLAG_MULTILINE;
+      if (rule.isSet(MOD_DOTALL)) flag |= HS_FLAG_DOTALL;
+      if (hs_compile(rule.getRegexp().data(), flag,
+                     HS_MODE_BLOCK, &platform, &db, &err) == HS_SUCCESS) {
+        exps.push_back(rule.getRegexp().data());
+        ids.push_back(static_cast<unsigned>(rule.getID()));
+        flags.push_back(flag);
+      } else {
+        hs_free_compile_error(err);
+      }
+    }
   }
 
   result = hs_alloc_scratch(db, &scratch);
