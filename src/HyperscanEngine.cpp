@@ -44,7 +44,7 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
                                  HS_MODE_BLOCK, &platform, &db, &err);
   if (result != HS_SUCCESS) {
     std::stringstream msg;
-    msg << err->message << " (" << err->expression << ')';
+    msg << err->message << " (ruleid: " << err->expression << ')';
     std::runtime_error error(msg.str());
     hs_free_compile_error(err);
     throw error;
