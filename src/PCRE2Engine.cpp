@@ -1,4 +1,3 @@
-#include <rematch/compile.h>
 #include "PCRE2Engine.h"
 
 using namespace regexbench;

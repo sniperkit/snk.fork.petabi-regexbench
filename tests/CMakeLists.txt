@@ -7,12 +7,22 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Kyuafile.in
 
 add_definitions(-DDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(RE2_INCLUDE_DIR)
-  include_directories("${RE2_INCLUDE_DIR}")
-  if(NOT (RE2_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+set(ENGINE_SRCS ../src/Engine.cpp)
+if(HYPERSCAN_INCLUDE_DIR)
+  include_directories("${HYPERSCAN_INCLUDE_DIR}")
+  if(NOT (HYPERSCAN_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
     set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -isystem ${RE2_INCLUDE_DIR}")
+      "${CMAKE_CXX_FLAGS} -isystem ${HYPERSCAN_INCLUDE_DIR}")
   endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} ../src/HyperscanEngine.cpp)
+endif()
+if(PCRE2_INCLUDE_DIR)
+  include_directories("${PCRE2_INCLUDE_DIR}")
+  if(NOT (PCRE2_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${PCRE2_INCLUDE_DIR}")
+  endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} ../src/PCRE2Engine.cpp)
 endif()
 if(REMATCH_INCLUDE_DIR)
   include_directories("${REMATCH_INCLUDE_DIR}")
@@ -20,31 +30,42 @@ if(REMATCH_INCLUDE_DIR)
     set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} -isystem ${REMATCH_INCLUDE_DIR}")
   endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} ../src/REmatchEngine.cpp)
+endif()
+if(RE2_INCLUDE_DIR)
+  include_directories("${RE2_INCLUDE_DIR}")
+  if(NOT (RE2_INCLUDE_DIR STREQUAL Boost_INCLUDE_DIRS))
+    set(CMAKE_CXX_FLAGS
+      "${CMAKE_CXX_FLAGS} -isystem ${RE2_INCLUDE_DIR}")
+  endif()
+  set(ENGINE_SRCS ${ENGINE_SRCS} ../src/RE2Engine.cpp)
 endif()
 
 add_executable(t_metadata t_metadata.cpp
   ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 target_link_libraries(t_metadata ${ATF_LIB} ${PCAP_LIB})
 
-add_executable(t_session t_session.cpp ../src/REmatchEngine.cpp ../src/Engine.cpp
+add_executable(t_session t_session.cpp ../src/Engine.cpp
   ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 target_link_libraries(t_session ${ATF_LIB} ${PCAP_LIB})
 if(PCRE2_LIB)
   target_link_libraries(t_session ${PCRE2_LIB})
 endif()
 if(REMATCHCOMP_LIB)
+  add_executable(t_session ../src/REmatchEngine.cpp)
   target_link_libraries(t_session ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
 endif()
 
-add_executable(t_re2 t_re2.cpp ../src/RE2Engine.cpp ../src/Engine.cpp
+add_executable(t_re2 t_re2.cpp ../src/Engine.cpp
   ../src/match.cpp ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp)
 target_link_libraries(t_re2 ${ATF_LIB} ${PCAP_LIB})
 if(RE2_LIB)
+  add_executalbe(t_re2 ../src/RE2Engine.cpp)
   target_link_libraries(t_re2 ${RE2_LIB})
 endif()
 
-add_executable(t_option t_option.cpp ../src/RE2Engine.cpp ../src/Engine.cpp ../src/REMatchEngine.cpp
-  ../src/RE2Engine.cpp ../src/PCRE2Engine.cpp ../src/HyperscanEngine.cpp ../src/match.cpp
+add_executable(t_option t_option.cpp ${ENGINE_SRCS}
+  ../src/match.cpp
   ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp ../src/CPPEngine.cpp ../src/BoostEngine.cpp)
 target_link_libraries(t_option ${ATF_LIB} ${PCAP_LIB} ${Boost_LIBRARIES})
 if(HYPERSCAN_LIB)

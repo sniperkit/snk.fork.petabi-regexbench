@@ -1,15 +1,20 @@
+#include "config.h"
+
 #include <atf-c++.hpp>
 
 #include <iostream>
 
 #include "../src/Session.h"
 #include "../src/regexbench.h"
+#ifdef HAVE_REMATCH
 #include "../src/REmatchEngine.h"
+#endif
 
 using namespace regexbench;
 
 ATF_TEST_CASE_WITHOUT_HEAD(session1);
 ATF_TEST_CASE_BODY(session1) {
+#ifdef HAVE_REMATCH
   REmatchAutomataEngineSession engine;
   engine.compile(regexbench::loadRules(DATA_DIR "/rule/session.re"));
   size_t nsessions = 0;
@@ -18,10 +23,12 @@ ATF_TEST_CASE_BODY(session1) {
   engine.init(nsessions);
   regexbench::MatchResult result = match(engine, pcap, 1, match_info);
   ATF_REQUIRE_EQ(1, result.nmatches);
+#endif
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(session2);
 ATF_TEST_CASE_BODY(session2) {
+#ifdef HAVE_REMATCH
   REmatchAutomataEngineSession engine;
   engine.compile(regexbench::loadRules(DATA_DIR "/rule/session2.re"));
   size_t nsessions = 0;
@@ -31,6 +38,7 @@ ATF_TEST_CASE_BODY(session2) {
   engine.init(nsessions);
   regexbench::MatchResult result = match(engine, pcap, 1, match_info);
   ATF_REQUIRE_EQ(2, result.nmatches);
+#endif
 }
 
 ATF_INIT_TEST_CASES(tcs) {

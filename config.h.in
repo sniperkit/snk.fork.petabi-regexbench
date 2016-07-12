@@ -1,0 +1,9 @@
+#ifndef REGEXBENCH_CONFIG_H
+#define REGEXBENCH_CONFIG_H
+
+#cmakedefine HAVE_HYPERSCAN
+#cmakedefine HAVE_PCRE2
+#cmakedefine HAVE_RE2
+#cmakedefine HAVE_REMATCH
+
+#endif
