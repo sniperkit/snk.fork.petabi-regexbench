@@ -47,7 +47,7 @@ if(NOT CMAKE_CXX_FLAGS_RELEASE MATCHES "-O")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
-find_package(Boost REQUIRED COMPONENTS program_options regex)
+find_package(Boost REQUIRED COMPONENTS program_options regex system)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
 find_library(PCAP_LIB pcap)
 

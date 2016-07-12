@@ -1,3 +1,6 @@
+#include <sys/types.h>
+#include <netinet/in.h>
+
 #include <net/ethernet.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
