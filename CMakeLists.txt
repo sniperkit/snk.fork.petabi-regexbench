@@ -59,13 +59,30 @@ endif()
 
 find_path(HYPERSCAN_INCLUDE_DIR hs/hs_compile.h)
 find_library(HYPERSCAN_LIB hs)
+if(HYPERSCAN_INCLUDE_DIR AND HYPERSCAN_LIB)
+  set(HAVE_HYPERSCAN 1)
+endif()
 find_path(PCRE2_INCLUDE_DIR pcre2.h)
 find_library(PCRE2_LIB pcre2-8)
+if(PCRE2_INCLUDE_DIR AND PCRE2_LIB)
+  set(HAVE_PCRE2 1)
+endif()
 find_path(REMATCH_INCLUDE_DIR rematch/rematch.h)
 find_library(REMATCHCOMP_LIB rematchcomp)
 find_library(REMATCHEXEC_LIB rematchexec)
+if(REMATCH_INCLUDE_DIR AND
+    REMATCHCOMP_LIB AND REMATCHEXEC_LIB)
+  set(HAVE_REMATCH 1)
+endif()
 find_path(RE2_INCLUDE_DIR re2/re2.h)
 find_library(RE2_LIB re2)
+if(RE2_INCLUDE_DIR AND RE2_LIB)
+  set(HAVE_RE2 1)
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # suppress warnings
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")

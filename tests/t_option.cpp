@@ -1,15 +1,25 @@
+#include "config.h"
+
 #include <atf-c++.hpp>
 
 #include <iostream>
 
 #include "../src/BoostEngine.h"
 #include "../src/CPPEngine.h"
+#ifdef HAVE_HYPERSCAN
 #include "../src/HyperscanEngine.h"
+#endif
 #include "../src/PcapSource.h"
+#ifdef HAVE_PCRE2
 #include "../src/PCRE2Engine.h"
+#endif
+#ifdef HAVE_RE2
 #include "../src/RE2Engine.h"
+#endif
 #include "../src/regexbench.h"
+#ifdef HAVE_REMATCH
 #include "../src/REmatchEngine.h"
+#endif
 
 using namespace regexbench;
 
@@ -34,21 +44,29 @@ ATF_TEST_CASE_BODY(t_option) {
   result = opTest(&cengine);
   ATF_REQUIRE_EQ(2, result.nmatches);
 
+#ifdef HAVE_HYPERSCAN
   HyperscanEngine hsengine;
   result = opTest(&hsengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
+#endif
 
+#ifdef HAVE_PCRE2
   PCRE2Engine pengine;
   result = opTest(&pengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
+#endif
 
+#ifdef HAVE_RE2
   RE2Engine re2engine;
   result = opTest(&re2engine);
   ATF_REQUIRE_EQ(3, result.nmatches);
+#endif
 
+#ifdef HAVE_REMATCH
   REmatchAutomataEngine rengine;
   result = opTest(&rengine);
   ATF_REQUIRE_EQ(3, result.nmatches);
+#endif
 }
 
 ATF_INIT_TEST_CASES(tcs) {

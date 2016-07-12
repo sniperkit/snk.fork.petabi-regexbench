@@ -1,3 +1,5 @@
+#include "config.h"
+
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -13,11 +15,19 @@
 
 #include "BoostEngine.h"
 #include "CPPEngine.h"
+#ifdef HAVE_HYPERSCAN
 #include "HyperscanEngine.h"
+#endif
+#ifdef HAVE_PCRE2
 #include "PCRE2Engine.h"
+#endif
 #include "PcapSource.h"
+#ifdef HAVE_RE2
 #include "RE2Engine.h"
+#endif
+#ifdef HAVE_REMATCH
 #include "REmatchEngine.h"
+#endif
 #include "Rule.h"
 #include "regexbench.h"
 
@@ -30,11 +40,19 @@ namespace po = boost::program_options;
 enum EngineType : uint64_t {
   ENGINE_BOOST,
   ENGINE_CPP,
+#ifdef HAVE_HYPERSCAN
   ENGINE_HYPERSCAN,
+#endif
+#ifdef HAVE_PCRE2
   ENGINE_PCRE2,
   ENGINE_PCRE2JIT,
+#endif
+#ifdef HAVE_RE2
   ENGINE_RE2,
-  ENGINE_REMATCH
+#endif
+#ifdef HAVE_REMATCH
+  ENGINE_REMATCH,
+#endif
 };
 
 struct Arguments {
@@ -58,8 +76,10 @@ static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
 
 static bool endsWith(const std::string &, const char *);
 static Arguments parse_options(int argc, const char *argv[]);
+#ifdef HAVE_PCRE2
 static void compilePCRE2(const Arguments &,
                          std::unique_ptr<regexbench::Engine> &);
+#endif
 
 int main(int argc, const char *argv[]) {
   try {
@@ -74,10 +94,13 @@ int main(int argc, const char *argv[]) {
       engine = std::make_unique<regexbench::CPPEngine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
+#ifdef HAVE_HYPERSCAN
     case ENGINE_HYPERSCAN:
       engine = std::make_unique<regexbench::HyperscanEngine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
+#endif
+#ifdef HAVE_PCRE2
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
       compilePCRE2(args, engine);
@@ -86,10 +109,14 @@ int main(int argc, const char *argv[]) {
       engine = std::make_unique<regexbench::PCRE2JITEngine>();
       compilePCRE2(args, engine);
       break;
+#endif
+#ifdef HAVE_RE2
     case ENGINE_RE2:
       engine = std::make_unique<regexbench::RE2Engine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
+#endif
+#ifdef HAVE_REMATCH
     case ENGINE_REMATCH:
       if (args.rematch_session) {
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
@@ -105,6 +132,7 @@ int main(int argc, const char *argv[]) {
         engine->compile(regexbench::loadRules(args.rule_file));
       }
       break;
+#endif
     }
 
     std::string reportFields[]{
@@ -228,16 +256,24 @@ Arguments parse_options(int argc, const char *argv[]) {
     args.engine = ENGINE_BOOST;
   else if (engine == "cpp")
     args.engine = ENGINE_CPP;
+#ifdef HAVE_HYPERSCAN
   else if (engine == "hyperscan")
     args.engine = ENGINE_HYPERSCAN;
+#endif
+#ifdef HAVE_PCRE2
   else if (engine == "pcre2")
     args.engine = ENGINE_PCRE2;
   else if (engine == "pcre2jit")
     args.engine = ENGINE_PCRE2JIT;
+#endif
+#ifdef HAVE_RE2
   else if (engine == "re2")
     args.engine = ENGINE_RE2;
+#endif
+#ifdef HAVE_REMATCH
   else if (engine == "rematch")
     args.engine = ENGINE_REMATCH;
+#endif
   else {
     std::cerr << "unknown engine: " << engine << std::endl;
     std::exit(EXIT_FAILURE);
@@ -258,6 +294,7 @@ Arguments parse_options(int argc, const char *argv[]) {
   return args;
 }
 
+#ifdef HAVE_PCRE2
 static void compilePCRE2(const Arguments &args,
                          std::unique_ptr<regexbench::Engine> &engine) {
   if (!args.pcre2_concat)
@@ -268,3 +305,4 @@ static void compilePCRE2(const Arguments &args,
     engine->compile(rules);
   }
 }
+#endif
