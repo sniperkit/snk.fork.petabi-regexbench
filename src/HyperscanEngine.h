@@ -32,10 +32,24 @@ public:
   virtual void compile(const std::vector<Rule> &);
   virtual size_t match(const char *, size_t, size_t);
 
-private:
+protected:
   hs_database_t *db;
   hs_scratch_t *scratch;
   hs_platform_info_t platform;
+  size_t nsessions;
+};
+
+class HyperscanEngineStream : public HyperscanEngine {
+public:
+  HyperscanEngineStream() = default;
+  virtual ~HyperscanEngineStream();
+  virtual void init(size_t);
+
+  using HyperscanEngine::compile;
+  virtual size_t match(const char *, size_t, size_t);
+
+private:
+  std::unique_ptr<hs_stream*[]> streams;
 };
 
 } // namespace regexbench
