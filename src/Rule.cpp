@@ -140,20 +140,3 @@ std::vector<Rule> regexbench::loadRules(std::istream &is) {
   }
   return rules;
 }
-
-void regexbench::concatRules(std::vector<Rule> &rules) {
-  std::string concatResult;
-  uint32_t ops = 0;
-  for (const auto &rule : rules) {
-    concatResult += "(";
-    concatResult += rule.getRegexp();
-    concatResult += ")|";
-    ops |= rule.getPCRE2Options();
-  }
-
-  rules.clear();
-
-  // call resize to remove the tailing '|' character
-  concatResult.resize(concatResult.size() - 1);
-  rules.emplace_back(Rule(concatResult, 0, ops));
-}

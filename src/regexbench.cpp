@@ -76,15 +76,15 @@ static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
 
 static bool endsWith(const std::string &, const char *);
 static Arguments parse_options(int argc, const char *argv[]);
-#ifdef HAVE_PCRE2
-static void compilePCRE2(const Arguments &,
-                         std::unique_ptr<regexbench::Engine> &);
-#endif
 
 int main(int argc, const char *argv[]) {
   try {
     auto args = parse_options(argc, argv);
     std::unique_ptr<regexbench::Engine> engine;
+    size_t nsessions = 0;
+    regexbench::PcapSource pcap(args.pcap_file);
+    auto match_info = buildMatchMeta(pcap, nsessions);
+
     switch (args.engine) {
     case ENGINE_BOOST:
       engine = std::make_unique<regexbench::BoostEngine>();
@@ -103,11 +103,13 @@ int main(int argc, const char *argv[]) {
 #ifdef HAVE_PCRE2
     case ENGINE_PCRE2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
-      compilePCRE2(args, engine);
+      engine->init(args.pcre2_concat);
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
     case ENGINE_PCRE2JIT:
       engine = std::make_unique<regexbench::PCRE2JITEngine>();
-      compilePCRE2(args, engine);
+      engine->init(args.pcre2_concat);
+      engine->compile(regexbench::loadRules(args.rule_file));
       break;
 #endif
 #ifdef HAVE_RE2
@@ -131,6 +133,7 @@ int main(int argc, const char *argv[]) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
         engine->compile(regexbench::loadRules(args.rule_file));
       }
+      engine->init(nsessions);
       break;
 #endif
     }
@@ -139,11 +142,7 @@ int main(int argc, const char *argv[]) {
         "TotalMatches", "TotalMatchedPackets",  "UserTime",     "SystemTime",
         "TotalTime",    "TotalBytes",           "TotalPackets", "Mbps",
         "Mpps",         "MaximumMemoryUsed(kB)"};
-    size_t nsessions = 0;
     std::string prefix = "regexbench.";
-    regexbench::PcapSource pcap(args.pcap_file);
-    auto match_info = buildMatchMeta(pcap, nsessions);
-    engine->init(nsessions);
 
     regexbench::MatchResult result =
       match(*engine, pcap, args.repeat, match_info);
@@ -293,16 +292,3 @@ Arguments parse_options(int argc, const char *argv[]) {
   }
   return args;
 }
-
-#ifdef HAVE_PCRE2
-static void compilePCRE2(const Arguments &args,
-                         std::unique_ptr<regexbench::Engine> &engine) {
-  if (!args.pcre2_concat)
-    engine->compile(regexbench::loadRules(args.rule_file));
-  else {
-    auto rules = regexbench::loadRules(args.rule_file);
-    concatRules(rules);
-    engine->compile(rules);
-  }
-}
-#endif
