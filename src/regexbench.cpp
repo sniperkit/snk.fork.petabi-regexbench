@@ -102,6 +102,7 @@ int main(int argc, const char *argv[]) {
         engine = std::make_unique<regexbench::HyperscanEngine>();
       }
       engine->compile(regexbench::loadRules(args.rule_file));
+      engine->init(nsessions);
       break;
 #endif
 #ifdef HAVE_PCRE2
