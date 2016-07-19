@@ -98,11 +98,11 @@ int main(int argc, const char *argv[]) {
     case ENGINE_HYPERSCAN:
       if (args.rematch_session) {
         engine = std::make_unique<regexbench::HyperscanEngineStream>();
+        engine->init(nsessions);
       } else {
         engine = std::make_unique<regexbench::HyperscanEngine>();
       }
       engine->compile(regexbench::loadRules(args.rule_file));
-      engine->init(nsessions);
       break;
 #endif
 #ifdef HAVE_PCRE2

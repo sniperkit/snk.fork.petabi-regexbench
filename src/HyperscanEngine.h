@@ -45,7 +45,7 @@ public:
   virtual ~HyperscanEngineStream();
   virtual void init(size_t);
 
-  using HyperscanEngine::compile;
+  void compile(const std::vector<Rule> &);
   virtual size_t match(const char *, size_t, size_t);
 
 private:

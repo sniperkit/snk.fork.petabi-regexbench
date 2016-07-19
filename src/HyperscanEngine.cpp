@@ -39,13 +39,14 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   }
 
   hs_compile_error_t *err;
-  auto mode = HS_MODE_BLOCK;
+  unsigned int mode = HS_MODE_BLOCK;
 
   if (nsessions)
     mode = HS_MODE_STREAM;
+
   auto result = hs_compile_multi(exps.data(), flags.data(), ids.data(),
                                  static_cast<unsigned>(exps.size()),
-                                 HS_MODE_STREAM, &platform, &db, &err);
+                                 mode, &platform, &db, &err);
   if (result != HS_SUCCESS) {
     std::stringstream msg;
     msg << err->message << " (ruleid: " << err->expression << ')';
@@ -57,6 +58,15 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   result = hs_alloc_scratch(db, &scratch);
   if (result != HS_SUCCESS)
     throw std::bad_alloc();
+}
+
+void HyperscanEngineStream::compile(const std::vector<Rule> &rules) {
+  HyperscanEngine::compile(rules);
+  streams.reset(new hs_stream_t*[nsessions]);
+
+  for (size_t i = 0; i < nsessions; i++) {
+    hs_open_stream(db, 0, &streams[i]);
+  }
 }
 
 HyperscanEngineStream::~HyperscanEngineStream() {
@@ -74,16 +84,11 @@ size_t HyperscanEngine::match(const char *data, size_t len, size_t) {
 
 void HyperscanEngineStream::init(size_t nsessions_) {
   nsessions = nsessions_;
-  streams.reset(new hs_stream_t*[nsessions]);
-
-  for (size_t i = 0; i < nsessions; i++) {
-    hs_open_stream(db, 0, &streams[i]);
-  }
 }
 
 size_t HyperscanEngineStream::match(const char *data, size_t len, size_t sid) {
   size_t nmatches = 0;
-  auto ret = hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,
+  hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,
                             onMatch, &nmatches);
   return nmatches > 0;
 }
