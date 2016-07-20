@@ -11,12 +11,12 @@ add_library(regexbench_lib STATIC ../src/match.cpp
   ../src/PcapSource.cpp ../src/Rule.cpp ../src/Session.cpp ../src/Engine.cpp)
 
 add_executable(t_metadata t_metadata.cpp)
-target_link_libraries(t_metadata ${ATF_LIB} ${PCAP_LIB} regexbench_lib)
+target_link_libraries(t_metadata ${ATF_LIB} ${PCAP_LIB} regexbench_lib ${Boost_LIBRARIES})
 
 if(REMATCHCOMP_LIB AND REMATCHEXEC_LIB AND PCRE2_LIB)
   add_executable(t_session t_session.cpp)
   target_link_libraries(t_session engines ${ATF_LIB} ${PCAP_LIB} ${PCRE2_LIB}
-    ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} regexbench_lib)
+    ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} regexbench_lib ${Boost_LIBRARIES})
 endif()
 
 if(RE2_LIB)

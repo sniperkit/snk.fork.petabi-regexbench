@@ -4,6 +4,7 @@
 #include <sys/time.h>
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -166,17 +167,17 @@ int main(int argc, const char *argv[]) {
     pt.put(prefix + "TotalBytes", pcap.getNumberOfBytes());
     pt.put(prefix + "TotalPackets", pcap.getNumberOfPackets());
     ss.str("");
-    ss << boost::format("%1$.6f") %
-              (static_cast<double>(pcap.getNumberOfBytes() *
-                                   static_cast<unsigned long>(args.repeat)) /
-               (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
+    ss << std::fixed << std::setprecision(6)
+       << (static_cast<double>(pcap.getNumberOfBytes() *
+                               static_cast<unsigned long>(args.repeat)) /
+           (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
     pt.put(prefix + "Mbps", ss.str());
 
     ss.str("");
-    ss << boost::format("%1$.6f") %
-              (static_cast<double>(pcap.getNumberOfPackets() *
-                                   static_cast<unsigned long>(args.repeat)) /
-               (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
+    ss << std::fixed << std::setprecision(6)
+       <<(static_cast<double>(pcap.getNumberOfPackets() *
+                              static_cast<unsigned long>(args.repeat)) /
+          (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
     pt.put(prefix + "Mpps", ss.str());
     struct rusage stat;
     getrusage(RUSAGE_SELF, &stat);
