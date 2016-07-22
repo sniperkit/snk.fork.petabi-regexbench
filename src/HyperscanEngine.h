@@ -33,6 +33,7 @@ public:
   virtual size_t match(const char *, size_t, size_t);
 
 protected:
+  void reportFailedRules(const std::vector<Rule> &);
   hs_database_t *db;
   hs_scratch_t *scratch;
   hs_platform_info_t platform;
