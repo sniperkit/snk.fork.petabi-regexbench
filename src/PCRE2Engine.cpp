@@ -44,7 +44,7 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
                       PCRE2_ZERO_TERMINATED, rule.getPCRE2Options(), &errcode,
                       &erroffset, nullptr);
     if (re == nullptr) {
-      msg << rule.getID() << " ";
+      msg << rule.getID() << " " << rule.getRegexp() << "\n";
     } else {
       auto mdata = pcre2_match_data_create_from_pattern(re, nullptr);
       res.push_back(std::make_unique<PCRE2Engine::PCRE2_DATA>(re, mdata));
@@ -75,7 +75,7 @@ void PCRE2JITEngine::compile(const std::vector<Rule> &rules) {
     auto a = res[i]->re;
     int errcode = ::pcre2_jit_compile(a, PCRE2_JIT_COMPLETE);
     if (errcode < 0)
-      msg << i << " ";
+      msg << i << " " << rules[i].getRegexp() << "\n";
   }
   if (msg.str().size()) {
     std::runtime_error error(msg.str());

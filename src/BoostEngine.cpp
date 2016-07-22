@@ -21,7 +21,7 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
     try {
       re = std::make_unique<boost::regex>(rule.getRegexp().data());
     } catch (...) {
-      msg << rule.getID() << " ";
+      msg << rule.getID() << " " << rule.getRegexp() << "\n";
       continue;
     }
     res.push_back(std::move(re));

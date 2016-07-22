@@ -17,7 +17,7 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
     try {
       re = std::make_unique<std::regex>(rule.getRegexp().data(), op);
     } catch(...) {
-      msg << rule.getID() << " ";
+      msg << rule.getID() << " " << rule.getRegexp() <<"\n";
       continue;
     }
     res.push_back(std::move(re));
