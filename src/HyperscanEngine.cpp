@@ -37,7 +37,9 @@ void HyperscanEngine::reportFailedRules(const std::vector<Rule> &rules) {
     auto result = hs_compile(rule.getRegexp().data(), flag,
                              HS_MODE_BLOCK, &platform, &db, &err);
     if (result != HS_SUCCESS) {
-      msg << rule.getID() << " " << rule.getRegexp() << "\n";
+      msg << "id: " << rule.getID() << " " << err->message << " rule:"
+          << rule.getRegexp() << "\n";
+      hs_free_compile_error(err);
     }
   }
   if (msg.str().size()) {

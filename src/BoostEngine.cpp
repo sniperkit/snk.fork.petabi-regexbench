@@ -19,9 +19,10 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
 
     std::unique_ptr<boost::regex> re;
     try {
-      re = std::make_unique<boost::regex>(rule.getRegexp().data());
-    } catch (...) {
-      msg << rule.getID() << " " << rule.getRegexp() << "\n";
+      re = std::make_unique<boost::regex>(rule.getRegexp());
+    } catch (const std::exception &e) {
+      msg << "id: " << rule.getID() << " " << e.what() << " rule:"
+          << rule.getRegexp() << "\n";
       continue;
     }
     res.push_back(std::move(re));
