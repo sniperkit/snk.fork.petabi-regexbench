@@ -62,7 +62,7 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
 
 void HyperscanEngineStream::compile(const std::vector<Rule> &rules) {
   HyperscanEngine::compile(rules);
-  streams.reset(new hs_stream_t*[nsessions]);
+  streams = std::make_unique<hs_stream*[]>(nsessions);
 
   for (size_t i = 0; i < nsessions; i++) {
     hs_open_stream(db, 0, &streams[i]);
