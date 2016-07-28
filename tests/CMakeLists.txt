@@ -21,7 +21,8 @@ endif()
 
 if(RE2_LIB)
   add_executable(t_re2 t_re2.cpp)
-  target_link_libraries(t_re2 engines ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB} regexbench_lib)
+  target_link_libraries(t_re2 engines ${ATF_LIB} ${PCAP_LIB} ${RE2_LIB}
+    regexbench_lib ${Boost_LIBRARIES})
 endif()
 
 add_executable(t_option t_option.cpp ${ENGINE_SRCS})
