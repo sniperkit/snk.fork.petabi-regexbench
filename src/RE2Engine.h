@@ -18,6 +18,8 @@ public:
   virtual size_t match(const char *, size_t, size_t);
 private:
   std::vector<std::unique_ptr<re2::RE2>> res;
+  // set to max mem to 50M, details see re2.h
+  static const size_t maxMem= 50000000;
 };
 
 } // namespace regexbench
