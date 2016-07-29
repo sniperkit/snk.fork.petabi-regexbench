@@ -17,15 +17,13 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
       op |= boost::regex_constants::mod_s;
     }
 
-    std::unique_ptr<boost::regex> re;
     try {
-      re = std::make_unique<boost::regex>(rule.getRegexp());
+      res.emplace_back(std::make_unique<boost::regex>(rule.getRegexp()));
     } catch (const std::exception &e) {
       msg << "id: " << rule.getID() << " " << e.what() << " rule:"
           << rule.getRegexp() << "\n";
       continue;
     }
-    res.push_back(std::move(re));
   }
   if (msg.str().size()) {
     std::runtime_error error(msg.str());

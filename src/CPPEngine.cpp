@@ -13,15 +13,13 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
       op |= std::regex_constants::icase;
     }
 
-    std::unique_ptr<std::regex> re;
     try {
-      re = std::make_unique<std::regex>(rule.getRegexp(), op);
+      res.emplace_back(std::make_unique<std::regex>(rule.getRegexp(), op));
     } catch(const std::exception &e) {
       msg << "id: " << rule.getID() << " " << e.what() << " rule:"
           << rule.getRegexp() << "\n";
       continue;
     }
-    res.push_back(std::move(re));
   }
   if (msg.str().size()) {
     std::runtime_error error(msg.str());
