@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -24,6 +25,29 @@ HyperscanEngine::~HyperscanEngine() {
   hs_free_scratch(scratch);
 }
 
+void HyperscanEngine::reportFailedRules(const std::vector<Rule> &rules) {
+  std::stringstream msg;
+  hs_compile_error_t *err = nullptr;
+
+  for (const auto &rule : rules) {
+    unsigned flag = HS_FLAG_ALLOWEMPTY;
+    if (rule.isSet(MOD_CASELESS)) flag |= HS_FLAG_CASELESS;
+    if (rule.isSet(MOD_MULTILINE)) flag |= HS_FLAG_MULTILINE;
+    if (rule.isSet(MOD_DOTALL)) flag |= HS_FLAG_DOTALL;
+    auto result = hs_compile(rule.getRegexp().data(), flag,
+                             HS_MODE_BLOCK, &platform, &db, &err);
+    if (result != HS_SUCCESS) {
+      msg << "id: " << rule.getID() << " " << err->message << " rule:"
+          << rule.getRegexp() << "\n";
+      hs_free_compile_error(err);
+    }
+  }
+  if (msg.str().size()) {
+    std::runtime_error error(msg.str());
+    throw error;
+  }
+}
+
 void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   std::vector<const char *> exps;
   std::vector<unsigned> flags;
@@ -48,11 +72,7 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
                                  static_cast<unsigned>(exps.size()),
                                  mode, &platform, &db, &err);
   if (result != HS_SUCCESS) {
-    std::stringstream msg;
-    msg << err->message << " (ruleid: " << err->expression << ')';
-    std::runtime_error error(msg.str());
-    hs_free_compile_error(err);
-    throw error;
+    reportFailedRules(rules);
   }
 
   result = hs_alloc_scratch(db, &scratch);

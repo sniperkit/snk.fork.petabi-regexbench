@@ -1,8 +1,11 @@
+#include <sstream>
+
 #include "RE2Engine.h"
 
 using namespace regexbench;
 
 void RE2Engine::compile(const std::vector<Rule> &rules) {
+  std::stringstream msg;
   for (const auto &rule : rules) {
     RE2::Options op;
 
@@ -21,8 +24,12 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
     if (re->ok()) {
       res.push_back(std::move(re));
     } else {
-      throw std::runtime_error("fail to compile rule: " + rule.getRegexp());
+      msg << rule.getID() << " ";
     }
+  }
+  if (msg.str().size()) {
+    std::runtime_error error(msg.str());
+    throw error;
   }
 }
 

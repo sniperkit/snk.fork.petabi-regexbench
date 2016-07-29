@@ -1,8 +1,11 @@
+#include <sstream>
+
 #include "CPPEngine.h"
 
 using namespace regexbench;
 
 void CPPEngine::compile(const std::vector<Rule> &rules) {
+  std::stringstream msg;
   for (const auto &rule : rules) {
     std::regex_constants::syntax_option_type op;
 
@@ -10,8 +13,17 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
       op |= std::regex_constants::icase;
     }
 
-    auto re = std::make_unique<std::regex>(rule.getRegexp().data(), op);
-    res.push_back(std::move(re));
+    try {
+      res.emplace_back(std::make_unique<std::regex>(rule.getRegexp(), op));
+    } catch(const std::exception &e) {
+      msg << "id: " << rule.getID() << " " << e.what() << " rule:"
+          << rule.getRegexp() << "\n";
+      continue;
+    }
+  }
+  if (msg.str().size()) {
+    std::runtime_error error(msg.str());
+    throw error;
   }
 }
 

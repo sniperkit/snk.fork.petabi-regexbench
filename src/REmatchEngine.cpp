@@ -128,11 +128,11 @@ size_t REmatchAutomataEngineSession::match(const char *pkt, size_t len,
 }
 
 void REmatchAutomataEngineSession::init(size_t nsessions) {
-  parent = mregSession_create_parent(static_cast<uint32_t>(nsessions * 2),
+  parent = mregSession_create_parent(static_cast<uint32_t>(nsessions),
                                      txtbl->nstates);
   child = mregSession_create_child(parent, unit_total);
 
-  for (size_t i = 0; i < nsessions * 2; i++) {
+  for (size_t i = 0; i < nsessions; i++) {
     matcher_t *cur = child->mindex[i];
     if (cur->num_active) {
       if (child->active1 < MNULL) {

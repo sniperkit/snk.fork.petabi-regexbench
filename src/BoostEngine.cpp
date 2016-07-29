@@ -1,8 +1,11 @@
+#include <sstream>
+
 #include "BoostEngine.h"
 
 using namespace regexbench;
 
 void BoostEngine::compile(const std::vector<Rule> &rules) {
+  std::stringstream msg;
   for (const auto &rule : rules) {
     boost::regex_constants::syntax_option_type op =
         boost::regex_constants::optimize;
@@ -14,8 +17,17 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
       op |= boost::regex_constants::mod_s;
     }
 
-    auto re = std::make_unique<boost::regex>(rule.getRegexp().data());
-    res.push_back(std::move(re));
+    try {
+      res.emplace_back(std::make_unique<boost::regex>(rule.getRegexp()));
+    } catch (const std::exception &e) {
+      msg << "id: " << rule.getID() << " " << e.what() << " rule:"
+          << rule.getRegexp() << "\n";
+      continue;
+    }
+  }
+  if (msg.str().size()) {
+    std::runtime_error error(msg.str());
+    throw error;
   }
 }
 
