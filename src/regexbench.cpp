@@ -97,7 +97,12 @@ int main(int argc, const char *argv[]) {
       break;
 #ifdef HAVE_HYPERSCAN
     case ENGINE_HYPERSCAN:
-      engine = std::make_unique<regexbench::HyperscanEngine>();
+      if (args.rematch_session) {
+        engine = std::make_unique<regexbench::HyperscanEngineStream>();
+        engine->init(nsessions);
+      } else {
+        engine = std::make_unique<regexbench::HyperscanEngine>();
+      }
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
 #endif

@@ -16,7 +16,7 @@ static int onMatch(unsigned int, unsigned long long,
 
 HyperscanEngine::HyperscanEngine()
     : db(nullptr), scratch(nullptr),
-      platform{HS_TUNE_FAMILY_GENERIC, 0, 0, 0} {
+      platform{HS_TUNE_FAMILY_GENERIC, 0, 0, 0}, nsessions(0) {
 }
 
 HyperscanEngine::~HyperscanEngine() {
@@ -39,9 +39,14 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
   }
 
   hs_compile_error_t *err;
+  unsigned int mode = HS_MODE_BLOCK;
+
+  if (nsessions)
+    mode = HS_MODE_STREAM;
+
   auto result = hs_compile_multi(exps.data(), flags.data(), ids.data(),
                                  static_cast<unsigned>(exps.size()),
-                                 HS_MODE_BLOCK, &platform, &db, &err);
+                                 mode, &platform, &db, &err);
   if (result != HS_SUCCESS) {
     std::stringstream msg;
     msg << err->message << " (ruleid: " << err->expression << ')';
@@ -55,9 +60,35 @@ void HyperscanEngine::compile(const std::vector<Rule> &rules) {
     throw std::bad_alloc();
 }
 
+void HyperscanEngineStream::compile(const std::vector<Rule> &rules) {
+  HyperscanEngine::compile(rules);
+  streams = std::make_unique<hs_stream*[]>(nsessions);
+
+  for (size_t i = 0; i < nsessions; i++) {
+    hs_open_stream(db, 0, &streams[i]);
+  }
+}
+
+HyperscanEngineStream::~HyperscanEngineStream() {
+  for (size_t i = 0; i < nsessions; i++) {
+    hs_close_stream(streams[i], scratch, onMatch, nullptr);
+  }
+}
+
 size_t HyperscanEngine::match(const char *data, size_t len, size_t) {
   size_t nmatches = 0;
   hs_scan(db, data, static_cast<unsigned>(len), 0, scratch,
           onMatch, &nmatches);
+  return nmatches > 0;
+}
+
+void HyperscanEngineStream::init(size_t nsessions_) {
+  nsessions = nsessions_;
+}
+
+size_t HyperscanEngineStream::match(const char *data, size_t len, size_t sid) {
+  size_t nmatches = 0;
+  hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,
+                            onMatch, &nmatches);
   return nmatches > 0;
 }
