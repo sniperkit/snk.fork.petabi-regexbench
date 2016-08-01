@@ -8,6 +8,7 @@ void RE2Engine::compile(const std::vector<Rule> &rules) {
   std::stringstream msg;
   for (const auto &rule : rules) {
     RE2::Options op;
+    op.set_max_mem(maxMem);
 
     if (rule.isSet(MOD_CASELESS)) {
       op.set_case_sensitive(false);
