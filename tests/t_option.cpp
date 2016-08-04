@@ -23,6 +23,8 @@
 
 using namespace regexbench;
 
+regexbench::MatchResult opTest(Engine *);
+
 regexbench::MatchResult opTest(Engine *engine) {
   engine->compile(regexbench::loadRules(DATA_DIR "/rule/option.re"));
   size_t nsessions = 0;
