@@ -3,6 +3,7 @@
 #define REGEXBENCH_REMATCHENGINE_H
 
 #include <rematch/rematch.h>
+#include <rematch/execute.h>
 
 #include "Engine.h"
 #include "Session.h"
