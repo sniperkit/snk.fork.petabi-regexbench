@@ -190,7 +190,7 @@ int main(int argc, const char *argv[]) {
 
     std::ostringstream buf;
     write_json(buf, pt, false);
-    std::ofstream outputFile(args.output_file);
+    std::ofstream outputFile(args.output_file, std::ios_base::trunc);
     outputFile << buf.str();
 
     for (const auto &it : reportFields) {
