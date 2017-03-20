@@ -47,7 +47,7 @@ if(NOT CMAKE_CXX_FLAGS_RELEASE MATCHES "-O")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
-include_directories(${CMAKE_INSTALL_PREFIX}/include)
+include_directories(SYSTEM ${CMAKE_INSTALL_PREFIX}/include)
 
 find_package(Boost REQUIRED COMPONENTS program_options regex system)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
@@ -68,7 +68,7 @@ find_library(HYPERSCAN_LIB
 if(HYPERSCAN_INCLUDE_DIR AND HYPERSCAN_LIB)
   set(HAVE_HYPERSCAN 1)
   set(AVAIL_ENGS ${AVAIL_ENGS} "Hyperscan ")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${HYPERSCAN_INCLUDE_DIR}")
+  include_directories(SYSTEM ${HYPERSCAN_INCLUDE_DIR})
 endif()
 find_path(PCRE2_INCLUDE_DIR pcre2.h HINTS ${CMAKE_INSTALL_PREFIX}/include)
 find_library(PCRE2_LIB
@@ -79,7 +79,7 @@ find_library(PCRE2_LIB
 if(PCRE2_INCLUDE_DIR AND PCRE2_LIB)
   set(HAVE_PCRE2 1)
   set(AVAIL_ENGS ${AVAIL_ENGS} "PCRE2 ")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${PCRE2_INCLUDE_DIR}")
+  include_directories(SYSTEM ${PCRE2_INCLUDE_DIR})
 endif()
 find_path(REMATCH_INCLUDE_DIR rematch/rematch.h HINTS ${CMAKE_INSTALL_PREFIX}/include)
 find_library(REMATCHCOMP_LIB
@@ -94,10 +94,9 @@ find_library(REMATCHEXEC_LIB
   NO_CMAKE_SYSTEM_PATH)
 if(REMATCH_INCLUDE_DIR AND
    REMATCHCOMP_LIB AND REMATCHEXEC_LIB)
-  include_directories(${REMATCH_INCLUDE_DIR})
   set(HAVE_REMATCH 1)
   set(AVAIL_ENGS ${AVAIL_ENGS} "REmatch ")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${REMATCH_INCLUDE_DIR}")
+  include_directories(SYSTEM ${REMATCH_INCLUDE_DIR})
 endif()
 find_path(RE2_INCLUDE_DIR re2/re2.h HINTS ${REMATCH_INCLUDE_DIR})
 find_library(RE2_LIB
@@ -108,7 +107,7 @@ find_library(RE2_LIB
 if(RE2_INCLUDE_DIR AND RE2_LIB)
   set(HAVE_RE2 1)
   set(AVAIL_ENGS ${AVAIL_ENGS} "RE2 ")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${RE2_INCLUDE_DIR}")
+  include_directories(SYSTEM ${RE2_INCLUDE_DIR})
 endif()
 
 set(AVAIL_ENGS ${AVAIL_ENGS} "std::regex Boost::regex")
@@ -123,7 +122,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
 
 if(Boost_INCLUDE_DIR)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${Boost_INCLUDE_DIR}")
+  include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 endif()
 
 subdirs(src)
