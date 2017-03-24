@@ -39,7 +39,7 @@ using boost::property_tree::write_json;
 namespace po = boost::program_options;
 
 enum class EngineType : uint64_t {
-  boost = 0,
+  boost,
   std_regex,
   hyperscan,
   pcre2,
@@ -228,7 +228,7 @@ Arguments parse_options(int argc, const char *argv[]) {
   po::options_description optargs("Options");
   optargs.add_options()("help,h", "Print usage information.");
   optargs.add_options()(
-      "engine,e", po::value<std::string>(&engine)->default_value("rematch"),
+      "engine,e", po::value<std::string>(&engine)->default_value("hyperscan"),
       "Matching engine to run.");
   optargs.add_options()("repeat,r",
                         po::value<int32_t>(&args.repeat)->default_value(1),
@@ -244,7 +244,7 @@ Arguments parse_options(int argc, const char *argv[]) {
   optargs.add_options()(
       "output,o",
       po::value<std::string>(&args.output_file)->default_value("output.json"),
-      "Output JSON file."),
+      "Output JSON file.");
   optargs.add_options()(
       "reduce,R", po::value<bool>(&args.reduce)->default_value(false),
       "Use REduce with REmatch, default is false");

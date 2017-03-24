@@ -13,8 +13,6 @@ using namespace regexbench;
 const char NFA_FUNC_NAME[] = "run";
 const char NFA_NSTATES_NAME[] = "nstates";
 
-REmatchAutomataEngine::REmatchAutomataEngine()
-    : flow(nullptr), matcher(nullptr), txtbl(nullptr) {}
 REmatchAutomataEngine::REmatchAutomataEngine(bool red)
     : flow(nullptr), matcher(nullptr), txtbl(nullptr), reduce(red) {}
 
@@ -145,8 +143,8 @@ void REmatchAutomataEngineSession::init(size_t nsessions) {
   }
 }
 
-REmatch2AutomataEngine::REmatch2AutomataEngine() : matcher(nullptr), context(nullptr) {}
-REmatch2AutomataEngine::REmatch2AutomataEngine(bool red) : matcher(nullptr), context(nullptr), reduce(red) {}
+REmatch2AutomataEngine::REmatch2AutomataEngine(bool red) : matcher(nullptr),
+    context(nullptr), reduce(red) {}
 REmatch2AutomataEngine::~REmatch2AutomataEngine() {
   rematch2ContextFree(context);
   rematch2Free(matcher);

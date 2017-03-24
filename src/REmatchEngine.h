@@ -13,8 +13,7 @@ namespace regexbench {
 
 class REmatchAutomataEngine : public Engine {
 public:
-  REmatchAutomataEngine();
-  REmatchAutomataEngine(bool red);
+  REmatchAutomataEngine(bool red = false);
   virtual ~REmatchAutomataEngine();
 
   virtual void compile(const std::vector<Rule> &);
@@ -27,7 +26,7 @@ private:
 protected:
   mregex_t *txtbl;
   mregmatch_t regmatch[1];
-  bool reduce = {false};
+  bool reduce = false;
   char __padding[7];
 
 };
@@ -66,8 +65,7 @@ private:
 
 class REmatch2AutomataEngine : public Engine {
 public:
-  REmatch2AutomataEngine();
-  REmatch2AutomataEngine(bool red);
+  REmatch2AutomataEngine(bool red = false);
   ~REmatch2AutomataEngine();
 
   void compile(const std::vector<Rule> &rules) override;
@@ -77,7 +75,7 @@ public:
 private:
   rematch2_t* matcher;
   rematch_match_context_t* context;
-  bool reduce = {false};
+  bool reduce = false;
 
 protected:
   char __padding[7];
