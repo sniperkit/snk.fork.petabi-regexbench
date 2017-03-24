@@ -15,6 +15,8 @@ const char NFA_NSTATES_NAME[] = "nstates";
 
 REmatchAutomataEngine::REmatchAutomataEngine()
     : flow(nullptr), matcher(nullptr), txtbl(nullptr) {}
+REmatchAutomataEngine::REmatchAutomataEngine(bool red)
+    : flow(nullptr), matcher(nullptr), txtbl(nullptr), reduce(red) {}
 
 REmatchAutomataEngine::~REmatchAutomataEngine() {
   if (flow)
@@ -39,7 +41,7 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
     mods.push_back(opt);
   }
   txtbl =
-      rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
+      rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce);
   flow = mregflow_new(txtbl->nstates, 1, 1);
   matcher = matcher_new(txtbl->nstates);
 }
@@ -144,6 +146,7 @@ void REmatchAutomataEngineSession::init(size_t nsessions) {
 }
 
 REmatch2AutomataEngine::REmatch2AutomataEngine() : matcher(nullptr), context(nullptr) {}
+REmatch2AutomataEngine::REmatch2AutomataEngine(bool red) : matcher(nullptr), context(nullptr), reduce(red) {}
 REmatch2AutomataEngine::~REmatch2AutomataEngine() {
   rematch2ContextFree(context);
   rematch2Free(matcher);
@@ -162,10 +165,13 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule> &rules) {
     if (rule.isSet(MOD_DOTALL)) opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  matcher = rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
+  matcher = rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce);
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
+  context = rematch2ContextInit(matcher, 1);
+  if (context == nullptr)
+    throw std::runtime_error("Could not initialize context.");
 }
 
 void REmatch2AutomataEngine::load(const std::string &file) {
