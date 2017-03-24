@@ -4,6 +4,7 @@
 
 #include <rematch/rematch.h>
 #include <rematch/execute.h>
+#include <rematch/compile.h>
 
 #include "Engine.h"
 #include "Session.h"
@@ -57,6 +58,25 @@ private:
   static constexpr size_t unit_total = 1u << 17;
   mregSession_t *parent;
   mregSession_t *child;
+};
+
+class REmatch2AutomataEngine : public Engine {
+public:
+  REmatch2AutomataEngine();
+  ~REmatch2AutomataEngine();
+
+  void compileWithREduce() {reduce = true;}
+  void compile(const std::vector<Rule> &rules) override;
+  void load(const std::string &file) override;
+  size_t match(const char *pkt, size_t len, size_t) override;
+
+private:
+  rematch2_t* matcher;
+  rematch_match_context_t* context;
+  bool reduce = {false};
+
+protected:
+  char __padding[7];
 };
 
 } // namespace regexbench
