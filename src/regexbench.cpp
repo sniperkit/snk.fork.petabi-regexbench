@@ -38,22 +38,15 @@ using boost::property_tree::write_json;
 
 namespace po = boost::program_options;
 
-enum EngineType : uint64_t {
-  ENGINE_BOOST,
-  ENGINE_CPP,
-#ifdef HAVE_HYPERSCAN
-  ENGINE_HYPERSCAN,
-#endif
-#ifdef HAVE_PCRE2
-  ENGINE_PCRE2,
-  ENGINE_PCRE2JIT,
-#endif
-#ifdef HAVE_RE2
-  ENGINE_RE2,
-#endif
-#ifdef HAVE_REMATCH
-  ENGINE_REMATCH,
-#endif
+enum class EngineType : uint64_t {
+  boost,
+  std_regex,
+  hyperscan,
+  pcre2,
+  pcre2_jit,
+  re2,
+  rematch,
+  rematch2
 };
 
 struct Arguments {
@@ -64,7 +57,8 @@ struct Arguments {
   int32_t repeat;
   uint32_t pcre2_concat;
   uint32_t rematch_session;
-  char paddings[4];
+  bool reduce = {false};
+  char paddings[3];
 };
 
 template<typename Derived, typename Base, typename Del>
@@ -87,16 +81,16 @@ int main(int argc, const char *argv[]) {
     auto match_info = buildMatchMeta(pcap, nsessions);
 
     switch (args.engine) {
-    case ENGINE_BOOST:
+    case EngineType::boost:
       engine = std::make_unique<regexbench::BoostEngine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
-    case ENGINE_CPP:
+    case EngineType::std_regex:
       engine = std::make_unique<regexbench::CPPEngine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
 #ifdef HAVE_HYPERSCAN
-    case ENGINE_HYPERSCAN:
+    case EngineType::hyperscan:
       if (args.rematch_session) {
         engine = std::make_unique<regexbench::HyperscanEngineStream>();
         engine->init(nsessions);
@@ -107,25 +101,25 @@ int main(int argc, const char *argv[]) {
       break;
 #endif
 #ifdef HAVE_PCRE2
-    case ENGINE_PCRE2:
+    case EngineType::pcre2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
       engine->init(args.pcre2_concat);
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
-    case ENGINE_PCRE2JIT:
+    case EngineType::pcre2_jit:
       engine = std::make_unique<regexbench::PCRE2JITEngine>();
       engine->init(args.pcre2_concat);
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
 #endif
 #ifdef HAVE_RE2
-    case ENGINE_RE2:
+    case EngineType::re2:
       engine = std::make_unique<regexbench::RE2Engine>();
       engine->compile(regexbench::loadRules(args.rule_file));
       break;
 #endif
 #ifdef HAVE_REMATCH
-    case ENGINE_REMATCH:
+    case EngineType::rematch:
       if (args.rematch_session) {
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
         engine->compile(regexbench::loadRules(args.rule_file));
@@ -136,10 +130,19 @@ int main(int argc, const char *argv[]) {
         engine = std::make_unique<regexbench::REmatchSOEngine>();
         engine->load(args.rule_file);
       } else {
-        engine = std::make_unique<regexbench::REmatchAutomataEngine>();
+        engine = std::make_unique<regexbench::REmatchAutomataEngine>(args.reduce);
         engine->compile(regexbench::loadRules(args.rule_file));
       }
       engine->init(nsessions);
+      break;
+    case EngineType::rematch2:
+      if (endsWith(args.rule_file, ".nfa")) {
+        engine = std::make_unique<regexbench::REmatch2AutomataEngine>();
+        engine->load(args.rule_file);
+      } else {
+        engine = std::make_unique<regexbench::REmatch2AutomataEngine>(args.reduce);
+        engine->compile(regexbench::loadRules(args.rule_file));
+      }
       break;
 #endif
     }
@@ -242,6 +245,9 @@ Arguments parse_options(int argc, const char *argv[]) {
       "output,o",
       po::value<std::string>(&args.output_file)->default_value("output.json"),
       "Output JSON file.");
+  optargs.add_options()(
+      "reduce,R", po::value<bool>(&args.reduce)->default_value(false),
+      "Use REduce with REmatch, default is false");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;
@@ -258,26 +264,28 @@ Arguments parse_options(int argc, const char *argv[]) {
     std::exit(EXIT_SUCCESS);
   }
   if (engine == "boost")
-    args.engine = ENGINE_BOOST;
+    args.engine = EngineType::boost;
   else if (engine == "cpp")
-    args.engine = ENGINE_CPP;
+    args.engine = EngineType::std_regex;
 #ifdef HAVE_HYPERSCAN
   else if (engine == "hyperscan")
-    args.engine = ENGINE_HYPERSCAN;
+    args.engine = EngineType::hyperscan;
 #endif
 #ifdef HAVE_PCRE2
   else if (engine == "pcre2")
-    args.engine = ENGINE_PCRE2;
+    args.engine = EngineType::pcre2;
   else if (engine == "pcre2jit")
-    args.engine = ENGINE_PCRE2JIT;
+    args.engine = EngineType::pcre2_jit;
 #endif
 #ifdef HAVE_RE2
   else if (engine == "re2")
-    args.engine = ENGINE_RE2;
+    args.engine = EngineType::re2;
 #endif
 #ifdef HAVE_REMATCH
   else if (engine == "rematch")
-    args.engine = ENGINE_REMATCH;
+    args.engine = EngineType::rematch;
+  else if (engine == "rematch2")
+    args.engine = EngineType::rematch2;
 #endif
   else {
     std::cerr << "unknown engine: " << engine << std::endl;

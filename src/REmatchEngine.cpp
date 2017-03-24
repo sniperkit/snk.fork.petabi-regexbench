@@ -13,8 +13,8 @@ using namespace regexbench;
 const char NFA_FUNC_NAME[] = "run";
 const char NFA_NSTATES_NAME[] = "nstates";
 
-REmatchAutomataEngine::REmatchAutomataEngine()
-    : flow(nullptr), matcher(nullptr), txtbl(nullptr) {}
+REmatchAutomataEngine::REmatchAutomataEngine(bool red)
+    : flow(nullptr), matcher(nullptr), txtbl(nullptr), reduce(red) {}
 
 REmatchAutomataEngine::~REmatchAutomataEngine() {
   if (flow)
@@ -39,7 +39,7 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
     mods.push_back(opt);
   }
   txtbl =
-      rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), false);
+      rematch_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce);
   flow = mregflow_new(txtbl->nstates, 1, 1);
   matcher = matcher_new(txtbl->nstates);
 }
@@ -141,4 +141,49 @@ void REmatchAutomataEngineSession::init(size_t nsessions) {
       }
     }
   }
+}
+
+REmatch2AutomataEngine::REmatch2AutomataEngine(bool red) : matcher(nullptr),
+    context(nullptr), reduce(red) {}
+REmatch2AutomataEngine::~REmatch2AutomataEngine() {
+  rematch2ContextFree(context);
+  rematch2Free(matcher);
+}
+
+void REmatch2AutomataEngine::compile(const std::vector<Rule> &rules) {
+  std::vector<const char *> exps;
+  std::vector<unsigned> mods;
+  std::vector<unsigned> ids;
+  for (const auto &rule : rules) {
+    exps.push_back(rule.getRegexp().data());
+    ids.push_back(static_cast<unsigned>(rule.getID()));
+    uint32_t opt = 0;
+    if (rule.isSet(MOD_CASELESS)) opt |= REMATCH_MOD_CASELESS;
+    if (rule.isSet(MOD_MULTILINE)) opt |= REMATCH_MOD_MULTILINE;
+    if (rule.isSet(MOD_DOTALL)) opt |= REMATCH_MOD_DOTALL;
+    mods.push_back(opt);
+  }
+  matcher = rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce);
+  if (matcher == nullptr) {
+    throw std::runtime_error("Could not build REmatch2 matcher.");
+  }
+  context = rematch2ContextInit(matcher, 1);
+  if (context == nullptr)
+    throw std::runtime_error("Could not initialize context.");
+}
+
+void REmatch2AutomataEngine::load(const std::string &file) {
+  matcher = rematch2Load(file.c_str());
+  if (matcher == nullptr)
+    throw std::runtime_error("Could not load REmatch2 matcher.");
+  context = rematch2ContextInit(matcher, 1);
+  if (context == nullptr)
+    throw std::runtime_error("Could not initialize context.");
+}
+
+size_t REmatch2AutomataEngine::match(const char *pkt, size_t len, size_t) {
+  rematch2_exec(matcher, pkt, len, context);
+  size_t matched = context->num_matches;
+  rematch2ContextClear(context, true);
+  return matched;
 }
