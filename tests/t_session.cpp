@@ -13,7 +13,8 @@
 using namespace regexbench;
 
 ATF_TEST_CASE_WITHOUT_HEAD(session1);
-ATF_TEST_CASE_BODY(session1) {
+ATF_TEST_CASE_BODY(session1)
+{
 #ifdef HAVE_REMATCH
   REmatchAutomataEngineSession engine;
   engine.compile(regexbench::loadRules(DATA_DIR "/rule/session.re"));
@@ -27,7 +28,8 @@ ATF_TEST_CASE_BODY(session1) {
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(session2);
-ATF_TEST_CASE_BODY(session2) {
+ATF_TEST_CASE_BODY(session2)
+{
 #ifdef HAVE_REMATCH
   REmatchAutomataEngineSession engine;
   engine.compile(regexbench::loadRules(DATA_DIR "/rule/session2.re"));
@@ -41,7 +43,8 @@ ATF_TEST_CASE_BODY(session2) {
 #endif
 }
 
-ATF_INIT_TEST_CASES(tcs) {
+ATF_INIT_TEST_CASES(tcs)
+{
   ATF_ADD_TEST_CASE(tcs, session1);
   ATF_ADD_TEST_CASE(tcs, session2);
 }

@@ -2,9 +2,9 @@
 #ifndef REGEXBENCH_H
 #define REGEXBENCH_H
 
+#include "Rule.h"
 #include <boost/timer/timer.hpp>
 #include <vector>
-#include "Rule.h"
 
 namespace regexbench {
 
@@ -22,8 +22,11 @@ struct MatchResult {
 
 struct MatchMeta {
   MatchMeta(size_t sid_ = 0, size_t oft_ = 0, size_t len_ = 0)
-      : sid(sid_), oft(oft_), len(len_) {}
-  bool operator==(const MatchMeta &rhs) {
+      : sid(sid_), oft(oft_), len(len_)
+  {
+  }
+  bool operator==(const MatchMeta& rhs)
+  {
     return sid == rhs.sid && oft == rhs.oft && len == rhs.len;
   }
   size_t sid;
@@ -31,11 +34,11 @@ struct MatchMeta {
   size_t len;
 };
 
-std::vector<MatchMeta> buildMatchMeta(const PcapSource &, size_t &);
-uint32_t getPLOffset(const std::string &);
-std::vector<Rule> loadRules(const std::string &);
-MatchResult match(Engine &, const PcapSource &, long,
-                  const std::vector<MatchMeta> &);
+std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
+uint32_t getPLOffset(const std::string&);
+std::vector<Rule> loadRules(const std::string&);
+MatchResult match(Engine&, const PcapSource&, long,
+                  const std::vector<MatchMeta>&);
 }
 
 #endif // REGEXBENCH_H

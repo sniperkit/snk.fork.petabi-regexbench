@@ -2,8 +2,8 @@
 #ifndef REGEXBENCH_SESSION_H
 #define REGEXBENCH_SESSION_H
 
-#include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/types.h>
 
 #include <net/ethernet.h>
 #include <netinet/ip.h>
@@ -18,72 +18,81 @@
 #include "PcapSource.h"
 
 namespace regexbench {
-constexpr inline uint16_t EXT_SPORT(const char *pkt, uint16_t size_iphdr) {
-  return ntohs(*reinterpret_cast<const uint16_t *>(
+constexpr inline uint16_t EXT_SPORT(const char* pkt, uint16_t size_iphdr)
+{
+  return ntohs(*reinterpret_cast<const uint16_t*>(
       pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_sport)));
 }
 
-constexpr inline uint16_t EXT_DPORT(const char *pkt, uint16_t size_iphdr) {
-  return ntohs(*reinterpret_cast<const uint16_t *>(
+constexpr inline uint16_t EXT_DPORT(const char* pkt, uint16_t size_iphdr)
+{
+  return ntohs(*reinterpret_cast<const uint16_t*>(
       pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_dport)));
 }
 
-constexpr inline uint32_t EXT_SIP(const char *pkt) {
-  return ntohl(*reinterpret_cast<const uint16_t *>(
-      pkt + ETHER_HDR_LEN + offsetof(struct ip, ip_src)));
+constexpr inline uint32_t EXT_SIP(const char* pkt)
+{
+  return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
+                                                  offsetof(struct ip, ip_src)));
 }
 
-constexpr inline uint32_t EXT_DIP(const char *pkt) {
-  return ntohl(*reinterpret_cast<const uint16_t *>(
-      pkt + ETHER_HDR_LEN + offsetof(struct ip, ip_dst)));
+constexpr inline uint32_t EXT_DIP(const char* pkt)
+{
+  return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
+                                                  offsetof(struct ip, ip_dst)));
 }
 
-inline const struct ip6_addr *EXT_SIP6(const char *pkt) {
-  return reinterpret_cast<const struct ip6_addr *>(
+inline const struct ip6_addr* EXT_SIP6(const char* pkt)
+{
+  return reinterpret_cast<const struct ip6_addr*>(
       pkt + ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_src));
 }
 
-inline const struct ip6_addr *EXT_DIP6(const char *pkt) {
-  return reinterpret_cast<const struct ip6_addr *>(
+inline const struct ip6_addr* EXT_DIP6(const char* pkt)
+{
+  return reinterpret_cast<const struct ip6_addr*>(
       pkt + ETHER_HDR_LEN + offsetof(struct ip6_hdr, ip6_dst));
 }
 
-inline uint8_t EXT_ICMP_TP(const char *pkt, uint16_t size_iphdr) {
-  return *reinterpret_cast<const uint8_t *>(pkt + size_iphdr + ETHER_HDR_LEN +
-                                            offsetof(struct icmp, icmp_type));
+inline uint8_t EXT_ICMP_TP(const char* pkt, uint16_t size_iphdr)
+{
+  return *reinterpret_cast<const uint8_t*>(pkt + size_iphdr + ETHER_HDR_LEN +
+                                           offsetof(struct icmp, icmp_type));
 }
 
-inline uint8_t EXT_ICMP_CD(const char *pkt, uint16_t size_iphdr) {
-  return *reinterpret_cast<const uint8_t *>(pkt + size_iphdr + ETHER_HDR_LEN +
-                                            offsetof(struct icmp, icmp_code));
+inline uint8_t EXT_ICMP_CD(const char* pkt, uint16_t size_iphdr)
+{
+  return *reinterpret_cast<const uint8_t*>(pkt + size_iphdr + ETHER_HDR_LEN +
+                                           offsetof(struct icmp, icmp_code));
 }
 
-constexpr inline int cmp_in6_addr(const struct in6_addr *a1,
-                                  const struct in6_addr *a2) {
+constexpr inline int cmp_in6_addr(const struct in6_addr* a1,
+                                  const struct in6_addr* a2)
+{
   for (size_t i = 0; i < 16; i++)
     if (a1->s6_addr[i] != a2->s6_addr[i])
       return 0;
   return 1;
 }
 
-  template<typename T>
-  class AddrPair {
-  public:
-    T src;
-    T dst;
-  };
+template <typename T> class AddrPair {
+public:
+  T src;
+  T dst;
+};
 
-  inline bool operator==(const AddrPair<in_addr> &lhs,
-                         const AddrPair<in_addr> &rhs) {
-    return *reinterpret_cast<const uint64_t *>(&lhs) ==
-      *reinterpret_cast<const uint64_t *>(&rhs);
-  };
+inline bool operator==(const AddrPair<in_addr>& lhs,
+                       const AddrPair<in_addr>& rhs)
+{
+  return *reinterpret_cast<const uint64_t*>(&lhs) ==
+         *reinterpret_cast<const uint64_t*>(&rhs);
+};
 
 class Session {
 public:
   Session() = delete;
-  Session(const char *pkt);
-  bool operator==(const Session &);
+  Session(const char* pkt);
+  bool operator==(const Session&);
   uint32_t getHashval() const { return hashval; }
   void setSession(uint32_t sid) { session_idx = sid; }
   uint32_t getSession() const { return session_idx; }
@@ -107,7 +116,7 @@ private:
   uint16_t pl_off;
   uint32_t matcher_idx;
   uint8_t protocol;
-  uint8_t ver;      /* IPv4 or IPv6 */
+  uint8_t ver; /* IPv4 or IPv6 */
   char paddings[2];
 };
 
@@ -115,7 +124,7 @@ class SessionTable {
 public:
   SessionTable() = default;
   ~SessionTable() = default;
-  bool find(Session &, size_t &);
+  bool find(Session&, size_t&);
   static uint32_t getSessionNum() { return nsessions; }
 
 private:

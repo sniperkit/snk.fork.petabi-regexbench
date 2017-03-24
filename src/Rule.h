@@ -10,30 +10,27 @@
 
 namespace regexbench {
 
-enum Modifier : unsigned {
-  MOD_CASELESS, MOD_MULTILINE, MOD_DOTALL,
-  NMODS
-};
+enum Modifier : unsigned { MOD_CASELESS, MOD_MULTILINE, MOD_DOTALL, NMODS };
 
 class Rule {
 public:
   Rule() = delete;
-  Rule(const Rule &) = default;
-  Rule(Rule &&) = default;
-  explicit Rule(const std::string &);
-  explicit Rule(const std::string &, size_t, uint32_t = 0);
+  Rule(const Rule&) = default;
+  Rule(Rule&&) = default;
+  explicit Rule(const std::string&);
+  explicit Rule(const std::string&, size_t, uint32_t = 0);
   ~Rule() = default;
-  Rule &operator=(const Rule &) = default;
-  Rule &operator=(Rule &&) = default;
+  Rule& operator=(const Rule&) = default;
+  Rule& operator=(Rule&&) = default;
 
   size_t getID() const { return id; }
   uint32_t getPCRE2Options() const;
-  const std::string &getRegexp() const { return regexp; }
+  const std::string& getRegexp() const { return regexp; }
   bool isSet(unsigned mod) const { return mods[mod]; }
-  void swapRegexp(std::string &other) { regexp.swap(other); }
+  void swapRegexp(std::string& other) { regexp.swap(other); }
 
 private:
-  void parseRule(const std::string &, size_t);
+  void parseRule(const std::string&, size_t);
   void setOptions(uint32_t);
 
   size_t id;
@@ -41,7 +38,7 @@ private:
   std::bitset<NMODS> mods;
 };
 
-std::vector<Rule> loadRules(std::istream &);
+std::vector<Rule> loadRules(std::istream&);
 } // namespace regexbench
 
 #endif

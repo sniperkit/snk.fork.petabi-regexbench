@@ -12,14 +12,16 @@ namespace regexbench {
 class HyperscanEngine : public Engine {
 public:
   HyperscanEngine();
-  HyperscanEngine(const HyperscanEngine &) = delete;
-  HyperscanEngine(HyperscanEngine &&o) : db(o.db), scratch(o.scratch) {
+  HyperscanEngine(const HyperscanEngine&) = delete;
+  HyperscanEngine(HyperscanEngine&& o) : db(o.db), scratch(o.scratch)
+  {
     o.db = nullptr;
     o.scratch = nullptr;
   }
   virtual ~HyperscanEngine();
-  HyperscanEngine &operator=(const HyperscanEngine &) = delete;
-  HyperscanEngine &operator=(HyperscanEngine &&o) {
+  HyperscanEngine& operator=(const HyperscanEngine&) = delete;
+  HyperscanEngine& operator=(HyperscanEngine&& o)
+  {
     hs_free_database(db);
     db = o.db;
     o.db = nullptr;
@@ -29,13 +31,13 @@ public:
     return *this;
   }
 
-  virtual void compile(const std::vector<Rule> &);
-  virtual size_t match(const char *, size_t, size_t);
+  virtual void compile(const std::vector<Rule>&);
+  virtual size_t match(const char*, size_t, size_t);
 
 protected:
-  void reportFailedRules(const std::vector<Rule> &);
-  hs_database_t *db;
-  hs_scratch_t *scratch;
+  void reportFailedRules(const std::vector<Rule>&);
+  hs_database_t* db;
+  hs_scratch_t* scratch;
   hs_platform_info_t platform;
   size_t nsessions;
 };
@@ -46,11 +48,11 @@ public:
   virtual ~HyperscanEngineStream();
   virtual void init(size_t);
 
-  void compile(const std::vector<Rule> &);
-  virtual size_t match(const char *, size_t, size_t);
+  void compile(const std::vector<Rule>&);
+  virtual size_t match(const char*, size_t, size_t);
 
 private:
-  std::unique_ptr<hs_stream*[]> streams;
+  std::unique_ptr<hs_stream* []> streams;
 };
 
 } // namespace regexbench

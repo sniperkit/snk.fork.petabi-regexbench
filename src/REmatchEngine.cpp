@@ -14,9 +14,12 @@ const char NFA_FUNC_NAME[] = "run";
 const char NFA_NSTATES_NAME[] = "nstates";
 
 REmatchAutomataEngine::REmatchAutomataEngine(bool red)
-    : flow(nullptr), matcher(nullptr), txtbl(nullptr), reduce(red) {}
+    : flow(nullptr), matcher(nullptr), txtbl(nullptr), reduce(red)
+{
+}
 
-REmatchAutomataEngine::~REmatchAutomataEngine() {
+REmatchAutomataEngine::~REmatchAutomataEngine()
+{
   if (flow)
     mregflow_delete(flow);
   if (matcher)
@@ -25,17 +28,21 @@ REmatchAutomataEngine::~REmatchAutomataEngine() {
     mregfree(txtbl);
 }
 
-void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
-  std::vector<const char *> exps;
+void REmatchAutomataEngine::compile(const std::vector<Rule>& rules)
+{
+  std::vector<const char*> exps;
   std::vector<unsigned> mods;
   std::vector<unsigned> ids;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     exps.push_back(rule.getRegexp().data());
     ids.push_back(static_cast<unsigned>(rule.getID()));
     uint32_t opt = 0;
-    if (rule.isSet(MOD_CASELESS)) opt |= REMATCH_MOD_CASELESS;
-    if (rule.isSet(MOD_MULTILINE)) opt |= REMATCH_MOD_MULTILINE;
-    if (rule.isSet(MOD_DOTALL)) opt |= REMATCH_MOD_DOTALL;
+    if (rule.isSet(MOD_CASELESS))
+      opt |= REMATCH_MOD_CASELESS;
+    if (rule.isSet(MOD_MULTILINE))
+      opt |= REMATCH_MOD_MULTILINE;
+    if (rule.isSet(MOD_DOTALL))
+      opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
   txtbl =
@@ -44,7 +51,8 @@ void REmatchAutomataEngine::compile(const std::vector<Rule> &rules) {
   matcher = matcher_new(txtbl->nstates);
 }
 
-void REmatchAutomataEngine::load(const std::string &filename) {
+void REmatchAutomataEngine::load(const std::string& filename)
+{
   txtbl = rematchload(filename.c_str());
   if (txtbl == nullptr) {
     throw std::runtime_error("cannot load NFA");
@@ -57,32 +65,37 @@ void REmatchAutomataEngine::load(const std::string &filename) {
     throw std::bad_alloc();
 }
 
-size_t REmatchAutomataEngine::match(const char *data, size_t len, size_t) {
+size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t)
+{
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches;
 }
 
 REmatchSOEngine::REmatchSOEngine()
-    : run(nullptr), ctx(nullptr), dlhandle(nullptr) {}
+    : run(nullptr), ctx(nullptr), dlhandle(nullptr)
+{
+}
 
-REmatchSOEngine::~REmatchSOEngine() {
+REmatchSOEngine::~REmatchSOEngine()
+{
   if (ctx)
     destroy_matchctx(ctx);
   if (dlhandle)
     dlclose(dlhandle);
 }
 
-void REmatchSOEngine::load(const std::string &filename) {
+void REmatchSOEngine::load(const std::string& filename)
+{
   dlhandle = dlopen(filename.c_str(), RTLD_LAZY);
   if (dlhandle == nullptr) {
-    char *error = dlerror();
+    char* error = dlerror();
     if (error != nullptr)
       throw std::runtime_error(error);
     throw std::runtime_error("fail to load " + filename);
   }
-  size_t *p = reinterpret_cast<size_t *>(dlsym(dlhandle, NFA_NSTATES_NAME));
+  size_t* p = reinterpret_cast<size_t*>(dlsym(dlhandle, NFA_NSTATES_NAME));
   if (p == nullptr) {
-    char *error = dlerror();
+    char* error = dlerror();
     if (error != nullptr)
       throw std::runtime_error(error);
     throw std::runtime_error("cannot find symol");
@@ -92,7 +105,7 @@ void REmatchSOEngine::load(const std::string &filename) {
     throw std::bad_alloc();
   run = reinterpret_cast<run_func_t>(dlsym(dlhandle, NFA_FUNC_NAME));
   if (run == nullptr) {
-    char *error = dlerror();
+    char* error = dlerror();
     if (error != nullptr)
       throw std::runtime_error(error);
     throw std::runtime_error("cannot find symol");
@@ -100,15 +113,19 @@ void REmatchSOEngine::load(const std::string &filename) {
 }
 
 REmatchAutomataEngineSession::REmatchAutomataEngineSession()
-    : parent{nullptr}, child{nullptr} {}
-REmatchAutomataEngineSession::~REmatchAutomataEngineSession() {
+    : parent{nullptr}, child{nullptr}
+{
+}
+REmatchAutomataEngineSession::~REmatchAutomataEngineSession()
+{
   mregSession_delete_parent(parent);
   mregSession_delete_child(child);
 }
 
-size_t REmatchAutomataEngineSession::match(const char *pkt, size_t len,
-                                         size_t idx) {
-  matcher_t *cur = child->mindex[idx];
+size_t REmatchAutomataEngineSession::match(const char* pkt, size_t len,
+                                           size_t idx)
+{
+  matcher_t* cur = child->mindex[idx];
   size_t ret = 0;
   switch (mregexec_session(txtbl, pkt, len, 1, regmatch, cur, child)) {
   case MREG_FINISHED: // finished
@@ -126,13 +143,14 @@ size_t REmatchAutomataEngineSession::match(const char *pkt, size_t len,
   return ret;
 }
 
-void REmatchAutomataEngineSession::init(size_t nsessions) {
+void REmatchAutomataEngineSession::init(size_t nsessions)
+{
   parent = mregSession_create_parent(static_cast<uint32_t>(nsessions),
                                      txtbl->nstates);
   child = mregSession_create_child(parent, unit_total);
 
   for (size_t i = 0; i < nsessions; i++) {
-    matcher_t *cur = child->mindex[i];
+    matcher_t* cur = child->mindex[i];
     if (cur->num_active) {
       if (child->active1 < MNULL) {
         MATCHER_SESSION_SET_NEW(cur, child);
@@ -143,27 +161,35 @@ void REmatchAutomataEngineSession::init(size_t nsessions) {
   }
 }
 
-REmatch2AutomataEngine::REmatch2AutomataEngine(bool red) : matcher(nullptr),
-    context(nullptr), reduce(red) {}
-REmatch2AutomataEngine::~REmatch2AutomataEngine() {
+REmatch2AutomataEngine::REmatch2AutomataEngine(bool red)
+    : matcher(nullptr), context(nullptr), reduce(red)
+{
+}
+REmatch2AutomataEngine::~REmatch2AutomataEngine()
+{
   rematch2ContextFree(context);
   rematch2Free(matcher);
 }
 
-void REmatch2AutomataEngine::compile(const std::vector<Rule> &rules) {
-  std::vector<const char *> exps;
+void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules)
+{
+  std::vector<const char*> exps;
   std::vector<unsigned> mods;
   std::vector<unsigned> ids;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     exps.push_back(rule.getRegexp().data());
     ids.push_back(static_cast<unsigned>(rule.getID()));
     uint32_t opt = 0;
-    if (rule.isSet(MOD_CASELESS)) opt |= REMATCH_MOD_CASELESS;
-    if (rule.isSet(MOD_MULTILINE)) opt |= REMATCH_MOD_MULTILINE;
-    if (rule.isSet(MOD_DOTALL)) opt |= REMATCH_MOD_DOTALL;
+    if (rule.isSet(MOD_CASELESS))
+      opt |= REMATCH_MOD_CASELESS;
+    if (rule.isSet(MOD_MULTILINE))
+      opt |= REMATCH_MOD_MULTILINE;
+    if (rule.isSet(MOD_DOTALL))
+      opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  matcher = rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce);
+  matcher = rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(),
+                             reduce);
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -172,7 +198,8 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule> &rules) {
     throw std::runtime_error("Could not initialize context.");
 }
 
-void REmatch2AutomataEngine::load(const std::string &file) {
+void REmatch2AutomataEngine::load(const std::string& file)
+{
   matcher = rematch2Load(file.c_str());
   if (matcher == nullptr)
     throw std::runtime_error("Could not load REmatch2 matcher.");
@@ -181,7 +208,8 @@ void REmatch2AutomataEngine::load(const std::string &file) {
     throw std::runtime_error("Could not initialize context.");
 }
 
-size_t REmatch2AutomataEngine::match(const char *pkt, size_t len, size_t) {
+size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t)
+{
   rematch2_exec(matcher, pkt, len, context);
   size_t matched = context->num_matches;
   rematch2ContextClear(context, true);

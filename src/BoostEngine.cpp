@@ -4,9 +4,10 @@
 
 using namespace regexbench;
 
-void BoostEngine::compile(const std::vector<Rule> &rules) {
+void BoostEngine::compile(const std::vector<Rule>& rules)
+{
   std::stringstream msg;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     boost::regex_constants::syntax_option_type op =
         boost::regex_constants::optimize;
 
@@ -19,9 +20,9 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
 
     try {
       res.emplace_back(std::make_unique<boost::regex>(rule.getRegexp()));
-    } catch (const std::exception &e) {
-      msg << "id: " << rule.getID() << " " << e.what() << " rule:"
-          << rule.getRegexp() << "\n";
+    } catch (const std::exception& e) {
+      msg << "id: " << rule.getID() << " " << e.what()
+          << " rule:" << rule.getRegexp() << "\n";
       continue;
     }
   }
@@ -31,9 +32,10 @@ void BoostEngine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t BoostEngine::match(const char *data, size_t, size_t) {
+size_t BoostEngine::match(const char* data, size_t, size_t)
+{
   boost::cmatch m;
-  for (const auto &re : res) {
+  for (const auto& re : res) {
     if (boost::regex_search(data, m, *re))
       return 1;
   }

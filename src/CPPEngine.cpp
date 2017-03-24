@@ -4,9 +4,10 @@
 
 using namespace regexbench;
 
-void CPPEngine::compile(const std::vector<Rule> &rules) {
+void CPPEngine::compile(const std::vector<Rule>& rules)
+{
   std::stringstream msg;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     std::regex_constants::syntax_option_type op;
 
     if (rule.isSet(MOD_CASELESS)) {
@@ -15,9 +16,9 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
 
     try {
       res.emplace_back(std::make_unique<std::regex>(rule.getRegexp(), op));
-    } catch(const std::exception &e) {
-      msg << "id: " << rule.getID() << " " << e.what() << " rule:"
-          << rule.getRegexp() << "\n";
+    } catch (const std::exception& e) {
+      msg << "id: " << rule.getID() << " " << e.what()
+          << " rule:" << rule.getRegexp() << "\n";
       continue;
     }
   }
@@ -27,9 +28,10 @@ void CPPEngine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t CPPEngine::match(const char *data, size_t, size_t) {
+size_t CPPEngine::match(const char* data, size_t, size_t)
+{
   std::cmatch m;
-  for (const auto &re : res) {
+  for (const auto& re : res) {
     if (std::regex_search(data, m, *re))
       return 1;
   }

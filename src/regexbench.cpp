@@ -61,18 +61,19 @@ struct Arguments {
   char paddings[3];
 };
 
-template<typename Derived, typename Base, typename Del>
+template <typename Derived, typename Base, typename Del>
 std::unique_ptr<Derived, Del>
-static_unique_ptr_cast( std::unique_ptr<Base, Del>&& p )
+static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 {
-  auto d = static_cast<Derived *>(p.release());
+  auto d = static_cast<Derived*>(p.release());
   return std::unique_ptr<Derived, Del>(d, std::move(p.get_deleter()));
 }
 
-static bool endsWith(const std::string &, const char *);
-static Arguments parse_options(int argc, const char *argv[]);
+static bool endsWith(const std::string&, const char*);
+static Arguments parse_options(int argc, const char* argv[]);
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[])
+{
   try {
     auto args = parse_options(argc, argv);
     std::unique_ptr<regexbench::Engine> engine;
@@ -130,7 +131,8 @@ int main(int argc, const char *argv[]) {
         engine = std::make_unique<regexbench::REmatchSOEngine>();
         engine->load(args.rule_file);
       } else {
-        engine = std::make_unique<regexbench::REmatchAutomataEngine>(args.reduce);
+        engine =
+            std::make_unique<regexbench::REmatchAutomataEngine>(args.reduce);
         engine->compile(regexbench::loadRules(args.rule_file));
       }
       engine->init(nsessions);
@@ -140,7 +142,8 @@ int main(int argc, const char *argv[]) {
         engine = std::make_unique<regexbench::REmatch2AutomataEngine>();
         engine->load(args.rule_file);
       } else {
-        engine = std::make_unique<regexbench::REmatch2AutomataEngine>(args.reduce);
+        engine =
+            std::make_unique<regexbench::REmatch2AutomataEngine>(args.reduce);
         engine->compile(regexbench::loadRules(args.rule_file));
       }
       break;
@@ -154,7 +157,7 @@ int main(int argc, const char *argv[]) {
     std::string prefix = "regexbench.";
 
     regexbench::MatchResult result =
-      match(*engine, pcap, args.repeat, match_info);
+        match(*engine, pcap, args.repeat, match_info);
     boost::property_tree::ptree pt;
     pt.put(prefix + "TotalMatches", result.nmatches);
     pt.put(prefix + "TotalMatchedPackets", result.nmatched_pkts);
@@ -183,9 +186,9 @@ int main(int argc, const char *argv[]) {
 
     ss.str("");
     ss << std::fixed << std::setprecision(6)
-       <<(static_cast<double>(pcap.getNumberOfPackets() *
-                              static_cast<unsigned long>(args.repeat)) /
-          (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
+       << (static_cast<double>(pcap.getNumberOfPackets() *
+                               static_cast<unsigned long>(args.repeat)) /
+           (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
     pt.put(prefix + "Mpps", ss.str());
     struct rusage stat;
     getrusage(RUSAGE_SELF, &stat);
@@ -196,24 +199,26 @@ int main(int argc, const char *argv[]) {
     std::ofstream outputFile(args.output_file, std::ios_base::trunc);
     outputFile << buf.str();
 
-    for (const auto &it : reportFields) {
+    for (const auto& it : reportFields) {
       std::cout << it << " : " << pt.get<std::string>(prefix + it) << "\n";
     }
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
 }
 
-bool endsWith(const std::string &obj, const char *end) {
+bool endsWith(const std::string& obj, const char* end)
+{
   auto r = obj.rfind(end);
   if ((r != std::string::npos) && (r == obj.size() - std::strlen(end)))
     return true;
   return false;
 }
 
-Arguments parse_options(int argc, const char *argv[]) {
+Arguments parse_options(int argc, const char* argv[])
+{
   Arguments args;
   std::string engine;
 
@@ -234,20 +239,18 @@ Arguments parse_options(int argc, const char *argv[]) {
                         po::value<int32_t>(&args.repeat)->default_value(1),
                         "Repeat pcap multiple times.");
   optargs.add_options()(
-    "concat,c",
-    po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
-    "Concatenate PCRE2 rules.");
+      "concat,c", po::value<uint32_t>(&args.pcre2_concat)->default_value(0),
+      "Concatenate PCRE2 rules.");
   optargs.add_options()(
-    "session,s",
-    po::value<uint32_t>(&args.rematch_session)->default_value(0),
-    "Rematch session mode.");
+      "session,s", po::value<uint32_t>(&args.rematch_session)->default_value(0),
+      "Rematch session mode.");
   optargs.add_options()(
       "output,o",
       po::value<std::string>(&args.output_file)->default_value("output.json"),
       "Output JSON file.");
-  optargs.add_options()(
-      "reduce,R", po::value<bool>(&args.reduce)->default_value(false),
-      "Use REduce with REmatch, default is false");
+  optargs.add_options()("reduce,R",
+                        po::value<bool>(&args.reduce)->default_value(false),
+                        "Use REduce with REmatch, default is false");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;

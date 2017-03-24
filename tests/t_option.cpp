@@ -23,9 +23,10 @@
 
 using namespace regexbench;
 
-regexbench::MatchResult opTest(Engine *);
+regexbench::MatchResult opTest(Engine*);
 
-regexbench::MatchResult opTest(Engine *engine) {
+regexbench::MatchResult opTest(Engine* engine)
+{
   engine->compile(regexbench::loadRules(DATA_DIR "/rule/option.re"));
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/option.pcap");
@@ -35,7 +36,8 @@ regexbench::MatchResult opTest(Engine *engine) {
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(t_option);
-ATF_TEST_CASE_BODY(t_option) {
+ATF_TEST_CASE_BODY(t_option)
+{
   regexbench::MatchResult result;
 
   BoostEngine bengine;
@@ -71,6 +73,4 @@ ATF_TEST_CASE_BODY(t_option) {
 #endif
 }
 
-ATF_INIT_TEST_CASES(tcs) {
-  ATF_ADD_TEST_CASE(tcs, t_option);
-}
+ATF_INIT_TEST_CASES(tcs) { ATF_ADD_TEST_CASE(tcs, t_option); }

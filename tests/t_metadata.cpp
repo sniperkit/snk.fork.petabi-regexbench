@@ -6,7 +6,8 @@
 using namespace regexbench;
 
 ATF_TEST_CASE_WITHOUT_HEAD(metadata_create);
-ATF_TEST_CASE_BODY(metadata_create) {
+ATF_TEST_CASE_BODY(metadata_create)
+{
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session.pcap");
   auto match_meta = buildMatchMeta(pcap, nsessions);
@@ -15,7 +16,8 @@ ATF_TEST_CASE_BODY(metadata_create) {
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(metadata_content);
-ATF_TEST_CASE_BODY(metadata_content) {
+ATF_TEST_CASE_BODY(metadata_content)
+{
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/session2.pcap");
   auto match_meta = buildMatchMeta(pcap, nsessions);
@@ -29,7 +31,8 @@ ATF_TEST_CASE_BODY(metadata_content) {
   ATF_REQUIRE(MatchMeta(2, 54, 4) == match_meta[12]);
 }
 
-ATF_INIT_TEST_CASES(tcs) {
+ATF_INIT_TEST_CASES(tcs)
+{
   ATF_ADD_TEST_CASE(tcs, metadata_create);
   ATF_ADD_TEST_CASE(tcs, metadata_content);
 }

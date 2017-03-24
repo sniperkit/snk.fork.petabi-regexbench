@@ -1,12 +1,13 @@
-#include <sstream>
 #include "PCRE2Engine.h"
+#include <sstream>
 
 using namespace regexbench;
 
 void PCRE2Engine::init(size_t mode) { isConcat = mode; }
 
 void PCRE2Engine::binaryCompile(std::string ruleStr, size_t nrules,
-                                size_t offset, uint32_t ops) {
+                                size_t offset, uint32_t ops)
+{
   PCRE2_SIZE erroffset = 0;
   int errcode = 0;
   auto re =
@@ -27,10 +28,11 @@ void PCRE2Engine::binaryCompile(std::string ruleStr, size_t nrules,
   }
 }
 
-void PCRE2Engine::compile(const std::vector<Rule> &rules) {
+void PCRE2Engine::compile(const std::vector<Rule>& rules)
+{
   if (isConcat) {
     auto ruleSize = rules.size();
-    auto ops = buildRuleOffset(const_cast<std::vector<Rule> &>(rules));
+    auto ops = buildRuleOffset(const_cast<std::vector<Rule>&>(rules));
     binaryCompile(rules[0].getRegexp(), ruleSize, 0, ops);
     return;
   }
@@ -38,7 +40,7 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   PCRE2_SIZE erroffset = 0;
   int errcode = 0;
   std::stringstream msg;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     auto re =
         pcre2_compile(reinterpret_cast<PCRE2_SPTR>(rule.getRegexp().data()),
                       PCRE2_ZERO_TERMINATED, rule.getPCRE2Options(), &errcode,
@@ -46,8 +48,8 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
     if (re == nullptr) {
       std::unique_ptr<unsigned char[]> errorbuf(new unsigned char[256]);
       pcre2_get_error_message(errcode, errorbuf.get(), 256);
-      msg << "id: " << rule.getID() << " " << errorbuf.get() << " rule:"
-          << rule.getRegexp() << "\n";
+      msg << "id: " << rule.getID() << " " << errorbuf.get()
+          << " rule:" << rule.getRegexp() << "\n";
     } else {
       auto mdata = pcre2_match_data_create_from_pattern(re, nullptr);
       res.push_back(std::make_unique<PCRE2Engine::PCRE2_DATA>(re, mdata));
@@ -59,8 +61,9 @@ void PCRE2Engine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-size_t PCRE2Engine::match(const char *data, size_t len, size_t) {
-  for (const auto &re : res) {
+size_t PCRE2Engine::match(const char* data, size_t len, size_t)
+{
+  for (const auto& re : res) {
     int rc = pcre2_match(re->re, reinterpret_cast<PCRE2_SPTR>(data), len, 0,
                          PCRE2_NOTEMPTY_ATSTART | PCRE2_NOTEMPTY, re->mdata,
                          nullptr);
@@ -70,7 +73,8 @@ size_t PCRE2Engine::match(const char *data, size_t len, size_t) {
   return 0;
 }
 
-void PCRE2JITEngine::compile(const std::vector<Rule> &rules) {
+void PCRE2JITEngine::compile(const std::vector<Rule>& rules)
+{
   PCRE2Engine::compile(rules);
   std::stringstream msg;
 
@@ -86,11 +90,12 @@ void PCRE2JITEngine::compile(const std::vector<Rule> &rules) {
   }
 }
 
-uint32_t PCRE2Engine::buildRuleOffset(std::vector<Rule> &rules) {
+uint32_t PCRE2Engine::buildRuleOffset(std::vector<Rule>& rules)
+{
   uint32_t ops = 0;
   size_t ruleOft = 0;
   std::string concatResult;
-  for (const auto &rule : rules) {
+  for (const auto& rule : rules) {
     concatResult += "(";
     concatResult += rule.getRegexp();
     concatResult += ")|";
