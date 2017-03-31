@@ -8,7 +8,8 @@ void CPPEngine::compile(const std::vector<Rule>& rules, size_t)
 {
   std::stringstream msg;
   for (const auto& rule : rules) {
-    std::regex_constants::syntax_option_type op;
+    std::regex_constants::syntax_option_type op{
+        std::regex_constants::ECMAScript};
 
     if (rule.isSet(MOD_CASELESS)) {
       op |= std::regex_constants::icase;
