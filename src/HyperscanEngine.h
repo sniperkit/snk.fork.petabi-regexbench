@@ -2,6 +2,8 @@
 #ifndef REGEXBENCH_HYPERSCANENGINE_H
 #define REGEXBENCH_HYPERSCANENGINE_H
 
+#include <memory>
+
 #include <hs/hs_compile.h>
 #include <hs/hs_runtime.h>
 
