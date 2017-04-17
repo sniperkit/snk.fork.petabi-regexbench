@@ -2,6 +2,8 @@
 #ifndef REGEXBENCH_PCRE2_H
 #define REGEXBENCH_PCRE2_H
 
+#include <memory>
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 

@@ -22,6 +22,11 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 include(CPack)
 
+option(REMATCH_WITHOUT_SESSION "Test REmatch w/o session" OFF)
+if (REMATCH_WITHOUT_SESSION)
+  add_definitions(-DREMATCH_WITHOUT_SESSION)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++98-compat")
@@ -33,7 +38,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 endif()
 if(NOT CMAKE_CXX_FLAGS MATCHES .*march.* AND
    NOT CMAKE_CXX_FLAGS_RELEASE MATCHES .*march.*)

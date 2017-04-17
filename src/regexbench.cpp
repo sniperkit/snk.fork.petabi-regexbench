@@ -122,8 +122,10 @@ int main(int argc, const char* argv[])
 #ifdef HAVE_REMATCH
     case EngineType::rematch:
       if (args.rematch_session) {
+#ifndef REMATCH_WITHOUT_SESSION
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
         engine->compile(regexbench::loadRules(args.rule_file));
+#endif
       } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
         engine->load(args.rule_file);
@@ -298,6 +300,13 @@ Arguments parse_options(int argc, const char* argv[])
     std::cerr << "invalid repeat value: " << args.repeat << std::endl;
     std::exit(EXIT_FAILURE);
   }
+
+#ifdef REMATCH_WITHOUT_SESSION
+  if ((engine == "rematch" || engine == "rematch2") && args.rematch_session) {
+    std::cerr << "not supporting session mode for now" << std::endl;
+    args.rematch_session = 0;
+  }
+#endif
 
   if (!vm.count("rule_file")) {
     std::cerr << "error: no rule file" << std::endl;

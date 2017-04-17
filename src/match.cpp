@@ -38,7 +38,12 @@ uint32_t regexbench::getPLOffset(const std::string& packet)
     offset += ih->ip_hl << 2;
     switch (ih->ip_p) {
     case IPPROTO_TCP:
-      offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)->th_off
+      offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)
+#ifdef __linux__
+        ->doff
+#else
+        ->th_off
+#endif
                 << 2;
       break;
     case IPPROTO_UDP:
@@ -57,7 +62,12 @@ uint32_t regexbench::getPLOffset(const std::string& packet)
         reinterpret_cast<const ip6_hdr*>(packet.data() + offset);
     switch (ih6->ip6_ctlun.ip6_un1.ip6_un1_nxt) {
     case IPPROTO_TCP:
-      offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)->th_off
+      offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)
+#ifdef __linux__
+        ->doff
+#else
+        ->th_off
+#endif
                 << 2;
       break;
     case IPPROTO_UDP:

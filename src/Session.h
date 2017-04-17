@@ -4,6 +4,7 @@
 
 #include <netinet/in.h>
 #include <sys/types.h>
+#include <stddef.h>
 
 #include <net/ethernet.h>
 #include <netinet/ip.h>
@@ -18,25 +19,49 @@
 #include "PcapSource.h"
 
 namespace regexbench {
-constexpr inline uint16_t EXT_SPORT(const char* pkt, uint16_t size_iphdr)
+#ifndef __linux__
+constexpr
+#endif
+inline uint16_t EXT_SPORT(const char* pkt, uint16_t size_iphdr)
 {
   return ntohs(*reinterpret_cast<const uint16_t*>(
-      pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_sport)));
+      pkt + size_iphdr + ETHER_HDR_LEN +
+#ifdef __linux__
+      offsetof(struct tcphdr, source)
+#else
+      offsetof(struct tcphdr, th_sport)
+#endif
+      ));
 }
 
-constexpr inline uint16_t EXT_DPORT(const char* pkt, uint16_t size_iphdr)
+#ifndef __linux__
+constexpr
+#endif
+inline uint16_t EXT_DPORT(const char* pkt, uint16_t size_iphdr)
 {
   return ntohs(*reinterpret_cast<const uint16_t*>(
-      pkt + size_iphdr + ETHER_HDR_LEN + offsetof(struct tcphdr, th_dport)));
+      pkt + size_iphdr + ETHER_HDR_LEN +
+#ifdef __linux__
+      offsetof(struct tcphdr, dest)
+#else
+      offsetof(struct tcphdr, th_dport)
+#endif
+      ));
 }
 
-constexpr inline uint32_t EXT_SIP(const char* pkt)
+#ifndef __linux__
+constexpr
+#endif
+inline uint32_t EXT_SIP(const char* pkt)
 {
   return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
                                                   offsetof(struct ip, ip_src)));
 }
 
-constexpr inline uint32_t EXT_DIP(const char* pkt)
+#ifndef __linux__
+constexpr
+#endif
+inline uint32_t EXT_DIP(const char* pkt)
 {
   return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
                                                   offsetof(struct ip, ip_dst)));

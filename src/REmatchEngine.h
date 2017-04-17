@@ -50,6 +50,7 @@ private:
   void* dlhandle;
 };
 
+#ifndef REMATCH_WITHOUT_SESSION
 class REmatchAutomataEngineSession : public REmatchAutomataEngine {
 public:
   REmatchAutomataEngineSession();
@@ -64,6 +65,7 @@ private:
   mregSession_t* parent;
   mregSession_t* child;
 };
+#endif
 
 class REmatch2AutomataEngine : public Engine {
 public:

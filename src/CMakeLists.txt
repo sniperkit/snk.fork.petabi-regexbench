@@ -23,10 +23,12 @@ set(ENGINE_SRCS ${ENGINE_SRCS} CPPEngine.cpp BoostEngine.cpp)
 
 add_library(engines ${ENGINE_SRCS})
 
+find_library(DL_LIB NAMES dl)
+
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp)
 target_link_libraries(regexbench
-  engines ${Boost_LIBRARIES} ${PCAP_LIB})
+  engines ${Boost_LIBRARIES} ${PCAP_LIB} ${DL_LIB})
 if(HYPERSCAN_LIB)
   target_link_libraries(regexbench ${HYPERSCAN_LIB})
 endif()

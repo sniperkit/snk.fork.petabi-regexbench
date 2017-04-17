@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include <dlfcn.h>
+
 #include <rematch/compile.h>
 #include <rematch/execute.h>
 #include <rematch/rematch.h>
@@ -112,6 +114,7 @@ void REmatchSOEngine::load(const std::string& filename)
   }
 }
 
+#ifndef REMATCH_WITHOUT_SESSION
 REmatchAutomataEngineSession::REmatchAutomataEngineSession()
     : parent{nullptr}, child{nullptr}
 {
@@ -160,6 +163,7 @@ void REmatchAutomataEngineSession::init(size_t nsessions)
     }
   }
 }
+#endif // !REMATCH_WITHOUT_SESSION
 
 REmatch2AutomataEngine::REmatch2AutomataEngine(bool red)
     : matcher(nullptr), context(nullptr), reduce(red)
