@@ -62,7 +62,7 @@ struct Arguments {
   uint32_t num_threads;
   std::vector<size_t> cores;
   bool reduce = {false};
-  char paddings[3];
+  char paddings[7];
 };
 
 template <typename Derived, typename Base, typename Del>
@@ -270,7 +270,8 @@ static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
     std::cerr << "User provided affinity assignment format error" << std::endl;
     // go with default assignment scheme
     for (int i = 0; i < num; ++i)
-      cores[i] = static_cast<size_t>((i > maxCore) ? maxCore : i);
+      cores[static_cast<size_t>(i)] =
+          static_cast<size_t>((i > maxCore) ? maxCore : i);
   }
   return cores;
 }

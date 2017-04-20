@@ -21,27 +21,24 @@
 namespace regexbench {
 inline uint16_t EXT_SPORT(const char* pkt, uint16_t size_iphdr)
 {
-  return ntohs(
-      *reinterpret_cast<const uint16_t*>(pkt + size_iphdr + ETHER_HDR_LEN +
 #ifdef __linux__
-                                         offsetof(struct tcphdr, source)
+#define TCP_SPORT_OFFSET offsetof(struct tcphdr, source)
 #else
-                                         offsetof(struct tcphdr, th_sport)
+#define TCP_SPORT_OFFSET offsetof(struct tcphdr, th_sport)
 #endif
-                                             ));
+  return ntohs(*reinterpret_cast<const uint16_t*>(
+      pkt + size_iphdr + ETHER_HDR_LEN + TCP_SPORT_OFFSET));
 }
 
 inline uint16_t EXT_DPORT(const char* pkt, uint16_t size_iphdr)
 {
-  return ntohs(*reinterpret_cast<const uint16_t*>(pkt + size_iphdr +
-                                                  ETHER_HDR_LEN +
 #ifdef __linux__
-                                                  offsetof(struct tcphdr, dest)
+#define TCP_DPORT_OFFSET offsetof(struct tcphdr, dest)
 #else
-                                                  offsetof(struct tcphdr,
-                                                           th_dport)
+#define TCP_DPORT_OFFSET offsetof(struct tcphdr, th_dport)
 #endif
-                                                      ));
+  return ntohs(*reinterpret_cast<const uint16_t*>(
+      pkt + size_iphdr + ETHER_HDR_LEN + TCP_DPORT_OFFSET));
 }
 
 inline uint32_t EXT_SIP(const char* pkt)
