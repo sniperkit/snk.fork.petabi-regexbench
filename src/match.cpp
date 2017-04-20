@@ -43,9 +43,9 @@ uint32_t regexbench::getPLOffset(const std::string& packet)
     case IPPROTO_TCP:
       offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)
 #ifdef __linux__
-        ->doff
+                    ->doff
 #else
-        ->th_off
+                    ->th_off
 #endif
                 << 2;
       break;
@@ -67,9 +67,9 @@ uint32_t regexbench::getPLOffset(const std::string& packet)
     case IPPROTO_TCP:
       offset += reinterpret_cast<const tcphdr*>(packet.data() + offset)
 #ifdef __linux__
-        ->doff
+                    ->doff
 #else
-        ->th_off
+                    ->th_off
 #endif
                 << 2;
       break;
@@ -132,9 +132,10 @@ MatchResult regexbench::match(Engine& engine, const PcapSource& src,
 #ifdef __linux__
 using cpuset_t = cpu_set_t;
 #endif
-void regexbench::matchThread(Engine* engine, const PcapSource* src,
-                              long repeat, size_t core, size_t sel, const std::vector<MatchMeta>* meta,
-                              MatchResult* result)
+void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
+                             size_t core, size_t sel,
+                             const std::vector<MatchMeta>* meta,
+                             MatchResult* result)
 {
   cpuset_t cpuset;
   CPU_ZERO(&cpuset);
@@ -143,14 +144,15 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src,
     std::cerr << "Setting affinty to a match thread failed" << std::endl;
     return;
   }
-  //std::cout << "set match thread_" << sel << "'s affinity to " << core << std::endl;
+  // std::cout << "set match thread_" << sel << "'s affinity to " << core <<
+  // std::endl;
 
   struct rusage begin, end;
   getrusage(RUSAGE_THREAD, &begin);
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src->getNumberOfPackets(); j++) {
-      auto matches =
-          engine->match((*src)[j].data() + (*meta)[j].oft, (*meta)[j].len, (*meta)[j].sid, sel);
+      auto matches = engine->match((*src)[j].data() + (*meta)[j].oft,
+                                   (*meta)[j].len, (*meta)[j].sid, sel);
       if (matches) {
         result->nmatches += matches;
         result->nmatched_pkts++;
@@ -163,8 +165,10 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src,
 }
 #endif
 
-std::vector<MatchResult> regexbench::match(Engine& engine, const PcapSource& src,
-                              long repeat, const std::vector<size_t>& cores, const std::vector<MatchMeta>& meta)
+std::vector<MatchResult> regexbench::match(Engine& engine,
+                                           const PcapSource& src, long repeat,
+                                           const std::vector<size_t>& cores,
+                                           const std::vector<MatchMeta>& meta)
 {
   std::vector<std::thread> threads;
 
@@ -183,10 +187,10 @@ std::vector<MatchResult> regexbench::match(Engine& engine, const PcapSource& src
 
   size_t i = 0;
   for (; coreIter != cores.cend(); ++coreIter, ++i) {
-    threads.push_back(std::thread(&regexbench::matchThread, &engine,
-          &src, repeat, *coreIter, i, &meta, &results[i]));
+    threads.push_back(std::thread(&regexbench::matchThread, &engine, &src,
+                                  repeat, *coreIter, i, &meta, &results[i]));
   }
-  for (auto &thr : threads)
+  for (auto& thr : threads)
     thr.join();
 
   return results;

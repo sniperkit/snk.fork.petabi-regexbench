@@ -67,7 +67,8 @@ void REmatchAutomataEngine::load(const std::string& filename, size_t)
     throw std::bad_alloc();
 }
 
-size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t, size_t thr)
+size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t,
+                                    size_t thr)
 {
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches;
@@ -176,7 +177,8 @@ REmatch2AutomataEngine::~REmatch2AutomataEngine()
   rematch2Free(matcher);
 }
 
-void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules, size_t numThr)
+void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
+                                     size_t numThr)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> mods;
@@ -222,7 +224,7 @@ void REmatch2AutomataEngine::load(const std::string& file, size_t numThr)
 }
 
 size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
-    size_t thr)
+                                     size_t thr)
 {
   auto& context = contexts[thr];
   rematch2_exec(matcher, pkt, len, context);

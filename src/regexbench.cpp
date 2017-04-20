@@ -128,7 +128,8 @@ int main(int argc, const char* argv[])
       if (args.rematch_session) {
 #ifndef REMATCH_WITHOUT_SESSION
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
-        engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
 #endif
       } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
@@ -139,7 +140,8 @@ int main(int argc, const char* argv[])
       } else {
         engine =
             std::make_unique<regexbench::REmatchAutomataEngine>(args.reduce);
-        engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
       }
       engine->init(nsessions);
       break;
@@ -150,7 +152,8 @@ int main(int argc, const char* argv[])
       } else {
         engine =
             std::make_unique<regexbench::REmatch2AutomataEngine>(args.reduce);
-        engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
       }
       break;
 #endif
@@ -192,23 +195,24 @@ int main(int argc, const char* argv[])
       pt.put(corePrefix + "TotalPackets", pcap.getNumberOfPackets());
       ss.str("");
       ss << std::fixed << std::setprecision(6)
-        << (static_cast<double>(pcap.getNumberOfBytes() *
-              static_cast<unsigned long>(args.repeat)) /
-            (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
+         << (static_cast<double>(pcap.getNumberOfBytes() *
+                                 static_cast<unsigned long>(args.repeat)) /
+             (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
       pt.put(corePrefix + "Mbps", ss.str());
 
       ss.str("");
       ss << std::fixed << std::setprecision(6)
-        << (static_cast<double>(pcap.getNumberOfPackets() *
-              static_cast<unsigned long>(args.repeat)) /
-            (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
+         << (static_cast<double>(pcap.getNumberOfPackets() *
+                                 static_cast<unsigned long>(args.repeat)) /
+             (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
       pt.put(corePrefix + "Mpps", ss.str());
       struct rusage stat;
       getrusage(RUSAGE_SELF, &stat);
       pt.put(corePrefix + "MaximumMemoryUsed(kB)", stat.ru_maxrss / 1000);
 
       for (const auto& it : reportFields) {
-        std::cout << it << " : " << pt.get<std::string>(corePrefix + it) << "\n";
+        std::cout << it << " : " << pt.get<std::string>(corePrefix + it)
+                  << "\n";
       }
       std::cout << std::endl;
     }
@@ -232,8 +236,6 @@ bool endsWith(const std::string& obj, const char* end)
   return false;
 }
 
-
-
 static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
 {
   auto ncpus = std::thread::hardware_concurrency();
@@ -254,15 +256,15 @@ static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
     std::istream_iterator<int> iter = std::istream_iterator<int>(is);
     int last = 0;
     std::generate(cores.begin(), cores.end(), [&iter, &last, maxCore]() {
-          int core = 0;
-          if (iter != std::istream_iterator<int>()) {
-            core = std::min(std::max(*iter, 0), maxCore);
-            ++iter;
-          } else
-            core = std::min(last + 1, maxCore);
-          last = core;
-          return static_cast<size_t>(core);
-        });
+      int core = 0;
+      if (iter != std::istream_iterator<int>()) {
+        core = std::min(std::max(*iter, 0), maxCore);
+        ++iter;
+      } else
+        core = std::min(last + 1, maxCore);
+      last = core;
+      return static_cast<size_t>(core);
+    });
   } catch (const std::exception&) {
     // some formatting error
     std::cerr << "User provided affinity assignment format error" << std::endl;
@@ -272,7 +274,6 @@ static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
   }
   return cores;
 }
-
 
 Arguments parse_options(int argc, const char* argv[])
 {
@@ -309,9 +310,9 @@ Arguments parse_options(int argc, const char* argv[])
   optargs.add_options()(
       "threads,n", po::value<uint32_t>(&args.num_threads)->default_value(1),
       "Number of threads.");
-  optargs.add_options()(
-      "affinity,a", po::value<std::string>(&affinity)->default_value("0"),
-      "Core affinity assignment (starting from main thread)");
+  optargs.add_options()("affinity,a",
+                        po::value<std::string>(&affinity)->default_value("0"),
+                        "Core affinity assignment (starting from main thread)");
   optargs.add_options()("reduce,R",
                         po::value<bool>(&args.reduce)->default_value(false),
                         "Use REduce with REmatch, default is false");

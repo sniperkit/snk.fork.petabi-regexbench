@@ -91,7 +91,8 @@ void HyperscanEngine::compile(const std::vector<Rule>& rules, size_t)
     throw std::bad_alloc();
 }
 
-void HyperscanEngineStream::compile(const std::vector<Rule>& rules, size_t numThr)
+void HyperscanEngineStream::compile(const std::vector<Rule>& rules,
+                                    size_t numThr)
 {
   HyperscanEngine::compile(rules, numThr);
   streams = std::make_unique<hs_stream* []>(nsessions);
@@ -117,7 +118,8 @@ size_t HyperscanEngine::match(const char* data, size_t len, size_t, size_t thr)
 
 void HyperscanEngineStream::init(size_t nsessions_) { nsessions = nsessions_; }
 
-size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid, size_t thr)
+size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid,
+                                    size_t thr)
 {
   size_t nmatches = 0;
   hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,
