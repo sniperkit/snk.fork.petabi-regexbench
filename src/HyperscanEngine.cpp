@@ -17,15 +17,15 @@ static int onMatch(unsigned int, unsigned long long, unsigned long long,
 }
 
 HyperscanEngine::HyperscanEngine()
-    : db(nullptr), scratch(nullptr), platform{HS_TUNE_FAMILY_GENERIC, 0, 0, 0},
-      nsessions(0)
+    : db(nullptr), platform{HS_TUNE_FAMILY_GENERIC, 0, 0, 0}, nsessions(0)
 {
 }
 
 HyperscanEngine::~HyperscanEngine()
 {
   hs_free_database(db);
-  hs_free_scratch(scratch);
+  for (auto scratch : scratches)
+    hs_free_scratch(scratch);
 }
 
 void HyperscanEngine::reportFailedRules(const std::vector<Rule>& rules)
@@ -55,7 +55,7 @@ void HyperscanEngine::reportFailedRules(const std::vector<Rule>& rules)
   }
 }
 
-void HyperscanEngine::compile(const std::vector<Rule>& rules, size_t)
+void HyperscanEngine::compile(const std::vector<Rule>& rules, size_t numThr)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> flags;
@@ -86,9 +86,14 @@ void HyperscanEngine::compile(const std::vector<Rule>& rules, size_t)
     reportFailedRules(rules);
   }
 
-  result = hs_alloc_scratch(db, &scratch);
-  if (result != HS_SUCCESS)
-    throw std::bad_alloc();
+  numThreads = numThr;
+  for (size_t i = 0; i < numThreads; ++i) {
+    hs_scratch_t* scratch = nullptr;
+    result = hs_alloc_scratch(db, &scratch);
+    scratches.push_back(scratch);
+    if (result != HS_SUCCESS)
+      throw std::bad_alloc();
+  }
 }
 
 void HyperscanEngineStream::compile(const std::vector<Rule>& rules,
@@ -104,15 +109,18 @@ void HyperscanEngineStream::compile(const std::vector<Rule>& rules,
 
 HyperscanEngineStream::~HyperscanEngineStream()
 {
-  for (size_t i = 0; i < nsessions; i++) {
-    hs_close_stream(streams[i], scratch, onMatch, nullptr);
-  }
+  // TODO : need to verify
+  for (auto scratch : scratches)
+    for (size_t i = 0; i < nsessions; i++) {
+      hs_close_stream(streams[i], scratch, onMatch, nullptr);
+    }
 }
 
 size_t HyperscanEngine::match(const char* data, size_t len, size_t, size_t thr)
 {
   size_t nmatches = 0;
-  hs_scan(db, data, static_cast<unsigned>(len), 0, scratch, onMatch, &nmatches);
+  hs_scan(db, data, static_cast<unsigned>(len), 0, scratches[thr], onMatch,
+          &nmatches);
   return nmatches > 0;
 }
 
@@ -122,7 +130,7 @@ size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid,
                                     size_t thr)
 {
   size_t nmatches = 0;
-  hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,
-                 onMatch, &nmatches);
+  hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0,
+                 scratches[thr], onMatch, &nmatches);
   return nmatches > 0;
 }

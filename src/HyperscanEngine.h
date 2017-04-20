@@ -15,10 +15,10 @@ class HyperscanEngine : public Engine {
 public:
   HyperscanEngine();
   HyperscanEngine(const HyperscanEngine&) = delete;
-  HyperscanEngine(HyperscanEngine&& o) : db(o.db), scratch(o.scratch)
+  HyperscanEngine(HyperscanEngine&& o) : db(o.db), scratches(o.scratches)
   {
     o.db = nullptr;
-    o.scratch = nullptr;
+    o.scratches.clear();
   }
   virtual ~HyperscanEngine();
   HyperscanEngine& operator=(const HyperscanEngine&) = delete;
@@ -27,9 +27,10 @@ public:
     hs_free_database(db);
     db = o.db;
     o.db = nullptr;
-    hs_free_scratch(scratch);
-    scratch = o.scratch;
-    o.scratch = nullptr;
+    for (auto scratch : scratches)
+      hs_free_scratch(scratch);
+    scratches = o.scratches;
+    o.scratches.clear();
     return *this;
   }
 
@@ -39,7 +40,7 @@ public:
 protected:
   void reportFailedRules(const std::vector<Rule>&);
   hs_database_t* db;
-  hs_scratch_t* scratch;
+  std::vector<hs_scratch_t*> scratches;
   hs_platform_info_t platform;
   size_t nsessions;
 };
