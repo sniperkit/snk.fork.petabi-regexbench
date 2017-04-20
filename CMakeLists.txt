@@ -52,6 +52,13 @@ if(NOT CMAKE_CXX_FLAGS_RELEASE MATCHES "-O")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
+
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" OS_NAME_LOWER)
+if (OS_NAME_LOWER STREQUAL "linux")
+  message("System is linux")
+  set(OS_IS_LINUX true)
+endif()
+
 include_directories(SYSTEM ${CMAKE_INSTALL_PREFIX}/include)
 
 find_package(Boost REQUIRED COMPONENTS program_options regex system)

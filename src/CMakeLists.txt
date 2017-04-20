@@ -23,12 +23,19 @@ set(ENGINE_SRCS ${ENGINE_SRCS} CPPEngine.cpp BoostEngine.cpp)
 
 add_library(engines ${ENGINE_SRCS})
 
-find_library(DL_LIB NAMES dl)
+if (OS_IS_LINUX)
+  # for dlopen, dlsym, ...
+  find_library(DL_LIB NAMES dl)
+endif()
 
 add_executable(regexbench
   match.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp)
 target_link_libraries(regexbench
-  engines ${Boost_LIBRARIES} ${PCAP_LIB} ${DL_LIB} ${CMAKE_THREAD_LIBS_INIT})
+  engines ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT})
+if (OS_IS_LINUX)
+  target_link_libraries(regexbench ${DL_LIB})
+endif()
+
 if(HYPERSCAN_LIB)
   target_link_libraries(regexbench ${HYPERSCAN_LIB})
 endif()
