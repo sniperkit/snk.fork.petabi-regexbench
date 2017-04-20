@@ -16,9 +16,9 @@ public:
   REmatchAutomataEngine(bool red = false);
   virtual ~REmatchAutomataEngine();
 
-  virtual void compile(const std::vector<Rule>&, size_t);
-  virtual void load(const std::string&, size_t);
-  virtual size_t match(const char*, size_t, size_t, size_t);
+  virtual void compile(const std::vector<Rule>&, size_t = 1);
+  virtual void load(const std::string&, size_t = 1);
+  virtual size_t match(const char*, size_t, size_t, size_t = 0);
 
 private:
   mregflow_t* flow;
@@ -38,8 +38,8 @@ public:
   REmatchSOEngine();
   virtual ~REmatchSOEngine();
 
-  virtual void load(const std::string&, size_t);
-  virtual size_t match(const char* data, size_t len, size_t, size_t)
+  virtual void load(const std::string&, size_t = 1);
+  virtual size_t match(const char* data, size_t len, size_t, size_t = 0)
   {
     return run(data, len, ctx);
   }
@@ -72,9 +72,9 @@ public:
   REmatch2AutomataEngine(bool red = false);
   ~REmatch2AutomataEngine();
 
-  void compile(const std::vector<Rule>& rules, size_t) override;
-  void load(const std::string& file, size_t) override;
-  size_t match(const char* pkt, size_t len, size_t, size_t) override;
+  void compile(const std::vector<Rule>& rules, size_t = 1) override;
+  void load(const std::string& file, size_t = 1) override;
+  size_t match(const char* pkt, size_t len, size_t, size_t = 0) override;
 
 private:
   rematch2_t* matcher;

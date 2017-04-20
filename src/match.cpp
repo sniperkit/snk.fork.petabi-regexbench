@@ -8,7 +8,11 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <pthread.h>
+#ifdef __FreeBSD__
+#include <pthread_np.h>
+#endif
 #include <sched.h>
+#include <sys/cpuset.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -171,9 +175,21 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                            const std::vector<MatchMeta>& meta)
 {
   std::vector<std::thread> threads;
+  std::vector<size_t>::const_iterator coreIter, coreEnd;
+  std::vector<size_t> defaultCores;
 
-  std::vector<MatchResult> results(cores.size() - 1);
-  auto coreIter = cores.cbegin();
+  std::vector<MatchResult> results;
+  if (cores.size() < 2) {
+    defaultCores.push_back(0); // TODO : revisit
+    defaultCores.push_back(0);
+    results.resize(1);
+    coreIter = defaultCores.cbegin();
+    coreEnd = defaultCores.cend();
+  } else {
+    results.resize(cores.size() - 1);
+    coreIter = cores.cbegin();
+    coreEnd = cores.cend();
+  }
   auto mainCore = *coreIter++;
 
   // set affinity to main thread itself
@@ -186,7 +202,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   }
 
   size_t i = 0;
-  for (; coreIter != cores.cend(); ++coreIter, ++i) {
+  for (; coreIter != coreEnd; ++coreIter, ++i) {
     threads.push_back(std::thread(&regexbench::matchThread, &engine, &src,
                                   repeat, *coreIter, i, &meta, &results[i]));
   }
