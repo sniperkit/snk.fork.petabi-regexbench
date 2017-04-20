@@ -37,7 +37,12 @@ struct MatchMeta {
 std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
 uint32_t getPLOffset(const std::string&);
 std::vector<Rule> loadRules(const std::string&);
-MatchResult match(Engine&, const PcapSource&, long,
+//MatchResult match(Engine&, const PcapSource&, long,
+//                  const std::vector<MatchMeta>&);
+void matchThread(Engine* engine, const PcapSource* src,
+                              long repeat, size_t core, size_t sel, const std::vector<MatchMeta>* meta,
+                              MatchResult* result);
+std::vector<MatchResult> match(Engine&, const PcapSource&, long, const std::vector<size_t>&,
                   const std::vector<MatchMeta>&);
 }
 

@@ -55,7 +55,7 @@ void HyperscanEngine::reportFailedRules(const std::vector<Rule>& rules)
   }
 }
 
-void HyperscanEngine::compile(const std::vector<Rule>& rules)
+void HyperscanEngine::compile(const std::vector<Rule>& rules, size_t)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> flags;
@@ -91,9 +91,9 @@ void HyperscanEngine::compile(const std::vector<Rule>& rules)
     throw std::bad_alloc();
 }
 
-void HyperscanEngineStream::compile(const std::vector<Rule>& rules)
+void HyperscanEngineStream::compile(const std::vector<Rule>& rules, size_t numThr)
 {
-  HyperscanEngine::compile(rules);
+  HyperscanEngine::compile(rules, numThr);
   streams = std::make_unique<hs_stream* []>(nsessions);
 
   for (size_t i = 0; i < nsessions; i++) {
@@ -108,7 +108,7 @@ HyperscanEngineStream::~HyperscanEngineStream()
   }
 }
 
-size_t HyperscanEngine::match(const char* data, size_t len, size_t)
+size_t HyperscanEngine::match(const char* data, size_t len, size_t, size_t thr)
 {
   size_t nmatches = 0;
   hs_scan(db, data, static_cast<unsigned>(len), 0, scratch, onMatch, &nmatches);
@@ -117,7 +117,7 @@ size_t HyperscanEngine::match(const char* data, size_t len, size_t)
 
 void HyperscanEngineStream::init(size_t nsessions_) { nsessions = nsessions_; }
 
-size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid)
+size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid, size_t thr)
 {
   size_t nmatches = 0;
   hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0, scratch,

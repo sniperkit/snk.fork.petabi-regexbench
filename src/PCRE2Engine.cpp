@@ -28,7 +28,7 @@ void PCRE2Engine::binaryCompile(std::string ruleStr, size_t nrules,
   }
 }
 
-void PCRE2Engine::compile(const std::vector<Rule>& rules)
+void PCRE2Engine::compile(const std::vector<Rule>& rules, size_t)
 {
   if (isConcat) {
     auto ruleSize = rules.size();
@@ -61,7 +61,7 @@ void PCRE2Engine::compile(const std::vector<Rule>& rules)
   }
 }
 
-size_t PCRE2Engine::match(const char* data, size_t len, size_t)
+size_t PCRE2Engine::match(const char* data, size_t len, size_t, size_t thr)
 {
   for (const auto& re : res) {
     int rc = pcre2_match(re->re, reinterpret_cast<PCRE2_SPTR>(data), len, 0,
@@ -73,9 +73,9 @@ size_t PCRE2Engine::match(const char* data, size_t len, size_t)
   return 0;
 }
 
-void PCRE2JITEngine::compile(const std::vector<Rule>& rules)
+void PCRE2JITEngine::compile(const std::vector<Rule>& rules, size_t numThr)
 {
-  PCRE2Engine::compile(rules);
+  PCRE2Engine::compile(rules, numThr);
   std::stringstream msg;
 
   for (size_t i = 0; i < res.size(); i++) {

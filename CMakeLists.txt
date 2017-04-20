@@ -55,6 +55,7 @@ endif()
 include_directories(SYSTEM ${CMAKE_INSTALL_PREFIX}/include)
 
 find_package(Boost REQUIRED COMPONENTS program_options regex system)
+find_package(Threads REQUIRED)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
 find_library(PCAP_LIB pcap)
 

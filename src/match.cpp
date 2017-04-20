@@ -7,11 +7,14 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <pthread.h>
+#include <sched.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
 #include <fstream>
 #include <iostream>
+#include <thread>
 
 #include "Engine.h"
 #include "PcapSource.h"
@@ -103,6 +106,7 @@ std::vector<MatchMeta> regexbench::buildMatchMeta(const PcapSource& src,
   return matcher_info;
 }
 
+#if 0
 MatchResult regexbench::match(Engine& engine, const PcapSource& src,
                               long repeat, const std::vector<MatchMeta>& meta)
 {
@@ -123,6 +127,69 @@ MatchResult regexbench::match(Engine& engine, const PcapSource& src,
   timersub(&(end.ru_utime), &(begin.ru_utime), &result.udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result.sdiff);
   return result;
+}
+#else
+#ifdef __linux__
+using cpuset_t = cpu_set_t;
+#endif
+void regexbench::matchThread(Engine* engine, const PcapSource* src,
+                              long repeat, size_t core, size_t sel, const std::vector<MatchMeta>* meta,
+                              MatchResult* result)
+{
+  cpuset_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(core, &cpuset);
+  if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset_t), &cpuset) != 0) {
+    std::cerr << "Setting affinty to a match thread failed" << std::endl;
+    return;
+  }
+  //std::cout << "set match thread_" << sel << "'s affinity to " << core << std::endl;
+
+  struct rusage begin, end;
+  getrusage(RUSAGE_THREAD, &begin);
+  for (long i = 0; i < repeat; ++i) {
+    for (size_t j = 0; j < src->getNumberOfPackets(); j++) {
+      auto matches =
+          engine->match((*src)[j].data() + (*meta)[j].oft, (*meta)[j].len, (*meta)[j].sid, sel);
+      if (matches) {
+        result->nmatches += matches;
+        result->nmatched_pkts++;
+      }
+    }
+  }
+  getrusage(RUSAGE_THREAD, &end);
+  timersub(&(end.ru_utime), &(begin.ru_utime), &result->udiff);
+  timersub(&(end.ru_stime), &(begin.ru_stime), &result->sdiff);
+}
+#endif
+
+std::vector<MatchResult> regexbench::match(Engine& engine, const PcapSource& src,
+                              long repeat, const std::vector<size_t>& cores, const std::vector<MatchMeta>& meta)
+{
+  std::vector<std::thread> threads;
+
+  std::vector<MatchResult> results(cores.size() - 1);
+  auto coreIter = cores.cbegin();
+  auto mainCore = *coreIter++;
+
+  // set affinity to main thread itself
+  cpuset_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(mainCore, &cpuset);
+  if (pthread_setaffinity_np(pthread_self(), sizeof(cpuset_t), &cpuset) != 0) {
+    std::cerr << "Setting affinty to a match thread failed" << std::endl;
+    return std::vector<MatchResult>();
+  }
+
+  size_t i = 0;
+  for (; coreIter != cores.cend(); ++coreIter, ++i) {
+    threads.push_back(std::thread(&regexbench::matchThread, &engine,
+          &src, repeat, *coreIter, i, &meta, &results[i]));
+  }
+  for (auto &thr : threads)
+    thr.join();
+
+  return results;
 }
 
 std::vector<regexbench::Rule> regexbench::loadRules(const std::string& filename)
