@@ -19,11 +19,7 @@
 #include "PcapSource.h"
 
 namespace regexbench {
-#ifndef __linux__
-constexpr
-#endif
-    inline uint16_t
-    EXT_SPORT(const char* pkt, uint16_t size_iphdr)
+inline uint16_t EXT_SPORT(const char* pkt, uint16_t size_iphdr)
 {
   return ntohs(
       *reinterpret_cast<const uint16_t*>(pkt + size_iphdr + ETHER_HDR_LEN +
@@ -35,11 +31,7 @@ constexpr
                                              ));
 }
 
-#ifndef __linux__
-constexpr
-#endif
-    inline uint16_t
-    EXT_DPORT(const char* pkt, uint16_t size_iphdr)
+inline uint16_t EXT_DPORT(const char* pkt, uint16_t size_iphdr)
 {
   return ntohs(*reinterpret_cast<const uint16_t*>(pkt + size_iphdr +
                                                   ETHER_HDR_LEN +
@@ -52,21 +44,13 @@ constexpr
                                                       ));
 }
 
-#ifndef __linux__
-constexpr
-#endif
-    inline uint32_t
-    EXT_SIP(const char* pkt)
+inline uint32_t EXT_SIP(const char* pkt)
 {
   return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
                                                   offsetof(struct ip, ip_src)));
 }
 
-#ifndef __linux__
-constexpr
-#endif
-    inline uint32_t
-    EXT_DIP(const char* pkt)
+inline uint32_t EXT_DIP(const char* pkt)
 {
   return ntohl(*reinterpret_cast<const uint16_t*>(pkt + ETHER_HDR_LEN +
                                                   offsetof(struct ip, ip_dst)));
