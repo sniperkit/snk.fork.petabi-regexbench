@@ -14,8 +14,8 @@ public:
   RE2Engine() = default;
   virtual ~RE2Engine() = default;
 
-  virtual void compile(const std::vector<Rule>&, size_t);
-  virtual size_t match(const char*, size_t, size_t, size_t);
+  virtual void compile(const std::vector<Rule>&, size_t = 1);
+  virtual size_t match(const char*, size_t, size_t, size_t = 0);
 
 private:
   std::vector<std::unique_ptr<re2::RE2>> res;

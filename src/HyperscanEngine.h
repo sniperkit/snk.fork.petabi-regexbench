@@ -33,8 +33,8 @@ public:
     return *this;
   }
 
-  virtual void compile(const std::vector<Rule>&, size_t);
-  virtual size_t match(const char*, size_t, size_t, size_t);
+  virtual void compile(const std::vector<Rule>&, size_t = 1);
+  virtual size_t match(const char*, size_t, size_t, size_t = 0);
 
 protected:
   void reportFailedRules(const std::vector<Rule>&);
@@ -50,8 +50,8 @@ public:
   virtual ~HyperscanEngineStream();
   virtual void init(size_t);
 
-  void compile(const std::vector<Rule>&, size_t);
-  virtual size_t match(const char*, size_t, size_t, size_t);
+  void compile(const std::vector<Rule>&, size_t = 1);
+  virtual size_t match(const char*, size_t, size_t, size_t = 0);
 
 private:
   std::unique_ptr<hs_stream* []> streams;
