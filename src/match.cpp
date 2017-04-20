@@ -12,7 +12,9 @@
 #include <pthread_np.h>
 #endif
 #include <sched.h>
+#ifdef __FreeBSD__
 #include <sys/cpuset.h>
+#endif
 #include <sys/resource.h>
 #include <sys/time.h>
 
