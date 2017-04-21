@@ -85,6 +85,8 @@ int main(int argc, const char* argv[])
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
 
+    struct rusage compileBegin, compileEnd;
+    getrusage(RUSAGE_SELF, &compileBegin);
     switch (args.engine) {
     case EngineType::boost:
       engine = std::make_unique<regexbench::BoostEngine>();
@@ -158,6 +160,16 @@ int main(int argc, const char* argv[])
       break;
 #endif
     }
+    getrusage(RUSAGE_SELF, &compileEnd);
+    struct timeval compileUdiff, compileSdiff;
+    timersub(&(compileEnd.ru_utime), &(compileBegin.ru_utime), &compileUdiff);
+    timersub(&(compileEnd.ru_stime), &(compileBegin.ru_stime), &compileSdiff);
+    std::cout << std::endl;
+    std::cout << "Compile time : "
+              << (compileUdiff.tv_sec + compileSdiff.tv_sec +
+                  (compileUdiff.tv_usec + compileSdiff.tv_usec) * 1e-6)
+              << std::endl
+              << std::endl;
 
     std::string reportFields[]{
         "TotalMatches", "TotalMatchedPackets",  "UserTime",     "SystemTime",
