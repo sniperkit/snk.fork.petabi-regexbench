@@ -236,7 +236,7 @@ bool endsWith(const std::string& obj, const char* end)
   return false;
 }
 
-static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
+static std::vector<size_t> setup_affinity(size_t num, const std::string& arg)
 {
   auto ncpus = std::thread::hardware_concurrency();
 
@@ -245,23 +245,39 @@ static std::vector<size_t> setup_affinity(size_t num, std::string& arg)
   // arg : user specified description of core assignment
   //   (comma separated decimals w/o space in between)
 
-  num += 1; // main thread included
-  // firstly, parse comma separated input
-  std::replace(arg.begin(), arg.end(), ',', ' ');
-  std::istringstream is(arg);
+  num += 1;    // main thread included
+  int inc = 1; // automatic increase value
+
+  // firstly check if there's trailing ":[decimal's]"
+  auto pos = arg.find(":");
+  if (pos != std::string::npos) {
+    std::string incStr = arg.substr(pos + 1);
+    if (incStr.empty())
+      inc = 0;
+    try {
+      inc = stoi(incStr);
+    } catch (const std::exception&) {
+    }
+  }
+
+  std::string csv = arg.substr(0, pos);
+
+  // parse comma separated input
+  std::replace(csv.begin(), csv.end(), ',', ' ');
+  std::istringstream is(csv);
 
   std::vector<size_t> cores(num); // to return
   int maxCore = static_cast<int>(ncpus - 1);
   try {
     std::istream_iterator<int> iter = std::istream_iterator<int>(is);
     int last = 0;
-    std::generate(cores.begin(), cores.end(), [&iter, &last, maxCore]() {
+    std::generate(cores.begin(), cores.end(), [&iter, &last, inc, maxCore]() {
       int core = 0;
       if (iter != std::istream_iterator<int>()) {
         core = std::min(std::max(*iter, 0), maxCore);
         ++iter;
       } else
-        core = std::min(last + 1, maxCore);
+        core = std::min(std::max(last + inc, 0), maxCore);
       last = core;
       return static_cast<size_t>(core);
     });
