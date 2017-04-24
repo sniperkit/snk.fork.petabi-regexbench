@@ -22,9 +22,9 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 include(CPack)
 
-option(REMATCH_WITHOUT_SESSION "Test REmatch w/o session" OFF)
-if (REMATCH_WITHOUT_SESSION)
-  add_definitions(-DREMATCH_WITHOUT_SESSION)
+option(WITH_SESSION "Test REmatch w/o session" ON)
+if (WITH_SESSION)
+  add_definitions(-DWITH_SESSION)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

@@ -128,7 +128,7 @@ int main(int argc, const char* argv[])
 #ifdef HAVE_REMATCH
     case EngineType::rematch:
       if (args.rematch_session) {
-#ifndef REMATCH_WITHOUT_SESSION
+#ifdef WITH_SESSION
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
         engine->compile(regexbench::loadRules(args.rule_file),
                         args.num_threads);
@@ -404,7 +404,7 @@ Arguments parse_options(int argc, const char* argv[])
     std::cout << " " << core;
   std::cout << std::endl;
 
-#ifdef REMATCH_WITHOUT_SESSION
+#ifndef WITH_SESSION
   if ((engine == "rematch" || engine == "rematch2") && args.rematch_session) {
     std::cerr << "not supporting session mode for now" << std::endl;
     args.rematch_session = 0;

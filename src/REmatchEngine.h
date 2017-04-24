@@ -50,7 +50,7 @@ private:
   void* dlhandle;
 };
 
-#ifndef REMATCH_WITHOUT_SESSION
+#ifdef WITH_SESSION
 class REmatchAutomataEngineSession : public REmatchAutomataEngine {
 public:
   REmatchAutomataEngineSession();

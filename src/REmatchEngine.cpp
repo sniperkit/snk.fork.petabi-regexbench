@@ -115,7 +115,7 @@ void REmatchSOEngine::load(const std::string& filename, size_t)
   }
 }
 
-#ifndef REMATCH_WITHOUT_SESSION
+#ifdef WITH_SESSION
 REmatchAutomataEngineSession::REmatchAutomataEngineSession()
     : parent{nullptr}, child{nullptr}
 {
@@ -164,7 +164,7 @@ void REmatchAutomataEngineSession::init(size_t nsessions)
     }
   }
 }
-#endif // !REMATCH_WITHOUT_SESSION
+#endif // WITH_SESSION
 
 REmatch2AutomataEngine::REmatch2AutomataEngine(bool red)
     : matcher(nullptr), reduce(red)
