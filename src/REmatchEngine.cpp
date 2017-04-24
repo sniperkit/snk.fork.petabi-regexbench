@@ -227,7 +227,7 @@ size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
                                      size_t thr)
 {
   auto& context = contexts[thr];
-  rematch2_exec(matcher, pkt, len, context);
+  rematch_scan_block(matcher, pkt, len, context);
   size_t matched = context->num_matches;
   rematch2ContextClear(context, true);
   return matched;
