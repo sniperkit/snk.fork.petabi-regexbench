@@ -35,7 +35,7 @@ void RE2Engine::compile(const std::vector<Rule>& rules, size_t)
   }
 }
 
-size_t RE2Engine::match(const char* data, size_t len, size_t, size_t thr)
+size_t RE2Engine::match(const char* data, size_t len, size_t, size_t /*thr*/)
 {
   len = 0;
   for (const auto& re : res) {

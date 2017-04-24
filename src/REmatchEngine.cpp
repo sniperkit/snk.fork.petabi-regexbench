@@ -68,7 +68,7 @@ void REmatchAutomataEngine::load(const std::string& filename, size_t)
 }
 
 size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t,
-                                    size_t thr)
+                                    size_t /*thr*/)
 {
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches;
@@ -127,7 +127,7 @@ REmatchAutomataEngineSession::~REmatchAutomataEngineSession()
 }
 
 size_t REmatchAutomataEngineSession::match(const char* pkt, size_t len,
-                                           size_t idx, size_t thr)
+                                           size_t idx, size_t /*thr*/)
 {
   matcher_t* cur = child->mindex[idx];
   size_t ret = 0;
