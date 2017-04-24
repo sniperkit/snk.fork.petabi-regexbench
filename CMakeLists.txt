@@ -122,7 +122,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # suppress warnings
-if (NOT OS_IS_LINUX)
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
 endif()
 
