@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include <dlfcn.h>
+
 #include <rematch/compile.h>
 #include <rematch/execute.h>
 #include <rematch/rematch.h>
@@ -28,7 +30,7 @@ REmatchAutomataEngine::~REmatchAutomataEngine()
     mregfree(txtbl);
 }
 
-void REmatchAutomataEngine::compile(const std::vector<Rule>& rules)
+void REmatchAutomataEngine::compile(const std::vector<Rule>& rules, size_t)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> mods;
@@ -51,7 +53,7 @@ void REmatchAutomataEngine::compile(const std::vector<Rule>& rules)
   matcher = matcher_new(txtbl->nstates);
 }
 
-void REmatchAutomataEngine::load(const std::string& filename)
+void REmatchAutomataEngine::load(const std::string& filename, size_t)
 {
   txtbl = rematchload(filename.c_str());
   if (txtbl == nullptr) {
@@ -65,7 +67,8 @@ void REmatchAutomataEngine::load(const std::string& filename)
     throw std::bad_alloc();
 }
 
-size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t)
+size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t,
+                                    size_t /*thr*/)
 {
   mregexec_single(txtbl, data, len, 1, regmatch, matcher, flow);
   return matcher->matches;
@@ -84,7 +87,7 @@ REmatchSOEngine::~REmatchSOEngine()
     dlclose(dlhandle);
 }
 
-void REmatchSOEngine::load(const std::string& filename)
+void REmatchSOEngine::load(const std::string& filename, size_t)
 {
   dlhandle = dlopen(filename.c_str(), RTLD_LAZY);
   if (dlhandle == nullptr) {
@@ -112,6 +115,7 @@ void REmatchSOEngine::load(const std::string& filename)
   }
 }
 
+#ifdef WITH_SESSION
 REmatchAutomataEngineSession::REmatchAutomataEngineSession()
     : parent{nullptr}, child{nullptr}
 {
@@ -123,7 +127,7 @@ REmatchAutomataEngineSession::~REmatchAutomataEngineSession()
 }
 
 size_t REmatchAutomataEngineSession::match(const char* pkt, size_t len,
-                                           size_t idx)
+                                           size_t idx, size_t /*thr*/)
 {
   matcher_t* cur = child->mindex[idx];
   size_t ret = 0;
@@ -160,18 +164,21 @@ void REmatchAutomataEngineSession::init(size_t nsessions)
     }
   }
 }
+#endif // WITH_SESSION
 
 REmatch2AutomataEngine::REmatch2AutomataEngine(bool red)
-    : matcher(nullptr), context(nullptr), reduce(red)
+    : matcher(nullptr), reduce(red)
 {
 }
 REmatch2AutomataEngine::~REmatch2AutomataEngine()
 {
-  rematch2ContextFree(context);
+  for (auto context : contexts)
+    rematch2ContextFree(context);
   rematch2Free(matcher);
 }
 
-void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules)
+void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
+                                     size_t numThr)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> mods;
@@ -193,24 +200,34 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules)
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
-  context = rematch2ContextInit(matcher, 1);
-  if (context == nullptr)
-    throw std::runtime_error("Could not initialize context.");
+  numThreads = numThr;
+  for (size_t i = 0; i < numThreads; ++i) {
+    auto context = rematch2ContextInit(matcher, 1);
+    if (context == nullptr)
+      throw std::runtime_error("Could not initialize context.");
+    contexts.push_back(context);
+  }
 }
 
-void REmatch2AutomataEngine::load(const std::string& file)
+void REmatch2AutomataEngine::load(const std::string& file, size_t numThr)
 {
   matcher = rematch2Load(file.c_str());
   if (matcher == nullptr)
     throw std::runtime_error("Could not load REmatch2 matcher.");
-  context = rematch2ContextInit(matcher, 1);
-  if (context == nullptr)
-    throw std::runtime_error("Could not initialize context.");
+  numThreads = numThr;
+  for (size_t i = 0; i < numThreads; ++i) {
+    auto context = rematch2ContextInit(matcher, 1);
+    if (context == nullptr)
+      throw std::runtime_error("Could not initialize context.");
+    contexts.push_back(context);
+  }
 }
 
-size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t)
+size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
+                                     size_t thr)
 {
-  rematch2_exec(matcher, pkt, len, context);
+  auto& context = contexts[thr];
+  rematch_scan_block(matcher, pkt, len, context);
   size_t matched = context->num_matches;
   rematch2ContextClear(context, true);
   return matched;

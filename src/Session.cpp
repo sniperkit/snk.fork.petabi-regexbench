@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <string.h>
+
 using namespace regexbench;
 
 Session::Session(const char* pkt) : hashval(0), matcher_idx(0)

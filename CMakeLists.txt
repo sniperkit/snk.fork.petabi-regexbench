@@ -22,6 +22,11 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 include(CPack)
 
+option(WITH_SESSION "Test REmatch with session" ON)
+if (WITH_SESSION)
+  add_definitions(-DWITH_SESSION)
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++98-compat")
@@ -47,9 +52,17 @@ if(NOT CMAKE_CXX_FLAGS_RELEASE MATCHES "-O")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
+
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" OS_NAME_LOWER)
+if (OS_NAME_LOWER STREQUAL "linux")
+  message("System is linux")
+  set(OS_IS_LINUX true)
+endif()
+
 include_directories(SYSTEM ${CMAKE_INSTALL_PREFIX}/include)
 
 find_package(Boost REQUIRED COMPONENTS program_options regex system)
+find_package(Threads REQUIRED)
 find_path(PCAP_INCLUDE_DIR pcap/pcap.h)
 find_library(PCAP_LIB pcap)
 
@@ -109,7 +122,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # suppress warnings
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+endif()
 
 if(Boost_INCLUDE_DIR)
   include_directories(SYSTEM ${Boost_INCLUDE_DIR})

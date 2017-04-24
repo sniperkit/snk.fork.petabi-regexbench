@@ -16,9 +16,9 @@ public:
   REmatchAutomataEngine(bool red = false);
   virtual ~REmatchAutomataEngine();
 
-  virtual void compile(const std::vector<Rule>&);
-  virtual void load(const std::string&);
-  virtual size_t match(const char*, size_t, size_t);
+  virtual void compile(const std::vector<Rule>&, size_t = 1);
+  virtual void load(const std::string&, size_t = 1);
+  virtual size_t match(const char*, size_t, size_t, size_t = 0);
 
 private:
   mregflow_t* flow;
@@ -38,8 +38,8 @@ public:
   REmatchSOEngine();
   virtual ~REmatchSOEngine();
 
-  virtual void load(const std::string&);
-  virtual size_t match(const char* data, size_t len, size_t)
+  virtual void load(const std::string&, size_t = 1);
+  virtual size_t match(const char* data, size_t len, size_t, size_t = 0)
   {
     return run(data, len, ctx);
   }
@@ -50,6 +50,7 @@ private:
   void* dlhandle;
 };
 
+#ifdef WITH_SESSION
 class REmatchAutomataEngineSession : public REmatchAutomataEngine {
 public:
   REmatchAutomataEngineSession();
@@ -57,26 +58,27 @@ public:
   virtual void init(size_t);
 
   using Engine::match;
-  virtual size_t match(const char*, size_t, size_t);
+  virtual size_t match(const char*, size_t, size_t, size_t);
 
 private:
   static constexpr size_t unit_total = 1u << 17;
   mregSession_t* parent;
   mregSession_t* child;
 };
+#endif
 
 class REmatch2AutomataEngine : public Engine {
 public:
   REmatch2AutomataEngine(bool red = false);
   ~REmatch2AutomataEngine();
 
-  void compile(const std::vector<Rule>& rules) override;
-  void load(const std::string& file) override;
-  size_t match(const char* pkt, size_t len, size_t) override;
+  void compile(const std::vector<Rule>& rules, size_t = 1) override;
+  void load(const std::string& file, size_t = 1) override;
+  size_t match(const char* pkt, size_t len, size_t, size_t = 0) override;
 
 private:
   rematch2_t* matcher;
-  rematch_match_context_t* context;
+  std::vector<rematch_match_context_t*> contexts;
   bool reduce = false;
 
 protected:

@@ -4,7 +4,7 @@
 
 using namespace regexbench;
 
-void BoostEngine::compile(const std::vector<Rule>& rules)
+void BoostEngine::compile(const std::vector<Rule>& rules, size_t)
 {
   std::stringstream msg;
   for (const auto& rule : rules) {
@@ -32,7 +32,7 @@ void BoostEngine::compile(const std::vector<Rule>& rules)
   }
 }
 
-size_t BoostEngine::match(const char* data, size_t, size_t)
+size_t BoostEngine::match(const char* data, size_t, size_t, size_t /*thr*/)
 {
   boost::cmatch m;
   for (const auto& re : res) {

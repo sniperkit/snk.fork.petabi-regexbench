@@ -23,53 +23,53 @@
 
 using namespace regexbench;
 
-regexbench::MatchResult opTest(Engine*);
+std::vector<regexbench::MatchResult> opTest(Engine*);
 
-regexbench::MatchResult opTest(Engine* engine)
+std::vector<regexbench::MatchResult> opTest(Engine* engine)
 {
   engine->compile(regexbench::loadRules(DATA_DIR "/rule/option.re"));
   size_t nsessions = 0;
   regexbench::PcapSource pcap(DATA_DIR "/pcap/option.pcap");
   auto match_info = buildMatchMeta(pcap, nsessions);
   engine->init(nsessions);
-  return regexbench::match(*engine, pcap, 1, match_info);
+  return regexbench::match(*engine, pcap, 1, std::vector<size_t>(), match_info);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(t_option);
 ATF_TEST_CASE_BODY(t_option)
 {
-  regexbench::MatchResult result;
+  std::vector<regexbench::MatchResult> results;
 
   BoostEngine bengine;
-  result = opTest(&bengine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
+  results = opTest(&bengine);
+  ATF_REQUIRE_EQ(3, results[0].nmatches);
 
   CPPEngine cengine;
-  result = opTest(&cengine);
-  ATF_REQUIRE_EQ(2, result.nmatches);
+  results = opTest(&cengine);
+  ATF_REQUIRE_EQ(2, results[0].nmatches);
 
 #ifdef HAVE_HYPERSCAN
   HyperscanEngine hsengine;
-  result = opTest(&hsengine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
+  results = opTest(&hsengine);
+  ATF_REQUIRE_EQ(3, results[0].nmatches);
 #endif
 
 #ifdef HAVE_PCRE2
   PCRE2Engine pengine;
-  result = opTest(&pengine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
+  results = opTest(&pengine);
+  ATF_REQUIRE_EQ(3, results[0].nmatches);
 #endif
 
 #ifdef HAVE_RE2
   RE2Engine re2engine;
-  result = opTest(&re2engine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
+  results = opTest(&re2engine);
+  ATF_REQUIRE_EQ(3, results[0].nmatches);
 #endif
 
 #ifdef HAVE_REMATCH
   REmatchAutomataEngine rengine;
-  result = opTest(&rengine);
-  ATF_REQUIRE_EQ(3, result.nmatches);
+  results = opTest(&rengine);
+  ATF_REQUIRE_EQ(3, results[0].nmatches);
 #endif
 }
 

@@ -4,7 +4,7 @@
 
 using namespace regexbench;
 
-void CPPEngine::compile(const std::vector<Rule>& rules)
+void CPPEngine::compile(const std::vector<Rule>& rules, size_t)
 {
   std::stringstream msg;
   for (const auto& rule : rules) {
@@ -28,7 +28,7 @@ void CPPEngine::compile(const std::vector<Rule>& rules)
   }
 }
 
-size_t CPPEngine::match(const char* data, size_t, size_t)
+size_t CPPEngine::match(const char* data, size_t, size_t, size_t /*thr*/)
 {
   std::cmatch m;
   for (const auto& re : res) {

@@ -3,12 +3,14 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include <boost/program_options.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -57,8 +59,10 @@ struct Arguments {
   int32_t repeat;
   uint32_t pcre2_concat;
   uint32_t rematch_session;
+  uint32_t num_threads;
+  std::vector<size_t> cores;
   bool reduce = {false};
-  char paddings[3];
+  char paddings[7];
 };
 
 template <typename Derived, typename Base, typename Del>
@@ -81,14 +85,16 @@ int main(int argc, const char* argv[])
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
 
+    struct rusage compileBegin, compileEnd;
+    getrusage(RUSAGE_SELF, &compileBegin);
     switch (args.engine) {
     case EngineType::boost:
       engine = std::make_unique<regexbench::BoostEngine>();
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
     case EngineType::std_regex:
       engine = std::make_unique<regexbench::CPPEngine>();
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
 #ifdef HAVE_HYPERSCAN
     case EngineType::hyperscan:
@@ -98,57 +104,72 @@ int main(int argc, const char* argv[])
       } else {
         engine = std::make_unique<regexbench::HyperscanEngine>();
       }
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
 #endif
 #ifdef HAVE_PCRE2
     case EngineType::pcre2:
       engine = std::make_unique<regexbench::PCRE2Engine>();
       engine->init(args.pcre2_concat);
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
     case EngineType::pcre2_jit:
       engine = std::make_unique<regexbench::PCRE2JITEngine>();
       engine->init(args.pcre2_concat);
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
 #endif
 #ifdef HAVE_RE2
     case EngineType::re2:
       engine = std::make_unique<regexbench::RE2Engine>();
-      engine->compile(regexbench::loadRules(args.rule_file));
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
       break;
 #endif
 #ifdef HAVE_REMATCH
     case EngineType::rematch:
       if (args.rematch_session) {
+#ifdef WITH_SESSION
         engine = std::make_unique<regexbench::REmatchAutomataEngineSession>();
-        engine->compile(regexbench::loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
+#endif
       } else if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatchAutomataEngine>();
-        engine->load(args.rule_file);
+        engine->load(args.rule_file, args.num_threads);
       } else if (endsWith(args.rule_file, ".so")) {
         engine = std::make_unique<regexbench::REmatchSOEngine>();
-        engine->load(args.rule_file);
+        engine->load(args.rule_file, args.num_threads);
       } else {
         engine =
             std::make_unique<regexbench::REmatchAutomataEngine>(args.reduce);
-        engine->compile(regexbench::loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
       }
       engine->init(nsessions);
       break;
     case EngineType::rematch2:
       if (endsWith(args.rule_file, ".nfa")) {
         engine = std::make_unique<regexbench::REmatch2AutomataEngine>();
-        engine->load(args.rule_file);
+        engine->load(args.rule_file, args.num_threads);
       } else {
         engine =
             std::make_unique<regexbench::REmatch2AutomataEngine>(args.reduce);
-        engine->compile(regexbench::loadRules(args.rule_file));
+        engine->compile(regexbench::loadRules(args.rule_file),
+                        args.num_threads);
       }
       break;
 #endif
     }
+    getrusage(RUSAGE_SELF, &compileEnd);
+    struct timeval compileUdiff, compileSdiff;
+    timersub(&(compileEnd.ru_utime), &(compileBegin.ru_utime), &compileUdiff);
+    timersub(&(compileEnd.ru_stime), &(compileBegin.ru_stime), &compileSdiff);
+    std::cout << std::endl;
+    std::cout << "Compile time : "
+              << (compileUdiff.tv_sec + compileSdiff.tv_sec +
+                  (compileUdiff.tv_usec + compileSdiff.tv_usec) * 1e-6)
+              << std::endl
+              << std::endl;
 
     std::string reportFields[]{
         "TotalMatches", "TotalMatchedPackets",  "UserTime",     "SystemTime",
@@ -156,52 +177,62 @@ int main(int argc, const char* argv[])
         "Mpps",         "MaximumMemoryUsed(kB)"};
     std::string prefix = "regexbench.";
 
-    regexbench::MatchResult result =
-        match(*engine, pcap, args.repeat, match_info);
-    boost::property_tree::ptree pt;
-    pt.put(prefix + "TotalMatches", result.nmatches);
-    pt.put(prefix + "TotalMatchedPackets", result.nmatched_pkts);
-    std::stringstream ss;
-    auto t = result.udiff.tv_sec + result.udiff.tv_usec * 1e-6;
-    ss << t;
-    pt.put(prefix + "UserTime", ss.str());
-    ss.str("");
-    t = result.sdiff.tv_sec + result.sdiff.tv_usec * 1e-6;
-    ss << t;
-    pt.put(prefix + "SystemTime", ss.str());
-    ss.str("");
-    struct timeval total;
-    timeradd(&result.udiff, &result.sdiff, &total);
-    t = total.tv_sec + total.tv_usec * 1e-6;
-    ss << t;
-    pt.put(prefix + "TotalTime", ss.str());
-    pt.put(prefix + "TotalBytes", pcap.getNumberOfBytes());
-    pt.put(prefix + "TotalPackets", pcap.getNumberOfPackets());
-    ss.str("");
-    ss << std::fixed << std::setprecision(6)
-       << (static_cast<double>(pcap.getNumberOfBytes() *
-                               static_cast<unsigned long>(args.repeat)) /
-           (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
-    pt.put(prefix + "Mbps", ss.str());
+    std::vector<regexbench::MatchResult> results =
+        match(*engine, pcap, args.repeat, args.cores, match_info);
 
-    ss.str("");
-    ss << std::fixed << std::setprecision(6)
-       << (static_cast<double>(pcap.getNumberOfPackets() *
-                               static_cast<unsigned long>(args.repeat)) /
-           (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
-    pt.put(prefix + "Mpps", ss.str());
-    struct rusage stat;
-    getrusage(RUSAGE_SELF, &stat);
-    pt.put(prefix + "MaximumMemoryUsed(kB)", stat.ru_maxrss / 1000);
+    auto coreIter = args.cores.begin();
+    coreIter++; // get rid of main thread
+    boost::property_tree::ptree pt;
+    for (const auto& result : results) {
+      std::stringstream ss;
+      ss << "thread" << *coreIter++ << ".";
+      std::string corePrefix = prefix + ss.str();
+      pt.put(corePrefix + "TotalMatches", result.nmatches);
+      pt.put(corePrefix + "TotalMatchedPackets", result.nmatched_pkts);
+      ss.str("");
+      auto t = result.udiff.tv_sec + result.udiff.tv_usec * 1e-6;
+      ss << t;
+      pt.put(corePrefix + "UserTime", ss.str());
+      ss.str("");
+      t = result.sdiff.tv_sec + result.sdiff.tv_usec * 1e-6;
+      ss << t;
+      pt.put(corePrefix + "SystemTime", ss.str());
+      ss.str("");
+      struct timeval total;
+      timeradd(&result.udiff, &result.sdiff, &total);
+      t = total.tv_sec + total.tv_usec * 1e-6;
+      ss << t;
+      pt.put(corePrefix + "TotalTime", ss.str());
+      pt.put(corePrefix + "TotalBytes", pcap.getNumberOfBytes());
+      pt.put(corePrefix + "TotalPackets", pcap.getNumberOfPackets());
+      ss.str("");
+      ss << std::fixed << std::setprecision(6)
+         << (static_cast<double>(pcap.getNumberOfBytes() *
+                                 static_cast<unsigned long>(args.repeat)) /
+             (total.tv_sec + total.tv_usec * 1e-6) / 1000000 * 8);
+      pt.put(corePrefix + "Mbps", ss.str());
+
+      ss.str("");
+      ss << std::fixed << std::setprecision(6)
+         << (static_cast<double>(pcap.getNumberOfPackets() *
+                                 static_cast<unsigned long>(args.repeat)) /
+             (total.tv_sec + total.tv_usec * 1e-6) / 1000000);
+      pt.put(corePrefix + "Mpps", ss.str());
+      struct rusage stat;
+      getrusage(RUSAGE_SELF, &stat);
+      pt.put(corePrefix + "MaximumMemoryUsed(kB)", stat.ru_maxrss / 1000);
+
+      for (const auto& it : reportFields) {
+        std::cout << it << " : " << pt.get<std::string>(corePrefix + it)
+                  << "\n";
+      }
+      std::cout << std::endl;
+    }
 
     std::ostringstream buf;
-    write_json(buf, pt, false);
+    write_json(buf, pt, true);
     std::ofstream outputFile(args.output_file, std::ios_base::trunc);
     outputFile << buf.str();
-
-    for (const auto& it : reportFields) {
-      std::cout << it << " : " << pt.get<std::string>(prefix + it) << "\n";
-    }
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
@@ -217,10 +248,67 @@ bool endsWith(const std::string& obj, const char* end)
   return false;
 }
 
+static std::vector<size_t> setup_affinity(size_t num, const std::string& arg)
+{
+  auto ncpus = std::thread::hardware_concurrency();
+
+  // num : user specified number of threads of matchers
+  //   (main thread is not included here)
+  // arg : user specified description of core assignment
+  //   (comma separated decimals w/o space in between)
+
+  num += 1;    // main thread included
+  int inc = 1; // automatic increase value
+
+  // firstly check if there's trailing ":[decimal's]"
+  auto pos = arg.find(":");
+  if (pos != std::string::npos) {
+    std::string incStr = arg.substr(pos + 1);
+    if (incStr.empty())
+      inc = 0;
+    try {
+      inc = stoi(incStr);
+    } catch (const std::exception&) {
+    }
+  }
+
+  std::string csv = arg.substr(0, pos);
+
+  // parse comma separated input
+  std::replace(csv.begin(), csv.end(), ',', ' ');
+  std::istringstream is(csv);
+
+  std::vector<size_t> cores(num); // to return
+  int maxCore = static_cast<int>(ncpus - 1);
+  try {
+    std::istream_iterator<int> iter = std::istream_iterator<int>(is);
+    int last = 0;
+    std::generate(cores.begin(), cores.end(), [&iter, &last, inc, maxCore]() {
+      int core = 0;
+      if (iter != std::istream_iterator<int>()) {
+        core = std::min(std::max(*iter, 0), maxCore);
+        ++iter;
+      } else
+        core = std::min(std::max(last + inc, 0), maxCore);
+      last = core;
+      return static_cast<size_t>(core);
+    });
+  } catch (const std::exception&) {
+    // some formatting error
+    std::cerr << "User provided affinity assignment format error" << std::endl;
+    // go with default assignment scheme
+    for (int i = 0; i < static_cast<int>(num); ++i)
+      cores[static_cast<size_t>(i)] =
+          static_cast<size_t>((i > maxCore) ? maxCore : i);
+  }
+  return cores;
+}
+
 Arguments parse_options(int argc, const char* argv[])
 {
   Arguments args;
   std::string engine;
+  std::string affinity;
 
   po::options_description posargs;
   posargs.add_options()("rule_file", po::value<std::string>(&args.rule_file),
@@ -248,6 +336,12 @@ Arguments parse_options(int argc, const char* argv[])
       "output,o",
       po::value<std::string>(&args.output_file)->default_value("output.json"),
       "Output JSON file.");
+  optargs.add_options()(
+      "threads,n", po::value<uint32_t>(&args.num_threads)->default_value(1),
+      "Number of threads.");
+  optargs.add_options()("affinity,a",
+                        po::value<std::string>(&affinity)->default_value("0"),
+                        "Core affinity assignment (starting from main thread)");
   optargs.add_options()("reduce,R",
                         po::value<bool>(&args.reduce)->default_value(false),
                         "Use REduce with REmatch, default is false");
@@ -298,6 +392,24 @@ Arguments parse_options(int argc, const char* argv[])
     std::cerr << "invalid repeat value: " << args.repeat << std::endl;
     std::exit(EXIT_FAILURE);
   }
+  if (args.num_threads < 1) {
+    std::cerr << "invalid number of threads: " << args.num_threads << std::endl;
+    std::cerr << " (should be >= 1 .. overriding it to 1" << std::endl;
+    args.num_threads = 1;
+  }
+  std::cout << "number of threads : " << args.num_threads << std::endl;
+  args.cores = setup_affinity(args.num_threads, affinity);
+  std::cout << "affinity setup is ..." << std::endl;
+  for (auto core : args.cores)
+    std::cout << " " << core;
+  std::cout << std::endl;
+
+#ifndef WITH_SESSION
+  if ((engine == "rematch" || engine == "rematch2") && args.rematch_session) {
+    std::cerr << "not supporting session mode for now" << std::endl;
+    args.rematch_session = 0;
+  }
+#endif
 
   if (!vm.count("rule_file")) {
     std::cerr << "error: no rule file" << std::endl;

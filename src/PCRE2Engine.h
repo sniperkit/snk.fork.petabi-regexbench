@@ -2,6 +2,8 @@
 #ifndef REGEXBENCH_PCRE2_H
 #define REGEXBENCH_PCRE2_H
 
+#include <memory>
+
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
@@ -14,9 +16,9 @@ public:
   PCRE2Engine() = default;
   virtual ~PCRE2Engine() = default;
 
-  virtual void compile(const std::vector<Rule>&);
+  virtual void compile(const std::vector<Rule>&, size_t);
   virtual void init(size_t);
-  virtual size_t match(const char*, size_t, size_t);
+  virtual size_t match(const char*, size_t, size_t, size_t);
 
 protected:
   struct PCRE2_DATA {
@@ -46,7 +48,7 @@ public:
   PCRE2JITEngine() = default;
   virtual ~PCRE2JITEngine() = default;
 
-  virtual void compile(const std::vector<Rule>&);
+  virtual void compile(const std::vector<Rule>&, size_t);
 };
 
 } // namespace regexbench
