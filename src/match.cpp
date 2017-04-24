@@ -143,6 +143,7 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
                              const std::vector<MatchMeta>* meta,
                              MatchResult* result)
 {
+#ifdef CPU_SET
   cpuset_t cpuset;
   CPU_ZERO(&cpuset);
   CPU_SET(core, &cpuset);
@@ -150,11 +151,12 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
     std::cerr << "Setting affinty to a match thread failed" << std::endl;
     return;
   }
-  // std::cout << "set match thread_" << sel << "'s affinity to " << core <<
-  // std::endl;
+#endif
 
+#ifdef RUSAGE_THREAD
   struct rusage begin, end;
   getrusage(RUSAGE_THREAD, &begin);
+#endif
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src->getNumberOfPackets(); j++) {
       auto matches = engine->match((*src)[j].data() + (*meta)[j].oft,
@@ -165,9 +167,11 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
       }
     }
   }
+#ifdef RUSAGE_THREAD
   getrusage(RUSAGE_THREAD, &end);
   timersub(&(end.ru_utime), &(begin.ru_utime), &result->udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result->sdiff);
+#endif
 }
 #endif
 
@@ -194,6 +198,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   }
   auto mainCore = *coreIter++;
 
+#ifdef CPU_SET
   // set affinity to main thread itself
   cpuset_t cpuset;
   CPU_ZERO(&cpuset);
@@ -202,6 +207,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
     std::cerr << "Setting affinty to a match thread failed" << std::endl;
     return std::vector<MatchResult>();
   }
+#endif
 
   size_t i = 0;
   for (; coreIter != coreEnd; ++coreIter, ++i) {
