@@ -297,7 +297,7 @@ static std::vector<size_t> setup_affinity(size_t num, const std::string& arg)
     // some formatting error
     std::cerr << "User provided affinity assignment format error" << std::endl;
     // go with default assignment scheme
-    for (int i = 0; i < num; ++i)
+    for (int i = 0; i < static_cast<int>(num); ++i)
       cores[static_cast<size_t>(i)] =
           static_cast<size_t>((i > maxCore) ? maxCore : i);
   }

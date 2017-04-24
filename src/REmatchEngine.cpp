@@ -201,7 +201,7 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
   numThreads = numThr;
-  for (auto i = 0; i < numThreads; ++i) {
+  for (size_t i = 0; i < numThreads; ++i) {
     auto context = rematch2ContextInit(matcher, 1);
     if (context == nullptr)
       throw std::runtime_error("Could not initialize context.");
@@ -215,7 +215,7 @@ void REmatch2AutomataEngine::load(const std::string& file, size_t numThr)
   if (matcher == nullptr)
     throw std::runtime_error("Could not load REmatch2 matcher.");
   numThreads = numThr;
-  for (auto i = 0; i < numThreads; ++i) {
+  for (size_t i = 0; i < numThreads; ++i) {
     auto context = rematch2ContextInit(matcher, 1);
     if (context == nullptr)
       throw std::runtime_error("Could not initialize context.");

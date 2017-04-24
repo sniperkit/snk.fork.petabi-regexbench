@@ -22,7 +22,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 
 include(CPack)
 
-option(WITH_SESSION "Test REmatch w/o session" ON)
+option(WITH_SESSION "Test REmatch with session" ON)
 if (WITH_SESSION)
   add_definitions(-DWITH_SESSION)
 endif()
@@ -38,7 +38,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 endif()
 if(NOT CMAKE_CXX_FLAGS MATCHES .*march.* AND
    NOT CMAKE_CXX_FLAGS_RELEASE MATCHES .*march.*)
@@ -122,7 +122,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # suppress warnings
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+if (NOT OS_IS_LINUX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion")
+endif()
 
 if(Boost_INCLUDE_DIR)
   include_directories(SYSTEM ${Boost_INCLUDE_DIR})
