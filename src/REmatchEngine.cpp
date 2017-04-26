@@ -201,8 +201,12 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
-  numThreads = numThr;
-  contexts.resize(numThreads, nullptr);
+  // temporary fix (uncomment below thread number assignment after proper fix)
+  rematch2Save(matcher, "tmpsave.nfa");
+  rematch2Free(matcher);
+  load("tmpsave.nfa", numThr);
+  //numThreads = numThr;
+  //contexts.resize(numThreads, nullptr);
 }
 
 void REmatch2AutomataEngine::load(const std::string& file, size_t numThr)
