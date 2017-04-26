@@ -63,7 +63,7 @@ struct Arguments {
   uint32_t rematch_session;
   uint32_t num_threads;
   std::vector<size_t> cores;
-  bool reduce = {false};
+  bool reduce = {true};
   char paddings[7];
 };
 
@@ -371,7 +371,7 @@ Arguments parse_options(int argc, const char* argv[])
                         po::value<std::string>(&affinity)->default_value("0"),
                         "Core affinity assignment (starting from main thread)");
   optargs.add_options()("reduce,R",
-                        po::value<bool>(&args.reduce)->default_value(false),
+                        po::value<bool>(&args.reduce)->default_value(true),
                         "Use REduce with REmatch, default is false");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
