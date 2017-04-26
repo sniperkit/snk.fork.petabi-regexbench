@@ -185,7 +185,7 @@ int main(int argc, const char* argv[])
     std::string reportFields[]{"TotalMatches", "TotalMatchedPackets",
                                "UserTime",     "SystemTime",
                                "TotalTime",    "Mbps",
-                               "Mpps",         "MaximumMemoryUsed(kB)"};
+                               "Mpps",         "MaximumMemoryUsed(MB)"};
 
     std::vector<regexbench::MatchResult> results = match(
         *engine, pcap, args.repeat, args.cores, match_info, args.log_file);
@@ -245,7 +245,7 @@ int main(int argc, const char* argv[])
       pt.put(corePrefix + "Mpps", ss.str());
       struct rusage stat;
       getrusage(RUSAGE_SELF, &stat);
-      pt.put(corePrefix + "MaximumMemoryUsed(kB)", stat.ru_maxrss / 1000);
+      pt.put(corePrefix + "MaximumMemoryUsed(MB)", stat.ru_maxrss / 1000);
 
       for (const auto& it : reportFields) {
         std::cout << it << " : " << pt.get<std::string>(corePrefix + it)
