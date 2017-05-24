@@ -5,6 +5,7 @@
 #include <map>
 
 #include "db_setup.h"
+#include "PcreChecker.h"
 
 // std namespace aliases
 using std::cout;
@@ -89,6 +90,12 @@ void parsePatterns(PcreCheckDb& db, const Json::Value& patterns)
     if (pattern["content"].empty() || !pattern["content"].isString())
       throw std::runtime_error("pattern content must be specfied (as string)");
     const auto &content = pattern["content"].asString();
+    if (!pattern["ctype"].empty()) {
+      if (pattern["ctype"] != "hex" && pattern["ctype"] != "str") {
+        throw std::runtime_error(
+            "pattern content type must be specfied (as string)");
+      }
+    }
 
     Pattern pattern_db(db);
     try {
@@ -99,7 +106,19 @@ void parsePatterns(PcreCheckDb& db, const Json::Value& patterns)
     } catch (NotFound) {
       pattern_db.name = name;
     }
-    pattern_db.content = Blob(content.data(), content.size());
+    if (pattern["ctype"].empty()) {
+      pattern_db.ctype = "str";
+      pattern_db.content = Blob(content.data(), content.size());
+    } else {
+      pattern_db.ctype = pattern["ctype"].asString();
+      if (pattern_db.ctype == "hex") {
+        std::string tmp = ConvertHexData(content.data());
+        pattern_db.content = Blob(tmp.data(), content.size());
+      }
+      if (pattern_db.ctype == "str") {
+        pattern_db.content = Blob(content.data(), content.size());
+      } // need unicode type
+    }
     if (!pattern["desc"].empty())
       pattern_db.desc = pattern["desc"].asString();
     pattern_db.update();

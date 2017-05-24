@@ -16,6 +16,7 @@
   <object name="Pattern">
     <field name="name" type="string" length="32" indexed="true"/>
     <field name="content" type="blob"/>
+    <field name="ctype" type="string" length="32"/>
     <field name="desc" type="string" length="2048"/>
   </object>
 

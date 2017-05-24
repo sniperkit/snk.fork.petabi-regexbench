@@ -18,11 +18,14 @@ struct AuxInfo {
   int result;
 
   std::vector<regexbench::Rule> rules;
+  std::string ctype; // content type in pattern
   std::string data; // used for singletest mode
 };
 
 void checkRematch(PcreCheckDb& db, struct AuxInfo& aux);
 void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux);
 void checkPcre(PcreCheckDb& db, struct AuxInfo& aux);
+std::string ConvertHexData(const std::string& data);
+bool hexToCh(std::string& hex, std::string& conv);
 
 #endif

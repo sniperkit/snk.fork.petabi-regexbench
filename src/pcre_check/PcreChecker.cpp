@@ -476,6 +476,7 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
 
       const auto& pattern =
           select<Pattern>(db, Pattern::Id == (*cur).patternid).one();
+      auto ctype = pattern.ctype.value();
       auto blob = pattern.content.value();
       size_t len = blob.length();
       auto temp = std::make_unique<char[]>(len);
@@ -513,6 +514,41 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
     //     << ", pattern id " << test.patternid.value()
     //     << ") => result : " << p.second << endl;
   }
+}
+
+std::string ConvertHexData(const std::string& data)
+{
+  size_t pos = 0;
+  std::string tmpStr, convCh, resultStr = data;
+
+  while ((pos = resultStr.find("\\x", pos)) != std::string::npos) {
+    tmpStr = resultStr.substr(pos + 2, 2);
+    if (hexToCh(tmpStr, convCh)) {
+      resultStr.erase(pos, 4);
+      resultStr.insert(pos, convCh);
+    } else {
+      pos += 2;
+      continue;
+    }
+  }
+  return resultStr;
+}
+
+bool hexToCh(std::string& hex, std::string& conv)
+{
+  for (auto d : hex) {
+    if (!isxdigit(d)) {
+      return false;
+    }
+  }
+  try {
+    char data = static_cast<char>(std::stoi(hex, 0, 16));
+    conv = std::string(1, data);
+  } catch (const std::exception& e) {
+    cerr << "hex convert fail " << e.what() << endl;
+    return false;
+  }
+  return true;
 }
 
 int runShell()

@@ -363,13 +363,29 @@ template <> void CS::processCmd(CS::cmd_singletest_option &opt)
     return;
   }
 
+  if (!opt[id::ctype]().empty() && opt[id::ctype]() != "hex" &&
+      opt[id::ctype]() != "str") {
+    cerr << "'invalid content type(hex, str)" << endl;
+    return;
+  }
+
   PcreCheckDb dummyDb("sqlite3", "database=dummy");
 
   AuxInfo aux;
   aux.rules.emplace_back(regexbench::Rule(opt[id::re](), 1));
   // cout << "Rule           : " << opt[id::re]() << endl;
   // cout << "Data           : " << opt[id::data]() << endl;
-  aux.data = singleTestHexCheck(opt[id::data]());
+  if (!opt[id::ctype]().empty()) {
+    aux.ctype = opt[id::ctype]();
+  } else {
+    aux.ctype = "str";
+  }
+  if (aux.ctype == "hex") {
+    aux.data = ConvertHexData(opt[id::data]());
+  } else {
+    aux.data = opt[id::data]();
+  }
+  // cout << "Content Type   : " << aux.ctype.data() << endl;
   // cout << "Convert Data   : " << aux.data.data() << endl;
   aux.nmatch = 1;
   aux.single = 1;
@@ -625,38 +641,4 @@ bool CS::parseCsvLine(const std::string &s, std::vector<std::string> &v) {
   if (!v.empty())
     return true;
   return false;
-}
-
-std::string CS::singleTestHexCheck(const std::string& data)
-{
-  size_t pos = 0;
-  std::string tmpStr, convCh, resultStr = data;
-  while ((pos = resultStr.find("\\x", pos)) != std::string::npos) {
-    tmpStr = resultStr.substr(pos + 2, 2);
-    if (hexToCh(tmpStr, convCh)) {
-      resultStr.erase(pos, 4);
-      resultStr.insert(pos, convCh);
-    } else {
-      pos += 2;
-      continue;
-    }
-  }
-  return resultStr;
-}
-
-bool CS::hexToCh(std::string& hex, std::string& conv)
-{
-  for (auto d : hex) {
-    if (!isxdigit(d)) {
-      return false;
-    }
-  }
-  try {
-    char data = static_cast<char>(std::stoi(hex, 0, 16));
-    conv = std::string(1, data);
-  } catch (const std::exception& e) {
-    cerr << "hex convert fail " << e.what() << endl;
-    return false;
-  }
-  return true;
 }

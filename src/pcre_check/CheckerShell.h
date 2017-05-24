@@ -45,6 +45,7 @@ AUTO_OPT_ID(json);
 AUTO_OPT_ID(singletest);
 AUTO_OPT_ID(re);
 AUTO_OPT_ID(data);
+AUTO_OPT_ID(ctype);
 AUTO_OPT_ID(exit);
 
 using cmd_opts_type = auto_opt_def<
@@ -64,7 +65,8 @@ using cmd_opts_type = auto_opt_def<
   >,
   auto_opt_tbl<idt::singletest,
     auto_opt_str<idt::re>,
-    auto_opt_str<idt::data>
+    auto_opt_str<idt::data>,
+    auto_opt_str<idt::ctype>
   >,
   auto_opt_tbl<idt::show,
     auto_opt_tbl<idt::table,
@@ -155,8 +157,6 @@ private:
   void dispatchCmds(const char *line);
   template <typename T> void processCmd(T &o);
   void processTestTable(cmd_show_table_test_option&);
-  std::string singleTestHexCheck(const std::string& data);
-  bool hexToCh(std::string& hex, std::string& conv);
   struct cmd_functor { // to be used by fusion::map for_each
     cmd_functor(CheckerShell &p) : sh(p) {}
     template <typename T> void operator()(T &t) const {
