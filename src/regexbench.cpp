@@ -65,10 +65,11 @@ struct Arguments {
   uint32_t rematch_session;
   uint32_t num_threads;
   uint32_t compile_test;
-  uint32_t nmatch = 1;
+  uint32_t nmatch = 0;
   std::vector<size_t> cores;
   bool reduce = {false};
-  char paddings[7];
+  bool turbo = {false};
+  char paddings[6];
 };
 
 template <typename Derived, typename Base, typename Del>
@@ -169,7 +170,7 @@ int main(int argc, const char* argv[])
         engine->load(args.rule_file, args.num_threads);
       } else {
         engine = std::make_unique<regexbench::REmatch2AutomataEngine>(
-            args.nmatch, args.reduce);
+            args.nmatch, args.reduce, args.turbo);
         engine->compile(regexbench::loadRules(args.rule_file),
                         args.num_threads);
       }
@@ -399,8 +400,9 @@ Arguments parse_options(int argc, const char* argv[])
   optargs.add_options()(
       "update,u", po::value<std::string>(&args.update_pipe)->default_value(""),
       "Pipe for signaling online update");
+  optargs.add_options()("turbo", "Turbo processing mode for rematch2");
   optargs.add_options()("match_num,m",
-                        po::value<uint32_t>(&args.nmatch)->default_value(1),
+                        po::value<uint32_t>(&args.nmatch)->default_value(0),
                         "Match number");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
@@ -417,6 +419,9 @@ Arguments parse_options(int argc, const char* argv[])
     std::cout << posargs << "\n" << optargs << "\n";
     std::exit(EXIT_SUCCESS);
   }
+
+  if (vm.count("turbo"))
+    args.turbo = true;
 
   if (engine == "boost")
     args.engine = EngineType::boost;

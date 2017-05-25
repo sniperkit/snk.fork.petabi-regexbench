@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <utility>
+#include <tuple>
 
 #include <dlfcn.h>
 
@@ -21,7 +21,8 @@ const char NFA_NSTATES_NAME[] = "nstates";
 REmatchAutomataEngine::REmatchAutomataEngine(uint32_t nm, bool red)
     : flow(nullptr), matcher(nullptr), txtbl(nullptr),
       regmatchMem(std::make_unique<mregmatch_t[]>(nm)),
-      regmatch(regmatchMem.get()), nmatch(nm), reduce(red)
+      regmatch(regmatchMem.get()), nmatch((nm < 1) ? MAX_NMATCH : nm),
+      reduce(red)
 {
 }
 
@@ -172,8 +173,8 @@ void REmatchAutomataEngineSession::init(size_t nsessions)
 }
 #endif // WITH_SESSION
 
-REmatch2AutomataEngine::REmatch2AutomataEngine(uint32_t nm, bool red)
-    : nmatch(nm), version(0), reduce(red)
+REmatch2AutomataEngine::REmatch2AutomataEngine(uint32_t nm, bool red, bool tur)
+    : nmatch(nm), version(0), reduce(red), turbo(tur)
 {
 }
 REmatch2AutomataEngine::~REmatch2AutomataEngine()
@@ -205,7 +206,7 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
     mods.push_back(opt);
   }
   auto matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                  ids.size(), reduce);
+                                  ids.size(), reduce, turbo);
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -235,7 +236,7 @@ void REmatch2AutomataEngine::compile_test(const std::vector<Rule>& rules) const
     mods.push_back(opt);
   }
   auto testMatcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                      ids.size(), reduce);
+                                      ids.size(), reduce, turbo);
   if (testMatcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -260,7 +261,7 @@ void REmatch2AutomataEngine::update_test(const std::vector<Rule>& rules)
     mods.push_back(opt);
   }
   auto tmp_matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                      ids.size(), reduce);
+                                      ids.size(), reduce, turbo);
   if (tmp_matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -294,10 +295,15 @@ void REmatch2AutomataEngine::load_updated(const std::string& file)
 
 static int count_matches(unsigned id, size_t, size_t, unsigned, void* ctx)
 {
-  std::pair<size_t, unsigned int>* matchRes =
-      static_cast<std::pair<size_t, unsigned int>*>(ctx);
-  matchRes->first++;
-  matchRes->second = id;
+  std::tuple<size_t, uint32_t, unsigned int>* matchRes =
+      static_cast<std::tuple<size_t, uint32_t, unsigned int>*>(ctx);
+  auto& count = std::get<0>(*matchRes);
+  ++count;
+  if (count == 1)
+    std::get<2>(*matchRes) = id;
+  auto nmatch = std::get<1>(*matchRes);
+  if (nmatch > 0 && count >= nmatch)
+    return 1;
   return 0;
 }
 
@@ -316,18 +322,20 @@ size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
     scratch = scratches[thr] = rematch_alloc_scratch(matchers[cur_version]);
     if (context)
       rematch2ContextFree(context);
-    context = contexts[thr] =
-        rematch2ContextInit(matchers[cur_version]);
+    context = contexts[thr] = rematch2ContextInit(matchers[cur_version]);
     if (context == nullptr)
       throw std::runtime_error("Could not initialize context.");
   }
   auto cur_matcher = matchers[cur_version];
-  std::pair<size_t, unsigned int> matchResult{0, 0};
+  std::tuple<size_t, uint32_t, unsigned int> matchResult{
+      0, nmatch, 0}; // 1st : match count
+                     // 2nd : nmatch (how many times to match)
+                     // 3rd : id of first match
   rematch_scan_block(cur_matcher, pkt, len, context, scratch, count_matches,
                      &matchResult);
-  size_t matched = matchResult.first;
+  size_t matched = std::get<0>(matchResult);
   if (matched > 0)
-    *pId = matchResult.second;
+    *pId = std::get<2>(matchResult);
   rematch2ContextClear(context, true);
   return matched;
 }

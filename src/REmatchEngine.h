@@ -33,6 +33,7 @@ protected:
   mregex_t* txtbl;
   std::unique_ptr<mregmatch_t[]> regmatchMem;
   mregmatch_t* regmatch;
+  static constexpr uint32_t MAX_NMATCH = 32; // TODO
   const uint32_t nmatch;
   bool reduce = false;
   char __padding[3];
@@ -78,7 +79,7 @@ private:
 
 class REmatch2AutomataEngine : public Engine {
 public:
-  REmatch2AutomataEngine(uint32_t nm = 1, bool red = false);
+  REmatch2AutomataEngine(uint32_t nm = 1, bool red = false, bool turbo = false);
   ~REmatch2AutomataEngine();
 
   void compile(const std::vector<Rule>& rules, size_t = 1) override;
@@ -100,9 +101,10 @@ private:
   const uint32_t nmatch;
   std::atomic_int version;
   bool reduce = false;
+  bool turbo = false;
 
 protected:
-  char __padding[7];
+  char __padding[6];
 };
 
 } // namespace regexbench
