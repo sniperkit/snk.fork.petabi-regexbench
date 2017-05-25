@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 #include <dlfcn.h>
 
@@ -291,6 +292,15 @@ void REmatch2AutomataEngine::load_updated(const std::string& file)
   std::cout << "Rule update soon to be applied" << std::endl;
 }
 
+static int count_matches(unsigned id, size_t, size_t, unsigned, void* ctx)
+{
+  std::pair<size_t, unsigned int>* matchRes =
+      static_cast<std::pair<size_t, unsigned int>*>(ctx);
+  matchRes->first++;
+  matchRes->second = id;
+  return 0;
+}
+
 size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
                                      size_t thr, size_t* pId)
 {
@@ -307,15 +317,17 @@ size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
     if (context)
       rematch2ContextFree(context);
     context = contexts[thr] =
-        rematch2ContextInit(matchers[cur_version], nmatch);
+        rematch2ContextInit(matchers[cur_version]);
     if (context == nullptr)
       throw std::runtime_error("Could not initialize context.");
   }
   auto cur_matcher = matchers[cur_version];
-  rematch_scan_block(cur_matcher, pkt, len, context, scratch);
-  size_t matched = context->num_matches;
-  if (context->num_matches > 0)
-    *pId = context->matchlist[0].fid;
+  std::pair<size_t, unsigned int> matchResult{0, 0};
+  rematch_scan_block(cur_matcher, pkt, len, context, scratch, count_matches,
+                     &matchResult);
+  size_t matched = matchResult.first;
+  if (matched > 0)
+    *pId = matchResult.second;
   rematch2ContextClear(context, true);
   return matched;
 }
