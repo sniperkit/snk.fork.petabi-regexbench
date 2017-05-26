@@ -1,11 +1,11 @@
 // include LiteSQL's header file and generated header file
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <map>
+#include <vector>
 
-#include "db_setup.h"
 #include "PcreChecker.h"
+#include "db_setup.h"
 
 // std namespace aliases
 using std::cout;
@@ -22,13 +22,13 @@ void parseRules(PcreCheckDb& db, const Json::Value& rules)
   // name : string (32)
   // content : blob
   // desc : string (2048)
-  for (const auto& rule: rules) {
+  for (const auto& rule : rules) {
     if (rule["name"].empty() || !rule["name"].isString())
       throw std::runtime_error("rule name must be specfied (as string)");
-    const auto &name = rule["name"].asString();
+    const auto& name = rule["name"].asString();
     if (rule["content"].empty() || !rule["content"].isString())
       throw std::runtime_error("rule content must be specfied (as string)");
-    const auto &content = rule["content"].asString();
+    const auto& content = rule["content"].asString();
 
     DbRule rule_db(db);
     try {
@@ -54,10 +54,10 @@ void parseGrammars(PcreCheckDb& db, const Json::Value& grammars)
 
   // name : string (32)
   // desc : string (2048)
-  for (const auto& grammar: grammars) {
+  for (const auto& grammar : grammars) {
     if (grammar["name"].empty() || !grammar["name"].isString())
       throw std::runtime_error("grammar name must be specfied (as string)");
-    const auto &name = grammar["name"].asString();
+    const auto& name = grammar["name"].asString();
 
     Grammar grammar_db(db);
     try {
@@ -83,13 +83,13 @@ void parsePatterns(PcreCheckDb& db, const Json::Value& patterns)
   // name : string (32)
   // content : blob
   // desc : string (2048)
-  for (const auto& pattern: patterns) {
+  for (const auto& pattern : patterns) {
     if (pattern["name"].empty() || !pattern["name"].isString())
       throw std::runtime_error("pattern name must be specfied (as string)");
-    const auto &name = pattern["name"].asString();
+    const auto& name = pattern["name"].asString();
     if (pattern["content"].empty() || !pattern["content"].isString())
       throw std::runtime_error("pattern content must be specfied (as string)");
-    const auto &content = pattern["content"].asString();
+    const auto& content = pattern["content"].asString();
     if (!pattern["ctype"].empty()) {
       if (pattern["ctype"] != "hex" && pattern["ctype"] != "str") {
         throw std::runtime_error(
@@ -112,7 +112,7 @@ void parsePatterns(PcreCheckDb& db, const Json::Value& patterns)
     } else {
       pattern_db.ctype = pattern["ctype"].asString();
       if (pattern_db.ctype == "hex") {
-        std::string tmp = ConvertHexData(content.data());
+        std::string tmp = convertHexData(content.data());
         pattern_db.content = Blob(tmp.data(), content.size());
       }
       if (pattern_db.ctype == "str") {
@@ -135,11 +135,11 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
   std::map<string, int> resultMap;
 
   std::vector<Engine> engineSels = select<Engine>(db).all();
-  for (const auto &e : engineSels) {
+  for (const auto& e : engineSels) {
     engineMap[e.name.value()] = e.id.value();
   }
   std::vector<Result> resultSels = select<Result>(db).all();
-  for (const auto &r : resultSels) {
+  for (const auto& r : resultSels) {
     resultMap[r.name.value()] = r.id.value();
   }
 
@@ -147,13 +147,14 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
   // pattern => Pattern name
   // grammars => array of Grammar names
   // result => json object of result for each engine
-  for (const auto& test: tests) {
+  for (const auto& test : tests) {
     if (test["rule"].empty() || !test["rule"].isString())
       throw std::runtime_error("test rule name must be specfied (as string)");
     if (test["pattern"].empty() || !test["pattern"].isString())
-      throw std::runtime_error("test pattern name must be specfied (as string)");
-    const auto &rulename = test["rule"].asString();
-    const auto &patternname = test["pattern"].asString();
+      throw std::runtime_error(
+          "test pattern name must be specfied (as string)");
+    const auto& rulename = test["rule"].asString();
+    const auto& patternname = test["pattern"].asString();
 
     // find ids of rule, pattern, grammar
     int rule_id;
@@ -161,7 +162,8 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
     try {
       const auto& rule_db = select<DbRule>(db, DbRule::Name == rulename).one();
       rule_id = rule_db.id.value();
-      const auto& pattern_db = select<Pattern>(db, Pattern::Name == patternname).one();
+      const auto& pattern_db =
+          select<Pattern>(db, Pattern::Name == patternname).one();
       pattern_id = pattern_db.id.value();
     } catch (NotFound e) {
       cerr << "rule(" << rulename << ") or pattern(" << patternname
@@ -179,9 +181,10 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
     // find out Test table id if any or create one
     int test_id;
     try {
-      const auto& test_db = select<Test>(db, Test::Ruleid == rule_id &&
-                                                 Test::Patternid == pattern_id)
-                                .one();
+      const auto& test_db =
+          select<Test>(db,
+                       Test::Ruleid == rule_id && Test::Patternid == pattern_id)
+              .one();
       test_id = test_db.id.value();
     } catch (NotFound) {
       Test test_db(db);
@@ -199,7 +202,8 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
         if (!gr.isString())
           continue; // TODO
         try {
-          const auto& gr_db = select<Grammar>(db, Grammar::Name == gr.asString()).one();
+          const auto& gr_db =
+              select<Grammar>(db, Grammar::Name == gr.asString()).one();
           grammar_ids.push_back(gr_db.id.value());
         } catch (NotFound) {
           // just register this grammar on the fly (w/o description)
@@ -213,8 +217,9 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
 
     for (auto gid : grammar_ids) {
       try {
-        select<TestGrammar>(db, TestGrammar::Testid == test_id &&
-                                    TestGrammar::Grammarid == gid).one();
+        select<TestGrammar>(
+            db, TestGrammar::Testid == test_id && TestGrammar::Grammarid == gid)
+            .one();
       } catch (NotFound) {
         TestGrammar tg(db);
         tg.testid = test_id;
@@ -244,11 +249,11 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
 
     for (auto e2V : verdictMap) {
       try {
-        auto resEntry =
-            *(select<TestResult>(db, TestResult::Testid == test_id &&
-                                         TestResult::Engineid ==
-                                             engineMap[e2V.first])
-                  .cursor());
+        auto resEntry = *(
+            select<TestResult>(db,
+                               TestResult::Testid == test_id &&
+                                   TestResult::Engineid == engineMap[e2V.first])
+                .cursor());
 
         resEntry.resultid = resultMap[e2V.second];
         resEntry.update();
@@ -261,5 +266,4 @@ void parseTests(PcreCheckDb& db, const Json::Value& tests)
       }
     }
   }
-
 }
