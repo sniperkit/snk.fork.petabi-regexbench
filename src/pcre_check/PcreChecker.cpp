@@ -1,8 +1,9 @@
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <memory>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include <hs/hs_compile.h>
 #include <hs/hs_runtime.h>
@@ -12,10 +13,10 @@
 #include <rematch/execute.h>
 #include <rematch/rematch.h>
 
-#include "db_setup.h"
 #include "../Rule.h"
-#include "PcreChecker.h"
 #include "CheckerShell.h"
+#include "PcreChecker.h"
+#include "db_setup.h"
 
 using std::cout;
 using std::cerr;
@@ -37,25 +38,9 @@ static void usage()
   cerr << "$ pcre_checker -s" << endl;
 }
 
-/*
-struct AuxInfo {
-  int resMatchId;
-  int resNomatchId;
-  int resErrorId;
-  std::map<string, int> str2EngineId;
-  uint32_t nmatch; // this is rematch only parameter
-
-  vector<Rule> rules;
-};
-
-static void checkRematch(PcreCheckDb& db, const struct AuxInfo& aux);
-static void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux);
-static void checkPcre(PcreCheckDb& db, struct AuxInfo& aux);
-*/
-
 static int runShell();
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   if (argc < 2) {
     usage();
@@ -97,7 +82,7 @@ int main(int argc, char **argv)
     aux.nmatch = 10; // TODO
     auto& rules = aux.rules;
     vector<DbRule> dbRules = select<DbRule>(db).orderBy(DbRule::Id).all();
-    for (const auto &dbRule : dbRules) {
+    for (const auto& dbRule : dbRules) {
       auto blob = dbRule.content.value();
       size_t len = blob.length();
       auto temp = std::make_unique<char[]>(len);
@@ -106,7 +91,7 @@ int main(int argc, char **argv)
       rules.emplace_back(Rule(line, static_cast<size_t>(dbRule.id.value())));
     }
     // for debugging
-    //for (const auto &r : rules) {
+    // for (const auto &r : rules) {
     //  cout << "rule " << r.getID() << ": " << r.getRegexp() << endl;
     //}
 
@@ -116,7 +101,7 @@ int main(int argc, char **argv)
 
     db.commit(); // commit changes (mostly about result)
 
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     cerr << e.what() << endl;
     return -1;
   } catch (Except& e) { // litesql exception
@@ -124,6 +109,56 @@ int main(int argc, char **argv)
     return -1;
   }
   return 0;
+}
+
+class rematchResult {
+public:
+  rematchResult(size_t res = 32)
+  {
+    // reserving appropriate size could improve initial performance
+    ids.reserve(res);
+  }
+  void clear() { ids.clear(); }
+  void pushId(unsigned id) { ids.push_back(id); }
+
+  bool isMatched() { return !ids.empty(); }
+
+  // just a wrapper over std::vector<unsigned>::iterator
+  class iterator : public std::iterator<std::input_iterator_tag, unsigned> {
+  public:
+    iterator(std::vector<unsigned>::iterator i) : it(i) {}
+    iterator& operator++()
+    {
+      ++it;
+      return *this;
+    }
+    iterator operator++(int)
+    {
+      iterator retval = *this;
+      ++(*this);
+      return retval;
+    }
+    bool operator==(iterator other) const { return it == other.it; }
+    bool operator!=(iterator other) const { return !(*this == other); }
+    reference operator*() const { return *it; }
+
+  private:
+    std::vector<unsigned>::iterator it;
+  };
+
+  iterator begin() { return iterator(ids.begin()); }
+  iterator end() { return iterator(ids.end()); }
+
+private:
+  std::vector<unsigned> ids;
+};
+
+static int onMatch(unsigned id, size_t from, size_t to, unsigned flags,
+                   void* ctx)
+{
+  auto res = static_cast<rematchResult*>(ctx);
+  res->pushId(id);
+  return 0; // continue till there's no more match
 }
 
 void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
@@ -136,6 +171,7 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   const auto& rules = aux.rules;
 
   rematch2_t* matcher;
+  rematch_scratch_t* scratch;
   rematch_match_context_t* context;
   vector<const char*> rematchExps;
   vector<unsigned> rematchMods;
@@ -154,21 +190,22 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   }
   matcher = rematch2_compile(rematchIds.data(), rematchExps.data(),
                              rematchMods.data(), rematchIds.size(),
-                             true /* reduce */);
+                             false /* reduce */);
   if (!matcher)
     throw std::runtime_error("Could not build REmatch2 matcher.");
-  context = rematch2ContextInit(matcher, aux.nmatch);
+  scratch = rematch_alloc_scratch(matcher);
+  context = rematch2ContextInit(matcher);
   if (context == nullptr)
     throw std::runtime_error("Could not initialize context.");
 
+  rematchResult matchRes;
   // prepare data (only need the data specified in Test table)
   int lastPid = -1;
-  if (aux.single) { // single test mode
-    int ret = rematch_scan_block(matcher, aux.data.data(), aux.data.size(), context);
-    if (context->num_matches > 0)
-      aux.result = 1;
-    else
-      aux.result = 0;
+  if (aux.single) {   // single test mode
+    matchRes.clear(); // must be done to get right result
+    int ret = rematch_scan_block(matcher, aux.data.data(), aux.data.size(),
+                                 context, scratch, onMatch, &matchRes);
+    aux.result = matchRes.isMatched() ? 1 : 0;
   } else {
     vector<Test> tests = select<Test>(db).orderBy(Test::Patternid).all();
     for (const auto& t : tests) {
@@ -198,26 +235,23 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
       }
 
       // do match
-      int ret = rematch_scan_block(matcher, temp.get(), len, context);
-      if (ret == MREG_FINISHED) { // this means we need to adjust 'nmatch'
-                                  // parameter used for rematch2ContextInit
-        cerr << "rematch2 returned MREG_FINISHED" << endl;
-      }
-      if (context->num_matches > 0) { // match
+      matchRes.clear(); // must be done to get right result
+      int ret = rematch_scan_block(matcher, temp.get(), len, context, scratch,
+                                   onMatch, &matchRes);
+      if (matchRes.isMatched()) {
         // for debugging
         // cout << "pattern " << lastPid;
         // cout << " matched rules :" << endl;
-        for (size_t i = 0; i < context->num_matches; ++i) {
+        for (auto id : matchRes) {
           // for debugging
-          // cout << " " << context->matchlist[i].fid;
-          stateid_t mid = context->matchlist[i].fid;
-          if (rule2TestMap.count(static_cast<int>(mid)) > 0)
-            rule2TestMap[static_cast<int>(mid)].second = true;
+          // cout << " " << id;
+          if (rule2TestMap.count(static_cast<int>(id)) > 0)
+            rule2TestMap[static_cast<int>(id)].second = true;
         }
-        // cout << endl;
-      } else { // nomatch
+      } else {
         cout << "pattern " << lastPid << " has no match" << endl;
       }
+      // cout << endl;
       rematch2ContextClear(context, true);
 
       // for debugging
@@ -228,12 +262,16 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
       //}
       for (const auto& p : rule2TestMap) {
         try {
-          auto cur = select<TestResult>(db,
-                                        TestResult::Testid == p.second.first &&
-                                            TestResult::Engineid == engineId)
-                         .cursor();
-          (*cur).resultid = (p.second.second ? resMatchId : resNomatchId);
-          (*cur).update();
+          auto cur =
+              *(select<TestResult>(db,
+                                   TestResult::Testid == p.second.first &&
+                                       TestResult::Engineid == engineId)
+                    .cursor());
+          cur.resultid = (p.second.second ? resMatchId : resNomatchId);
+          cur.update();
+          // for debugging
+          // cout << " TestResult id " << cur.id << " updated to  result "
+          //     << cur.resultid << "(" << p.second.second << ")" << endl;
         } catch (NotFound) {
           TestResult res(db);
           res.testid = p.second.first;
@@ -246,12 +284,13 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   }
 
   // clean-up of REmatch related objects
+  rematch_free_scratch(scratch);
   rematch2ContextFree(context);
   rematch2Free(matcher);
 }
 
 static int hsOnMatch(unsigned int, unsigned long long, unsigned long long,
-                   unsigned int, void* ctx)
+                     unsigned int, void* ctx)
 {
   size_t& nmatches = *static_cast<size_t*>(ctx);
   nmatches++;
@@ -270,7 +309,7 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
 
   hs_database_t* hsDb = nullptr;
   hs_scratch_t* hsScratch = nullptr;
-  //hs_platform_info_t hsPlatform;
+  // hs_platform_info_t hsPlatform;
   hs_compile_error_t* hsErr = nullptr;
 
   if (aux.single) {
@@ -340,7 +379,7 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
     hsScratch = nullptr;
     hsErr = nullptr;
     auto resCompile = hs_compile(rule.getRegexp().data(), flag, HS_MODE_BLOCK,
-                             nullptr, &hsDb, &hsErr);
+                                 nullptr, &hsDb, &hsErr);
     if (resCompile == HS_SUCCESS) {
       auto resAlloc = hs_alloc_scratch(hsDb, &hsScratch);
       if (resAlloc != HS_SUCCESS) {
@@ -373,17 +412,17 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
 
     hs_free_scratch(hsScratch);
     hs_free_database(hsDb);
-
   }
 
-  //cout << "Hyper scan result" << endl << endl;
+  // cout << "Hyper scan result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = select<TestResult>(db, TestResult::Testid == p.first &&
-                                            TestResult::Engineid == engineId)
-                     .cursor();
-      (*curT).resultid = p.second;
-      (*curT).update();
+      auto curT = *(select<TestResult>(db,
+                                       TestResult::Testid == p.first &&
+                                           TestResult::Engineid == engineId)
+                        .cursor());
+      curT.resultid = p.second;
+      curT.update();
     } catch (NotFound) {
       TestResult res(db);
       res.testid = p.first;
@@ -392,8 +431,8 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
       res.update();
     }
     // for debugging
-    //const auto& test = select<Test>(db, Test::Id == p.first).one();
-    //cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
+    // const auto& test = select<Test>(db, Test::Id == p.first).one();
+    // cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
     //     << ", pattern id " << test.patternid.value()
     //     << ") => result : " << p.second << endl;
   }
@@ -493,14 +532,15 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
     pcre2_match_data_free(mdata);
   }
 
-  //cout << "PCRE match result" << endl << endl;
+  // cout << "PCRE match result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = select<TestResult>(db, TestResult::Testid == p.first &&
-                                            TestResult::Engineid == engineId)
-                     .cursor();
-      (*curT).resultid = p.second;
-      (*curT).update();
+      auto curT = *(select<TestResult>(db,
+                                       TestResult::Testid == p.first &&
+                                           TestResult::Engineid == engineId)
+                        .cursor());
+      curT.resultid = p.second;
+      curT.update();
     } catch (NotFound) {
       TestResult res(db);
       res.testid = p.first;
@@ -509,8 +549,8 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
       res.update();
     }
     // for debugging
-    //const auto& test = select<Test>(db, Test::Id == p.first).one();
-    //cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
+    // const auto& test = select<Test>(db, Test::Id == p.first).one();
+    // cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
     //     << ", pattern id " << test.patternid.value()
     //     << ") => result : " << p.second << endl;
   }
@@ -557,7 +597,7 @@ int runShell()
     CheckerShell shell;
     shell.initialize();
     shell.run();
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     cerr << ex.what() << endl;
     return -1;
   }

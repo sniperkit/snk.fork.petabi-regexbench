@@ -45,5 +45,5 @@ endif()
 target_link_libraries(pcre_checker engines
   ${Boost_LIBRARIES} ${LIB_SQLITE3}
   ${PCRE2_LIB} ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${HYPERSCAN_LIB}
-  ${EDITLINE_LIB} ${LIB_JSONCPP}
+  ${EDITLINE_LIB} ${LIB_JSONCPP} ${PCAP_LIB}
 )
