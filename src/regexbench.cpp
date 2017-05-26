@@ -68,8 +68,12 @@ struct Arguments {
   uint32_t nmatch = 0;
   std::vector<size_t> cores;
   bool reduce = {false};
+#ifdef USE_TURBO
   bool turbo = {false};
   char paddings[6];
+#else
+  char paddings[7];
+#endif
 };
 
 template <typename Derived, typename Base, typename Del>
@@ -170,7 +174,12 @@ int main(int argc, const char* argv[])
         engine->load(args.rule_file, args.num_threads);
       } else {
         engine = std::make_unique<regexbench::REmatch2AutomataEngine>(
-            args.nmatch, args.reduce, args.turbo);
+            args.nmatch, args.reduce
+#ifdef USE_TURBO
+            ,
+            args.turbo
+#endif
+            );
         engine->compile(regexbench::loadRules(args.rule_file),
                         args.num_threads);
       }
@@ -400,7 +409,9 @@ Arguments parse_options(int argc, const char* argv[])
   optargs.add_options()(
       "update,u", po::value<std::string>(&args.update_pipe)->default_value(""),
       "Pipe for signaling online update");
+#ifdef USE_TURBO
   optargs.add_options()("turbo", "Turbo processing mode for rematch2");
+#endif
   optargs.add_options()("match_num,m",
                         po::value<uint32_t>(&args.nmatch)->default_value(0),
                         "Match number");
@@ -420,8 +431,10 @@ Arguments parse_options(int argc, const char* argv[])
     std::exit(EXIT_SUCCESS);
   }
 
+#ifdef USE_TURBO
   if (vm.count("turbo"))
     args.turbo = true;
+#endif
 
   if (engine == "boost")
     args.engine = EngineType::boost;

@@ -79,7 +79,12 @@ private:
 
 class REmatch2AutomataEngine : public Engine {
 public:
-  REmatch2AutomataEngine(uint32_t nm = 1, bool red = false, bool turbo = false);
+  REmatch2AutomataEngine(uint32_t nm = 1, bool red = false
+#ifdef USE_TURBO
+                         ,
+                         bool turbo = false
+#endif
+                         );
   ~REmatch2AutomataEngine();
 
   void compile(const std::vector<Rule>& rules, size_t = 1) override;
@@ -101,10 +106,16 @@ private:
   const uint32_t nmatch;
   std::atomic_int version;
   bool reduce = false;
+#ifdef USE_TURBO
   bool turbo = false;
+#endif
 
 protected:
+#ifdef USE_TURBO
   char __padding[6];
+#else
+  char __padding[7];
+#endif
 };
 
 } // namespace regexbench
