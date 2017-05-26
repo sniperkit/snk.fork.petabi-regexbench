@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {"name": "lookahead-positive", "content": "/abcd(?=f)/"},
+    {"name": "lookahead-negative", "content": "/abcd(?!f)/"}
+  ],
+
+  "grammars": [
+    {"name": "lookahead-positive"},
+    {"name": "lookahead-negative"}
+  ],
+
+  "patterns": [
+    {"name": "lookahead-positive", "content": "abcdf"},
+    {"name": "lookahead-negative", "content": "fabcd"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "lookahead-positive",
+     "pattern": "lookahead-positive",
+     "grammars" : ["lookahead-positive"], "expect": "match"},
+    {"rule": "lookahead-negative",
+     "pattern": "lookahead-negative",
+     "grammars" : ["lookahead-negative"], "expect": "match"}
+  ]
+}

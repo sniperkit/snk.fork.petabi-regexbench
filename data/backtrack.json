@@ -1,0 +1,76 @@
+{
+  "rules": [
+    {"name": "backtrack-force_match", "content": "/a((?:a|b(*ACCEPT)|c)d)/"},
+    {"name": "backtrack-force_backtrack", "content": "/a((?:a|b(*FAIL)|c)d)/"},
+    {"name": "backtrack-set_name", "content": "/X(*MARK:A)Y|X(*MARK:B)Z/"},
+    {"name": "backtrack-overall_failure", "content": "/a+(*COMMIT)b/"},
+    {"name": "backtrack-prune", "content": "/X(*PRUNE)Y|X(*PRUNE)Z/"},
+    {"name": "backtrack-named_prune", "content": "/X(*PRUNE:A)Y|X(*PRUNE:B)Z/"},
+    {"name": "backtrack-skip", "content": "/a+(*SKIP)b/"},
+    {"name": "backtrack-named_skip", "content": "/a+(*SKIP:A)b/"},
+    {"name": "backtrack-then", "content": "/A(B(*THEN)C)|D/"},
+    {"name": "backtrack-named_then", "content": "/A(B(*THEN:A)C)|D/"}
+  ],
+
+  "grammars": [
+    {"name": "backtrack-force_match"},
+    {"name": "backtrack-force_backtrack"},
+    {"name": "backtrack-set_name"},
+    {"name": "backtrack-overall_failure"},
+    {"name": "backtrack-prune"},
+    {"name": "backtrack-named_prune"},
+    {"name": "backtrack-skip"},
+    {"name": "backtrack-named_skip"},
+    {"name": "backtrack-then"},
+    {"name": "backtrack-named_then"}
+  ],
+
+  "patterns": [
+    {"name": "backtrack-force_match", "content": "abaacdaadabcd"},
+    {"name": "backtrack-force_backtrack", "content": "abaacdaadabcd"},
+    {"name": "backtrack-set_name", "content": "XYXZYZXXXYZXYXZYX"},
+    {"name": "backtrack-overall_failure", "content": "xxabbabbaxxaxbxxab"},
+    {"name": "backtrack-prune", "content": "XYXYXZXY"},
+    {"name": "backtrack-named_prune", "content": "XYXYXZXY"},
+    {"name": "backtrack-skip", "content": "xyzxyzaaaaaaaaaaaaaaaaabaab"},
+    {"name": "backtrack-named_skip", "content": "xyzxyzaaaaaaaaaaaaaaaaabaab"},
+    {"name": "backtrack-then", "content": "ABCDACBC"},
+    {"name": "backtrack-named_then", "content": "ABCDACBC"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "backtrack-force_match",
+     "pattern": "backtrack-force_match",
+     "grammars" : ["backtrack-force_match"], "expect": "match"},
+    {"rule": "backtrack-force_backtrack",
+     "pattern": "backtrack-force_backtrack",
+     "grammars" : ["backtrack-force_backtrack"], "expect": "match"},
+    {"rule": "backtrack-set_name",
+     "pattern": "backtrack-set_name",
+     "grammars" : ["backtrack-set_name"], "expect": "match"},
+    {"rule": "backtrack-overall_failure",
+     "pattern": "backtrack-overall_failure",
+     "grammars" : ["backtrack-overall_failure"], "expect": "match"},
+    {"rule": "backtrack-prune",
+     "pattern": "backtrack-prune",
+     "grammars" : ["backtrack-prune"], "expect": "match"},
+    {"rule": "backtrack-named_prune",
+     "pattern": "backtrack-named_prune",
+     "grammars" : ["backtrack-named_prune"], "expect": "match"},
+    {"rule": "backtrack-skip",
+     "pattern": "backtrack-skip",
+     "grammars" : ["backtrack-skip"], "expect": "match"},
+    {"rule": "backtrack-named_skip",
+     "pattern": "backtrack-named_skip",
+     "grammars" : ["backtrack-named_skip"], "expect": "match"},
+    {"rule": "backtrack-then",
+     "pattern": "backtrack-then",
+     "grammars" : ["backtrack-then"], "expect": "match"},
+    {"rule": "backtrack-named_then",
+     "pattern": "backtrack-named_then",
+     "grammars" : ["backtrack-named_then"], "expect": "match"}
+  ]
+}

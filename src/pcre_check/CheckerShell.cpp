@@ -381,7 +381,7 @@ template <> void CS::processCmd(CS::cmd_singletest_option &opt)
     aux.ctype = "str";
   }
   if (aux.ctype == "hex") {
-    aux.data = ConvertHexData(opt[id::data]());
+    aux.data = convertHexData(opt[id::data]());
   } else {
     aux.data = opt[id::data]();
   }

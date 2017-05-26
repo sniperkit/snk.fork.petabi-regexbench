@@ -1,0 +1,143 @@
+{
+  "rules": [
+    {"name": "quote-bs_x", "content": ""}, // don't know grammar
+	{"name": "esc_char-bs_a", "content": ""}, // bell character ??
+	{"name": "esc_char-bs_cx", "content": ""}, // ctr+A ~ ctr+Z ??
+    {"name": "esc_char-bs_e", "content": ""},  // escape control character(ASCII 0x1A) ??
+    {"name": "esc_char-bs_f", "content": ""}, // form feed control character(ASCII 0x0C) ??
+    {"name":"char_type-property", "content": "/abc\\p{L}123/"}, // build error(could not build rematch2)
+    {"name":"char_type-non_property", "content": "/abc\\P{L}123/"}, // build error
+    {"name":"char_type-uni_egc", "content": "/abc\\Xabc/"},
+    {"name": "char_class-posix_cat_cntrl", "content": ""}, // control character ??
+    {"name": "backref-relplus1", "content": ""}, // not found example
+    {"name": "backref-relplus2", "content": ""}, // not found example
+    {"name": "backref-name5", "content": "/(?P<x>abc){3}/"}, // error
+    {"name": "cond-overall_recur", "content": "/((?(R)a+|(?1)b))/"}, // not support
+    {"name": "cond-num_recur", "content": "/((?(R1)a+|(?1)b))/"}, // not support
+    {"name": "cond-define", "content": "/(?(DEFINE)([ab]))x(?1)y(?1)z/"}, // not support
+    {"name": "cond-named_recur", "content": "//"}, // ???
+    {"name": "cond-test_version", "content": "//"}, // ???
+    {"name": "cond-assert", "content": "//"}, // ???
+    {"name": "callout-string", "content": "/(?C{a})pqr/"} // not support
+    {"name": "option-match_limit", "content": "//"},
+    {"name": "option-notempty", "content": "//"},
+    {"name": "option-notempty_atstart", "content": "//"},
+    {"name": "option-no_auto_possess", "content": "//"},
+    {"name": "option-no_dotstar_anchor", "content": "//"},
+    {"name": "option-no_jit", "content": "//"},
+    {"name": "option-no_start_opt", "content": "//"},
+    {"name": "option-utf", "content": "//"},
+    {"name": "option-ucp", "content": "//"},
+    {"name": "option-newline_cr_only", "content": "//"},
+    {"name": "option-newline_lf_only", "content": "//"},
+    {"name": "option-newline_crlf", "content": "//"},
+    {"name": "option-newline_anycrlf", "content": "//"},
+    {"name": "option-newline_any", "content": "//"},
+    {"name": "option-bsr_anycrlf", "content": "//"},
+    {"name": "option-bsr_unicode", "content": "//"}
+  ],
+
+  "grammars": [
+    {"name": "basic"}
+  ],
+
+  "patterns": [
+    {"name": "quote-bs_x", "content": ""},
+	{"name": "esc_char-bs_a", "content": ""},
+    {"name": "esc_char-bs_cx", "content": ""},
+    {"name": "esc_char-bs_e", "content": ""},
+	{"name":"char_type-property", "content": "xyabcA12345"},
+    {"name":"char_type-non_property", "content": "xyabc@12345"},
+    {"name":"char_type-uni_egc", "content": "abc@abc"},
+    {"name": "char_class-posix_cat_cntrl", "content": ""},
+    {"name": "backref-relplus1", "content": ""},
+    {"name": "backref-relplus2", "content": ""},
+    {"name": "backref-name5", "content": "abcabcabc"}
+    {"name": "cond-named_recur", "content": ""},
+    {"name": "cond-overall_recur", "content": "abababccbaasdbab"},
+    {"name": "cond-num_recur", "content": "abababccbaasdbab"},
+    {"name": "cond-define", "content": "xayazazxxaxaxayaz"},
+    {"name": "cond-test_version", "content": ""},
+    {"name": "cond-assert", "content": ""},
+    {"name": "callout-string", "content": "abcpqr"}
+    {"name": "option-match_limit", "content": ""},
+    {"name": "option-notempty", "content": ""},
+    {"name": "option-notempty_atstart", "content": ""},
+    {"name": "option-no_auto_possess", "content": ""},
+    {"name": "option-no_dotstar_anchor", "content": ""},
+    {"name": "option-no_jit", "content": ""},
+    {"name": "option-no_start_opt", "content": ""},
+    {"name": "option-utf", "content": ""},
+    {"name": "option-ucp", "content": ""},
+    {"name": "option-newline_cr_only", "content": ""},
+    {"name": "option-newline_lf_only", "content": ""},
+    {"name": "option-newline_crlf", "content": ""},
+    {"name": "option-newline_anycrlf", "content": ""},
+    {"name": "option-newline_any", "content": ""},
+    {"name": "option-bsr_anycrlf", "content": ""},
+    {"name": "option-bsr_unicode", "content": ""},
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "quote-bs_x",
+     "pattern": "quote-bs_x",
+     "grammars" : ["quote-bs_x"], "expect": "match"},
+	{"rule": "esc_char-bs_a",
+	 "pattern": "esc_char-bs_a",
+	 "grammars" : ["esc_char-bs_a"], "expect": "match"},
+    {"rule": "esc_char-bs_cx",
+     "pattern": "esc_char-bs_cx",
+     "grammars" : ["esc_char-bs_cx"], "expect": "match"},
+    {"rule": "esc_char-bs_e",
+     "pattern": "esc_char-bs_e",
+     "grammars" : ["esc_char-bs_e"], "expect": "match"},
+    {"rule": "esc_char-bs_f",
+     "pattern": "esc_char-bs_f",
+     "grammars" : ["esc_char-bs_f"], "expect": "match"},
+     {"rule":"char_type-property",
+      "pattern": "char_type-property",
+      "grammars":["char_type-property"], "expect": "match" },
+     {"rule":"char_type-non_property",
+      "pattern": "char_type-non_property",
+      "grammars":["char_type-non_property"], "expect": "match" },
+     {"rule":"char_type-uni_egc",
+      "pattern": "char_type-uni_egc",
+      "grammars":["char_type-uni_egc"], "expect": "match" },
+    {"rule": "char_class-posix_cat_cntrl",
+     "pattern": "char_class-posix_cat_cntrl",
+     "grammars" : ["char_class-posix_cat_cntrl"], "expect": "match"},
+    {"rule": "backref-relplus1",
+     "pattern": "backref-relplus1",
+     "grammars" : ["backref-relplus1"], "expect": "match"},
+    {"rule": "backref-relplus2",
+     "pattern": "backref-relplus2",
+     "grammars" : ["backref-relplus2"], "expect": "match"},
+    {"rule": "backref-name5",
+     "pattern": "backref-name5",
+     "grammars" : ["backref-name5"], "expect": "match"},
+    {"rule": "cond-named_recur",
+     "pattern": "cond-named_recur",
+     "grammars" : ["cond-named_recur"], "expect": "match"},
+    {"rule": "cond-overall_recur",
+     "pattern": "cond-overall_recur",
+     "grammars" : ["cond-overall_recur"], "expect": "match"},
+    {"rule": "cond-num_recur",
+     "pattern": "cond-num_recur",
+     "grammars" : ["cond-num_recur"], "expect": "match"},
+    {"rule": "cond-define",
+     "pattern": "cond-define",
+     "grammars" : ["cond-define"], "expect": "match"},
+    {"rule": "cond-test_version",
+     "pattern": "cond-test_version",
+     "grammars" : ["cond-test_version"], "expect": "match"},
+    {"rule": "cond-assert",
+     "pattern": "cond-assert",
+     "grammars" : ["cond-assert"], "expect": "match"},
+    {"rule": "callout-string",
+     "pattern": "callout-string",
+     "grammars" : ["callout-string"], "expect": "match"}
+  ]
+}

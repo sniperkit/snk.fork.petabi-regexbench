@@ -25,7 +25,7 @@ struct AuxInfo {
 void checkRematch(PcreCheckDb& db, struct AuxInfo& aux);
 void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux);
 void checkPcre(PcreCheckDb& db, struct AuxInfo& aux);
-std::string ConvertHexData(const std::string& data);
+std::string convertHexData(const std::string& data);
 bool hexToCh(std::string& hex, std::string& conv);
 
 #endif

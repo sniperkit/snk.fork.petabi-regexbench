@@ -1,0 +1,76 @@
+{
+  "rules": [
+    {"name": "backref-num1", "content": "/(abc|def)=\\1/"},
+    {"name": "backref-num2", "content": "/(abc|def)=\\g1/"},
+    {"name": "backref-num3", "content": "/(abc|def)=\\g{1}/"},
+    {"name": "backref-relminus1", "content": "/(a)(b)(c)(d)\\g-3/"},
+    {"name": "backref-relminus2", "content": "/(a)(b)(c)(d)\\g{-3}/"},
+    {"name": "backref-name1", "content": "/(?<x>abc|def)=\\k<x>/"},
+    {"name": "backref-name2", "content": "/(?'x'abc|def)=\\k'x'/"},
+    {"name": "backref-name3", "content": "/(?'x'abc|def)=\\g{x}/"},
+    {"name": "backref-name4", "content": "/(?'x'abc|def)=\\k{x}/"},
+    {"name": "backref-name5", "content": "/(?P<x>abc|def)=(?P=x)/"}
+  ],
+
+  "grammars": [
+    {"name": "backref-num1"},
+    {"name": "backref-num2"},
+    {"name": "backref-num3"},
+    {"name": "backref-relminus1"},
+    {"name": "backref-relminus2"},
+    {"name": "backref-name1"},
+    {"name": "backref-name2"},
+    {"name": "backref-name3"},
+    {"name": "backref-name4"},
+    {"name": "backref-name5"}
+  ],
+
+  "patterns": [
+    {"name": "backref-num1", "content": "abc=abc"},
+    {"name": "backref-num2", "content": "abc=abc"},
+    {"name": "backref-num3", "content": "abc=abc"},
+    {"name": "backref-relminus1", "content": "abcdb"},
+    {"name": "backref-relminus2", "content": "abcdb"},
+    {"name": "backref-name1", "content": "abc=abc"},
+    {"name": "backref-name2", "content": "abc=abc"},
+    {"name": "backref-name3", "content": "abc=abc"},
+    {"name": "backref-name4", "content": "abc=abc"},
+    {"name": "backref-name5", "content": "abc=abc"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "backref-num1",
+     "pattern": "backref-num1",
+     "grammars" : ["backref-num1"], "expect": "match"},
+    {"rule": "backref-num2",
+     "pattern": "backref-num2",
+     "grammars" : ["backref-num2"], "expect": "match"},
+    {"rule": "backref-num3",
+     "pattern": "backref-num3",
+     "grammars" : ["backref-num3"], "expect": "match"},
+    {"rule": "backref-relminus1",
+     "pattern": "backref-relminus1",
+     "grammars" : ["backref-relminus1"], "expect": "match"},
+    {"rule": "backref-relminus2",
+     "pattern": "backref-relminus2",
+     "grammars" : ["backref-relminus2"], "expect": "match"},
+    {"rule": "backref-name1",
+     "pattern": "backref-name1",
+     "grammars" : ["backref-name1"], "expect": "match"},
+    {"rule": "backref-name2",
+     "pattern": "backref-name2",
+     "grammars" : ["backref-name2"], "expect": "match"},
+    {"rule": "backref-name3",
+     "pattern": "backref-name3",
+     "grammars" : ["backref-name3"], "expect": "match"},
+    {"rule": "backref-name4",
+     "pattern": "backref-name4",
+     "grammars" : ["backref-name4"], "expect": "match"},
+    {"rule": "backref-name5",
+     "pattern": "backref-name5",
+     "grammars" : ["backref-name5"], "expect": "match"}
+  ]
+}

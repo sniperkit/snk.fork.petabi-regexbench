@@ -516,7 +516,7 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
   }
 }
 
-std::string ConvertHexData(const std::string& data)
+std::string convertHexData(const std::string& data)
 {
   size_t pos = 0;
   std::string tmpStr, convCh, resultStr = data;
