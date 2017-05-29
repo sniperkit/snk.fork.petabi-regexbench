@@ -101,11 +101,11 @@ int main(int argc, char** argv)
 
     db.commit(); // commit changes (mostly about result)
 
-  } catch (const std::exception& e) {
-    cerr << e.what() << endl;
-    return -1;
   } catch (Except& e) { // litesql exception
     cerr << e << endl;
+    return -1;
+  } catch (const std::exception& e) {
+    cerr << e.what() << endl;
     return -1;
   }
   return 0;
@@ -205,6 +205,8 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
     matchRes.clear(); // must be done to get right result
     int ret = rematch_scan_block(matcher, aux.data.data(), aux.data.size(),
                                  context, scratch, onMatch, &matchRes);
+    if (ret == MREG_FAILURE)
+      cerr << "rematch failed during matching for a packet" << endl;
     aux.result = matchRes.isMatched() ? 1 : 0;
   } else {
     vector<Test> tests = select<Test>(db).orderBy(Test::Patternid).all();
@@ -238,6 +240,8 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
       matchRes.clear(); // must be done to get right result
       int ret = rematch_scan_block(matcher, temp.get(), len, context, scratch,
                                    onMatch, &matchRes);
+      if (ret == MREG_FAILURE)
+        cerr << "rematch failed during matching for a packet" << endl;
       if (matchRes.isMatched()) {
         // for debugging
         // cout << "pattern " << lastPid;
@@ -364,7 +368,7 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
   for (const auto& rule : rules) {
     if (!cur.rowsLeft())
       break;
-    if (rule.getID() != (*cur).ruleid.value())
+    if (rule.getID() != static_cast<size_t>((*cur).ruleid.value()))
       continue;
 
     unsigned flag = HS_FLAG_ALLOWEMPTY;
@@ -389,7 +393,9 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
     } else
       hs_free_compile_error(hsErr);
 
-    for (; cur.rowsLeft() && rule.getID() == (*cur).ruleid.value(); cur++) {
+    for (; cur.rowsLeft() &&
+           rule.getID() == static_cast<size_t>((*cur).ruleid.value());
+         cur++) {
 
       if (resCompile != HS_SUCCESS) {
         test2ResMap[(*cur).id.value()] = resErrorId;
@@ -492,7 +498,7 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
   for (const auto& rule : rules) {
     if (!cur.rowsLeft())
       break;
-    if (rule.getID() != (*cur).ruleid.value())
+    if (rule.getID() != static_cast<size_t>((*cur).ruleid.value()))
       continue;
 
     PCRE2_SIZE erroffset = 0;
@@ -506,7 +512,9 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
       mdata = pcre2_match_data_create_from_pattern(re, nullptr);
     }
 
-    for (; cur.rowsLeft() && rule.getID() == (*cur).ruleid.value(); cur++) {
+    for (; cur.rowsLeft() &&
+           rule.getID() == static_cast<size_t>((*cur).ruleid.value());
+         cur++) {
 
       if (re == nullptr) {
         test2ResMap[(*cur).id.value()] = resErrorId;
