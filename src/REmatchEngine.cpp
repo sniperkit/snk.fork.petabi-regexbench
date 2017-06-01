@@ -317,7 +317,8 @@ void REmatch2AutomataEngine::load_updated(const std::string& file)
   std::cout << "Rule update soon to be applied" << std::endl;
 }
 
-static int count_matches(unsigned id, size_t, size_t, unsigned, void* ctx)
+static int count_matches(unsigned id, unsigned long long, unsigned long long,
+                         unsigned, void* ctx)
 {
   std::tuple<size_t, uint32_t, unsigned int>* matchRes =
       static_cast<std::tuple<size_t, uint32_t, unsigned int>*>(ctx);
