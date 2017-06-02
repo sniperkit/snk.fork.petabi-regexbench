@@ -25,7 +25,7 @@ add_library(engines ${ENGINE_SRCS})
 
 set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp)
 add_library(rb ${REGEXBENCH_SRCS})
-target_link_libraries(rb 
+target_link_libraries(rb
     engines ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT})
 
 if(HYPERSCAN_LIB)

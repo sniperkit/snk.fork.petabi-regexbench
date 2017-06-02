@@ -94,5 +94,5 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
 int exec(Arguments& args);
 }
 
-std::vector<size_t> setup_affinity(size_t num, const std::string& arg);
+Arguments parse_options(int argc, const char* argv[]);
 #endif // REGEXBENCH_H
