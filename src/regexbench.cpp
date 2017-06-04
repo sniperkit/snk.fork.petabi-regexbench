@@ -45,7 +45,7 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 
 static bool endsWith(const std::string&, const char*);
 
-int regexbench::exec(Arguments &args)
+int regexbench::exec(Arguments& args)
 {
   try {
     std::string prefix;
@@ -144,7 +144,8 @@ int regexbench::exec(Arguments &args)
 #endif
     }
     getrusage(RUSAGE_SELF, &compileEnd);
-    args.compile_time = compileReport(compileBegin, compileEnd, pcap, args.quiet);
+    args.compile_time =
+        compileReport(compileBegin, compileEnd, pcap, args.quiet);
 
     // set up background jobs
     using BGJ = regexbench::BackgroundJobs;

@@ -7,8 +7,9 @@ using namespace regexbench;
 ATF_TEST_CASE_WITHOUT_HEAD(lib_test);
 ATF_TEST_CASE_BODY(lib_test)
 {
-  Arguments args = regexbench::init(
-      DATA_DIR "/rule/libtest.re", DATA_DIR "/pcap/libtest.pcap", DATA_DIR "/output.json");
+  Arguments args =
+      regexbench::init(DATA_DIR "/rule/libtest.re",
+                       DATA_DIR "/pcap/libtest.pcap", DATA_DIR "/output.json");
   int result = regexbench::exec(args);
 
   // hyperscan not support rule
