@@ -231,7 +231,7 @@ static std::vector<size_t> setup_affinity(size_t num, const std::string& arg)
   return cores;
 }
 
-Arguments parse_options(int argc, const char* argv[])
+Arguments regexbench::parse_options(int argc, const char* argv[])
 {
   Arguments args;
   std::string engine;
@@ -290,9 +290,7 @@ Arguments parse_options(int argc, const char* argv[])
   optargs.add_options()("match_num,m",
                         po::value<uint32_t>(&args.nmatch)->default_value(0),
                         "Match number");
-  optargs.add_options()("quiet,q",
-                        po::value<bool>(&args.quiet)->default_value(false),
-                        "Quiet mode, default is false");
+  optargs.add_options()("quiet,q", "Quiet mode, default is false");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;
@@ -313,6 +311,8 @@ Arguments parse_options(int argc, const char* argv[])
   if (vm.count("turbo"))
     args.turbo = true;
 #endif
+  if (vm.count("quiet"))
+    args.quiet = true;
 
   if (engine == "boost")
     args.engine = EngineType::boost;

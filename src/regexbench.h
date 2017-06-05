@@ -83,7 +83,8 @@ std::vector<MatchResult> match(Engine&, const PcapSource&, long,
                                const std::vector<MatchMeta>&,
                                const std::string&);
 std::string compileReport(struct rusage& compileBegin,
-                          struct rusage& compileEnd, PcapSource& pcap, bool quiet);
+                          struct rusage& compileEnd, PcapSource& pcap,
+                          bool quiet);
 void report(std::string& prefix, PcapSource& pcap, Arguments& args,
             std::vector<MatchResult>& results);
 Arguments init(const std::string& rule_file, const std::string& pcap_file,
@@ -92,7 +93,7 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
                uint32_t nthreads = 1, const std::string& affinity = "0",
                int32_t repeat = 1);
 int exec(Arguments& args);
+Arguments parse_options(int argc, const char* argv[]);
 }
 
-Arguments parse_options(int argc, const char* argv[]);
 #endif // REGEXBENCH_H
