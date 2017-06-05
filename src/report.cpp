@@ -27,9 +27,9 @@ using boost::property_tree::write_json;
 
 using namespace regexbench;
 
-std::string regexbench::compileReport(struct rusage& compileBegin,
-                                      struct rusage& compileEnd,
-                                      PcapSource& pcap, bool quiet)
+std::string regexbench::compileReport(const struct rusage& compileBegin,
+                                      const struct rusage& compileEnd,
+                                      const PcapSource& pcap, bool quiet)
 {
   struct timeval compileUdiff, compileSdiff;
   timersub(&(compileEnd.ru_utime), &(compileBegin.ru_utime), &compileUdiff);
@@ -48,15 +48,16 @@ std::string regexbench::compileReport(struct rusage& compileBegin,
   return std::to_string(compileTime);
 }
 
-void regexbench::report(std::string& prefix, PcapSource& pcap, Arguments& args,
-                        std::vector<MatchResult>& results)
+void regexbench::report(std::string& prefix, const PcapSource& pcap,
+                        const Arguments& args,
+                        const std::vector<MatchResult>& results)
 {
   std::string reportFields[]{"TotalMatches", "TotalMatchedPackets",
                              "UserTime",     "SystemTime",
                              "TotalTime",    "Mbps",
                              "Mpps",         "MaximumMemoryUsed(MB)"};
 
-  auto coreIter = args.cores.begin();
+  auto coreIter = args.cores.cbegin();
 
   coreIter++; // get rid of main thread
 

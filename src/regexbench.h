@@ -82,11 +82,11 @@ std::vector<MatchResult> match(Engine&, const PcapSource&, long,
                                const std::vector<size_t>&,
                                const std::vector<MatchMeta>&,
                                const std::string&);
-std::string compileReport(struct rusage& compileBegin,
-                          struct rusage& compileEnd, PcapSource& pcap,
-                          bool quiet);
-void report(std::string& prefix, PcapSource& pcap, Arguments& args,
-            std::vector<MatchResult>& results);
+std::string compileReport(const struct rusage& compileBegin,
+                          const struct rusage& compileEnd,
+                          const PcapSource& pcap, bool quiet);
+void report(std::string& prefix, const PcapSource& pcap, const Arguments& args,
+            const std::vector<MatchResult>& results);
 Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const std::string& output_file,
                const EngineType& engine = EngineType::hyperscan,
