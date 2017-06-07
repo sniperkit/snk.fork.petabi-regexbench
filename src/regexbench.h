@@ -5,8 +5,8 @@
 #include "Logger.h"
 #include "Rule.h"
 #include <boost/timer/timer.hpp>
-#include <vector>
 #include <map>
+#include <vector>
 
 enum class EngineType : uint64_t {
   boost,
@@ -82,7 +82,7 @@ struct MatchMeta {
   size_t len;
 };
 
-typedef void (*realtimeFunc)(const std::map<std::string, size_t> &);
+typedef void (*realtimeFunc)(const std::map<std::string, size_t>&);
 
 int setAffinity(size_t core, const std::string& thrName = "");
 std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
@@ -95,7 +95,7 @@ std::vector<MatchResult> match(Engine&, const PcapSource&, long,
                                const std::vector<size_t>&,
                                const std::vector<MatchMeta>&,
                                const std::string&, realtimeFunc func = nullptr);
-void realtimeReport(const std::map<std::string, size_t> &m);
+void realtimeReport(const std::map<std::string, size_t>& m);
 std::string compileReport(const struct rusage& compileBegin,
                           const struct rusage& compileEnd,
                           const PcapSource& pcap, bool quiet);

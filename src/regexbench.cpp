@@ -45,7 +45,7 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 
 static bool endsWith(const std::string&, const char*);
 
-int regexbench::exec(Arguments& args,  realtimeFunc func)
+int regexbench::exec(Arguments& args, realtimeFunc func)
 {
   try {
     std::string prefix;
@@ -69,8 +69,9 @@ int regexbench::exec(Arguments& args,  realtimeFunc func)
     bgj.start(); // launch background jobs (to actually run or not will be
                  // determined inside class instance)
 
-    std::vector<regexbench::MatchResult> results = match(
-        *engine, pcap, args.repeat, args.cores, match_info, args.log_file, func);
+    std::vector<regexbench::MatchResult> results =
+        match(*engine, pcap, args.repeat, args.cores, match_info, args.log_file,
+              func);
 
     report(prefix, pcap, args, results);
 
@@ -82,7 +83,8 @@ int regexbench::exec(Arguments& args,  realtimeFunc func)
   return EXIT_SUCCESS;
 }
 
-std::unique_ptr<regexbench::Engine> regexbench::loadEngine(Arguments& args, std::string &prefix, size_t nsessions)
+std::unique_ptr<regexbench::Engine>
+regexbench::loadEngine(Arguments& args, std::string& prefix, size_t nsessions)
 {
   std::unique_ptr<regexbench::Engine> engine;
 

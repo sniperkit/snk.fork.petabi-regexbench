@@ -132,17 +132,17 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   outputFile << buf.str();
 }
 
-void regexbench::realtimeReport(const std::map<std::string, size_t> &m)
+void regexbench::realtimeReport(const std::map<std::string, size_t>& m)
 {
   size_t sec = m.find("Sec")->second;
-  bool isTotal = sec ? false: true;
+  bool isTotal = sec ? false : true;
 
   if (isTotal) {
-    std::cout << "==============================================================="
-              << "\n"
-              << "TOTAL";
-  }
-  else
+    std::cout
+        << "==============================================================="
+        << "\n"
+        << "TOTAL";
+  } else
     std::cout << boost::format("#%03d ") % sec;
 
   for (const auto& it : m) {

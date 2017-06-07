@@ -5,15 +5,17 @@
 
 using namespace regexbench;
 
-static void report(const std::map<std::string, size_t> &m)
+static void report(const std::map<std::string, size_t>& m)
 {
   std::ostringstream buf;
   std::ofstream outputFile(DATA_DIR "/realtime", std::ios_base::app);
 
-  bool isTotal = m.find("Sec")->second ? false: true;
+  bool isTotal = m.find("Sec")->second ? false : true;
 
   if (isTotal)
-    buf << "========================================================" << "\n" << "TOTAL ";
+    buf << "========================================================"
+        << "\n"
+        << "TOTAL ";
 
   for (const auto& it : m) {
     if (isTotal && it.first == "Sec")

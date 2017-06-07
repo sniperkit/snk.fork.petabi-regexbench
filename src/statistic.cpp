@@ -37,7 +37,7 @@ static struct ResultInfo realtime(std::vector<MatchResult>& results)
 {
   struct ResultInfo stat;
 
-  for (auto &r: results) {
+  for (auto& r : results) {
     struct ResultInfo cur = r.cur;
     struct ResultInfo& old = (r.old);
 
@@ -55,12 +55,12 @@ static struct ResultInfo realtime(std::vector<MatchResult>& results)
   return stat;
 }
 
-static struct ResultInfo total (std::vector<MatchResult>& results)
+static struct ResultInfo total(std::vector<MatchResult>& results)
 {
   struct ResultInfo stat;
 
-  for (auto &r: results) {
-    const struct ResultInfo &cur = r.cur;
+  for (auto& r : results) {
+    const struct ResultInfo& cur = r.cur;
 
     stat.nmatches += cur.nmatches;
     stat.nmatched_pkts += cur.nmatched_pkts;
