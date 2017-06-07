@@ -179,7 +179,7 @@ regexbench::match(Engine& engine, const PcapSource& src, long repeat,
                   const std::vector<size_t>& cores,
                   const std::vector<MatchMeta>& meta,
                   const std::string& logfile,
-                  void (*realtimeFunc)(const std::map<std::string, size_t>&))
+                  realtimeFunc func)
 {
   std::vector<std::thread> threads;
   std::vector<size_t>::const_iterator coreIter, coreEnd;
@@ -223,7 +223,7 @@ regexbench::match(Engine& engine, const PcapSource& src, long repeat,
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     sec++;
-    statistic(sec, results, realtimeFunc);
+    statistic(sec, results, func);
 
     for (const auto& result : results) {
       if (!result.stop) {
@@ -235,9 +235,9 @@ regexbench::match(Engine& engine, const PcapSource& src, long repeat,
   }
 
   sec++;
-  statistic(sec, results, realtimeFunc);
+  statistic(sec, results, func);
 
-  statistic(0, results, realtimeFunc);
+  statistic(0, results, func);
 
   for (auto& thr : threads)
     thr.join();

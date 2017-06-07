@@ -82,6 +82,8 @@ struct MatchMeta {
   size_t len;
 };
 
+typedef void (*realtimeFunc)(const std::map<std::string, size_t> &);
+
 int setAffinity(size_t core, const std::string& thrName = "");
 std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
 uint32_t getPLOffset(const std::string&);
@@ -89,10 +91,10 @@ std::vector<Rule> loadRules(const std::string&);
 void matchThread(Engine* engine, const PcapSource* src, long repeat,
                  size_t core, size_t sel, const std::vector<MatchMeta>* meta,
                  MatchResult* result, Logger* logger);
-std::vector<MatchResult>
-match(Engine&, const PcapSource&, long, const std::vector<size_t>&,
-      const std::vector<MatchMeta>&, const std::string&,
-      void (*realtimeFunc)(const std::map<std::string, size_t>&) = nullptr);
+std::vector<MatchResult> match(Engine&, const PcapSource&, long,
+                               const std::vector<size_t>&,
+                               const std::vector<MatchMeta>&,
+                               const std::string&, realtimeFunc func = nullptr);
 void realtimeReport(const std::map<std::string, size_t> &m);
 std::string compileReport(const struct rusage& compileBegin,
                           const struct rusage& compileEnd,
@@ -104,12 +106,12 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const EngineType& engine = EngineType::hyperscan,
                uint32_t nthreads = 1, const std::string& affinity = "0",
                int32_t repeat = 1);
-int exec(Arguments& args, void (*realtimeFunc)(const std::map<std::string, size_t> &) = nullptr);
+int exec(Arguments& args, realtimeFunc func = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
-//void (*realtimeFunc)(const std::map<std::string, size_t> &);
 void statistic(const uint32_t sec, std::vector<MatchResult>& results,
-               void (*realtimeFunc)(const std::map<std::string, size_t>&));
-std::unique_ptr<Engine> loadEngine(Arguments& args, std::string &prefix, size_t nsessions);
+               realtimeFunc func = nullptr);
+std::unique_ptr<Engine> loadEngine(Arguments& args, std::string& prefix,
+                                   size_t nsessions);
 }
 
 #endif // REGEXBENCH_H

@@ -21,17 +21,16 @@ make_statistic(const uint32_t sec, const struct ResultInfo& stat);
 static struct ResultInfo realtime(std::vector<MatchResult>& results);
 static struct ResultInfo total(std::vector<MatchResult>& results);
 
-void regexbench::statistic(
-    const uint32_t sec, std::vector<MatchResult>& results,
-    void (*realtimeFunc)(const std::map<std::string, size_t>&))
+void regexbench::statistic(const uint32_t sec,
+                           std::vector<MatchResult>& results, realtimeFunc func)
 {
   struct ResultInfo stat = sec ? realtime(results) : total(results);
   std::map<std::string, size_t> m = make_statistic(sec, stat);
 
-  if (realtimeFunc == nullptr)
+  if (func == nullptr)
     realtimeReport(m);
   else
-    realtimeFunc(m);
+    func(m);
 }
 
 static struct ResultInfo realtime(std::vector<MatchResult>& results)
