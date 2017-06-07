@@ -38,18 +38,15 @@ static struct ResultInfo realtime(std::vector<MatchResult>& results)
   struct ResultInfo stat;
 
   for (auto& r : results) {
-    struct ResultInfo cur = r.cur;
-    struct ResultInfo& old = (r.old);
+    const auto cur = r.cur;
+    auto& old = (r.old);
 
     stat.nmatches += cur.nmatches - old.nmatches;
     stat.nmatched_pkts += cur.nmatched_pkts - old.nmatched_pkts;
     stat.npkts += cur.npkts - old.npkts;
     stat.nbytes += cur.nbytes - old.nbytes;
 
-    old.nmatches = cur.nmatches;
-    old.nmatched_pkts = cur.nmatched_pkts;
-    old.npkts = cur.npkts;
-    old.nbytes = cur.nbytes;
+    old = cur;
   }
 
   return stat;
@@ -76,11 +73,11 @@ make_statistic(const uint32_t sec, const struct ResultInfo& stat)
 {
   std::map<std::string, size_t> m;
 
-  m.insert(std::make_pair("Sec", sec));
-  m.insert(std::make_pair("Matches", stat.nmatches));
-  m.insert(std::make_pair("MatchedPackets", stat.nmatched_pkts));
-  m.insert(std::make_pair("Packets", stat.npkts));
-  m.insert(std::make_pair("Bytes", stat.nbytes));
+  m["Sec"] = sec;
+  m["Matches"] = stat.nmatches;
+  m["MatchedPackets"] = stat.nmatched_pkts;
+  m["Packets"] = stat.npkts;
+  m["Bytes"] = stat.nbytes;
 
   return m;
 }
