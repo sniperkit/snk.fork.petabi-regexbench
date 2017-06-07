@@ -156,12 +156,14 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
           engine->match((*src)[j].data() + (*meta)[j].oft, (*meta)[j].len,
                         (*meta)[j].sid, sel, &matchId);
       if (matches) {
-        result->nmatches += matches;
-        result->nmatched_pkts++;
+        result->cur.nmatches += matches;
+        result->cur.nmatched_pkts++;
         if (logger)
           logger->log("Thread ", sel, "(@", core, ") packet ", j,
                       " matches rule ", matchId);
       }
+      result->cur.nbytes += (*src)[j].length();
+      result->cur.npkts++;
     }
   }
 #ifdef RUSAGE_THREAD
@@ -169,13 +171,15 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
   timersub(&(end.ru_utime), &(begin.ru_utime), &result->udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result->sdiff);
 #endif
+  result->stop = true;
 }
 
-std::vector<MatchResult> regexbench::match(Engine& engine,
-                                           const PcapSource& src, long repeat,
-                                           const std::vector<size_t>& cores,
-                                           const std::vector<MatchMeta>& meta,
-                                           const std::string& logfile)
+std::vector<MatchResult>
+regexbench::match(Engine& engine, const PcapSource& src, long repeat,
+                  const std::vector<size_t>& cores,
+                  const std::vector<MatchMeta>& meta,
+                  const std::string& logfile,
+                  void (*realtimeFunc)(const std::map<std::string, size_t>&))
 {
   std::vector<std::thread> threads;
   std::vector<size_t>::const_iterator coreIter, coreEnd;
@@ -202,7 +206,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
 
   if (!logfile.empty()) {
     pLogger.reset(new Logger(logfile));
-    if (!pLogger->isOpen())
+    if (!pLogger->isOpen() )
       pLogger.reset();
   }
   size_t i = 0;
@@ -211,6 +215,29 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                   repeat, *coreIter, i, &meta, &results[i],
                                   (pLogger ? pLogger.get() : nullptr)));
   }
+
+  uint32_t sec = 0;
+  bool realTime = true;
+
+  while (realTime) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    sec++;
+    statistic(sec, results, realtimeFunc);
+
+    for (const auto& result : results) {
+      if (!result.stop) {
+        realTime = true;
+        break;
+      } else
+        realTime = false;
+    }
+  }
+
+  sec++;
+  statistic(sec, results, realtimeFunc);
+
+  statistic(0, results, realtimeFunc);
 
   for (auto& thr : threads)
     thr.join();

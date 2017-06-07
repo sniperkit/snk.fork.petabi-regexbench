@@ -23,7 +23,7 @@ set(ENGINE_SRCS ${ENGINE_SRCS} CPPEngine.cpp BoostEngine.cpp)
 
 add_library(engines ${ENGINE_SRCS})
 
-set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp)
+set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp statistic.cpp)
 add_library(rb ${REGEXBENCH_SRCS})
 target_link_libraries(rb
     engines ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT})
@@ -65,3 +65,7 @@ endif()
 if(RE2_LIB)
   target_link_libraries(regexbench ${RE2_LIB})
 endif()
+
+file(GLOB RB_HDR_SRCS "*.h")
+install(FILES ${RB_HDR_SRCS} DESTINATION include)
+install(TARGETS engines rb DESTINATION lib)

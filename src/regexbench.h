@@ -6,6 +6,7 @@
 #include "Rule.h"
 #include <boost/timer/timer.hpp>
 #include <vector>
+#include <map>
 
 enum class EngineType : uint64_t {
   boost,
@@ -48,13 +49,23 @@ namespace regexbench {
 class Engine;
 class PcapSource;
 
+struct ResultInfo {
+  ResultInfo() : nmatches(0), nmatched_pkts(0), npkts(0), nbytes(0) {}
+  size_t nmatches;
+  size_t nmatched_pkts;
+  size_t npkts;
+  size_t nbytes;
+};
+
 struct MatchResult {
-  MatchResult() : nmatches(0), nmatched_pkts(0) {}
+  MatchResult() : stop(false) {}
 
   struct timeval udiff;
   struct timeval sdiff;
-  size_t nmatches;
-  size_t nmatched_pkts;
+  struct ResultInfo cur;
+  struct ResultInfo old;
+  bool stop;
+  char paddings[7];
 };
 
 struct MatchMeta {
@@ -78,10 +89,11 @@ std::vector<Rule> loadRules(const std::string&);
 void matchThread(Engine* engine, const PcapSource* src, long repeat,
                  size_t core, size_t sel, const std::vector<MatchMeta>* meta,
                  MatchResult* result, Logger* logger);
-std::vector<MatchResult> match(Engine&, const PcapSource&, long,
-                               const std::vector<size_t>&,
-                               const std::vector<MatchMeta>&,
-                               const std::string&);
+std::vector<MatchResult>
+match(Engine&, const PcapSource&, long, const std::vector<size_t>&,
+      const std::vector<MatchMeta>&, const std::string&,
+      void (*realtimeFunc)(const std::map<std::string, size_t>&) = nullptr);
+void realtimeReport(const std::map<std::string, size_t> &m);
 std::string compileReport(const struct rusage& compileBegin,
                           const struct rusage& compileEnd,
                           const PcapSource& pcap, bool quiet);
@@ -92,8 +104,12 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const EngineType& engine = EngineType::hyperscan,
                uint32_t nthreads = 1, const std::string& affinity = "0",
                int32_t repeat = 1);
-int exec(Arguments& args);
+int exec(Arguments& args, void (*realtimeFunc)(const std::map<std::string, size_t> &) = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
+//void (*realtimeFunc)(const std::map<std::string, size_t> &);
+void statistic(const uint32_t sec, std::vector<MatchResult>& results,
+               void (*realtimeFunc)(const std::map<std::string, size_t>&));
+std::unique_ptr<Engine> loadEngine(Arguments& args, std::string &prefix, size_t nsessions);
 }
 
 #endif // REGEXBENCH_H

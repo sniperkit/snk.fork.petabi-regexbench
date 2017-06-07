@@ -24,7 +24,7 @@ ATF_TEST_CASE_BODY(session1)
   engine.init(nsessions);
   std::vector<regexbench::MatchResult> results =
       match(engine, pcap, 1, std::vector<size_t>(), match_info, "");
-  ATF_REQUIRE_EQ(1, results[0].nmatches);
+  ATF_REQUIRE_EQ(1, results[0].cur.nmatches);
 #endif
 }
 
@@ -41,7 +41,7 @@ ATF_TEST_CASE_BODY(session2)
   engine.init(nsessions);
   std::vector<regexbench::MatchResult> results =
       match(engine, pcap, 1, std::vector<size_t>(), match_info, "");
-  ATF_REQUIRE_EQ(2, results[0].nmatches);
+  ATF_REQUIRE_EQ(2, results[0].cur.nmatches);
 #endif
 }
 

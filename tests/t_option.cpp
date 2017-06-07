@@ -43,34 +43,34 @@ ATF_TEST_CASE_BODY(t_option)
 
   BoostEngine bengine;
   results = opTest(&bengine);
-  ATF_REQUIRE_EQ(3, results[0].nmatches);
+  ATF_REQUIRE_EQ(3, results[0].cur.nmatches);
 
   CPPEngine cengine;
   results = opTest(&cengine);
-  ATF_REQUIRE_EQ(2, results[0].nmatches);
+  ATF_REQUIRE_EQ(2, results[0].cur.nmatches);
 
 #ifdef HAVE_HYPERSCAN
   HyperscanEngine hsengine;
   results = opTest(&hsengine);
-  ATF_REQUIRE_EQ(3, results[0].nmatches);
+  ATF_REQUIRE_EQ(3, results[0].cur.nmatches);
 #endif
 
 #ifdef HAVE_PCRE2
   PCRE2Engine pengine;
   results = opTest(&pengine);
-  ATF_REQUIRE_EQ(3, results[0].nmatches);
+  ATF_REQUIRE_EQ(3, results[0].cur.nmatches);
 #endif
 
 #ifdef HAVE_RE2
   RE2Engine re2engine;
   results = opTest(&re2engine);
-  ATF_REQUIRE_EQ(3, results[0].nmatches);
+  ATF_REQUIRE_EQ(3, results[0].cur.nmatches);
 #endif
 
 #ifdef HAVE_REMATCH
   REmatchAutomataEngine rengine;
   results = opTest(&rengine);
-  ATF_REQUIRE_EQ(3, results[0].nmatches);
+  ATF_REQUIRE_EQ(3, results[0].cur.nmatches);
 #endif
 }
 

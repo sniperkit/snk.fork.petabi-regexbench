@@ -45,104 +45,19 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 
 static bool endsWith(const std::string&, const char*);
 
-int regexbench::exec(Arguments& args)
+int regexbench::exec(Arguments& args, void (*realtimeFunc)(const std::map<std::string, size_t> &))
 {
   try {
     std::string prefix;
-    std::unique_ptr<regexbench::Engine> engine;
     size_t nsessions = 0;
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
 
     struct rusage compileBegin, compileEnd;
     getrusage(RUSAGE_SELF, &compileBegin);
-    switch (args.engine) {
-    case EngineType::boost:
-      prefix = "boost";
-      engine = std::make_unique<regexbench::BoostEngine>();
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-    case EngineType::std_regex:
-      engine = std::make_unique<regexbench::CPPEngine>();
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-#ifdef HAVE_HYPERSCAN
-    case EngineType::hyperscan:
-      prefix = "hyperscan";
-      if (args.rematch_session) {
-        engine = std::make_unique<regexbench::HyperscanEngineStream>();
-        engine->init(nsessions);
-      } else {
-        engine = std::make_unique<regexbench::HyperscanEngine>();
-      }
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-#endif
-#ifdef HAVE_PCRE2
-    case EngineType::pcre2:
-      prefix = "pcre2";
-      engine = std::make_unique<regexbench::PCRE2Engine>();
-      engine->init(args.pcre2_concat);
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-    case EngineType::pcre2_jit:
-      engine = std::make_unique<regexbench::PCRE2JITEngine>();
-      engine->init(args.pcre2_concat);
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-#endif
-#ifdef HAVE_RE2
-    case EngineType::re2:
-      prefix = "re2";
-      engine = std::make_unique<regexbench::RE2Engine>();
-      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
-      break;
-#endif
-#ifdef HAVE_REMATCH
-    case EngineType::rematch:
-      prefix = "rematch";
-      if (args.rematch_session) {
-#ifdef WITH_SESSION
-        engine = std::make_unique<regexbench::REmatchAutomataEngineSession>(
-            args.nmatch);
-        engine->compile(regexbench::loadRules(args.rule_file),
-                        args.num_threads);
-#endif
-      } else if (endsWith(args.rule_file, ".nfa")) {
-        engine =
-            std::make_unique<regexbench::REmatchAutomataEngine>(args.nmatch);
-        engine->load(args.rule_file, args.num_threads);
-      } else if (endsWith(args.rule_file, ".so")) {
-        engine = std::make_unique<regexbench::REmatchSOEngine>();
-        engine->load(args.rule_file, args.num_threads);
-      } else {
-        engine = std::make_unique<regexbench::REmatchAutomataEngine>(
-            args.nmatch, args.reduce);
-        engine->compile(regexbench::loadRules(args.rule_file),
-                        args.num_threads);
-      }
-      engine->init(nsessions);
-      break;
-    case EngineType::rematch2:
-      prefix = "rematch2";
-      if (endsWith(args.rule_file, ".nfa")) {
-        engine =
-            std::make_unique<regexbench::REmatch2AutomataEngine>(args.nmatch);
-        engine->load(args.rule_file, args.num_threads);
-      } else {
-        engine = std::make_unique<regexbench::REmatch2AutomataEngine>(
-            args.nmatch, args.reduce
-#ifdef USE_TURBO
-            ,
-            args.turbo
-#endif
-            );
-        engine->compile(regexbench::loadRules(args.rule_file),
-                        args.num_threads);
-      }
-      break;
-#endif
-    }
+
+    auto engine = regexbench::loadEngine(args, prefix, nsessions);
+
     getrusage(RUSAGE_SELF, &compileEnd);
     args.compile_time =
         compileReport(compileBegin, compileEnd, pcap, args.quiet);
@@ -155,7 +70,7 @@ int regexbench::exec(Arguments& args)
                  // determined inside class instance)
 
     std::vector<regexbench::MatchResult> results = match(
-        *engine, pcap, args.repeat, args.cores, match_info, args.log_file);
+        *engine, pcap, args.repeat, args.cores, match_info, args.log_file, realtimeFunc);
 
     report(prefix, pcap, args, results);
 
@@ -165,6 +80,97 @@ int regexbench::exec(Arguments& args)
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
+}
+
+std::unique_ptr<regexbench::Engine> regexbench::loadEngine(Arguments& args, std::string &prefix, size_t nsessions)
+{
+  std::unique_ptr<regexbench::Engine> engine;
+
+  switch (args.engine) {
+  case EngineType::boost:
+    prefix = "boost";
+    engine = std::make_unique<regexbench::BoostEngine>();
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+  case EngineType::std_regex:
+    engine = std::make_unique<regexbench::CPPEngine>();
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+#ifdef HAVE_HYPERSCAN
+  case EngineType::hyperscan:
+    prefix = "hyperscan";
+    if (args.rematch_session) {
+      engine = std::make_unique<regexbench::HyperscanEngineStream>();
+      engine->init(nsessions);
+    } else {
+      engine = std::make_unique<regexbench::HyperscanEngine>();
+    }
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+#endif
+#ifdef HAVE_PCRE2
+  case EngineType::pcre2:
+    prefix = "pcre2";
+    engine = std::make_unique<regexbench::PCRE2Engine>();
+    engine->init(args.pcre2_concat);
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+  case EngineType::pcre2_jit:
+    engine = std::make_unique<regexbench::PCRE2JITEngine>();
+    engine->init(args.pcre2_concat);
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+#endif
+#ifdef HAVE_RE2
+  case EngineType::re2:
+    prefix = "re2";
+    engine = std::make_unique<regexbench::RE2Engine>();
+    engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    break;
+#endif
+#ifdef HAVE_REMATCH
+  case EngineType::rematch:
+    prefix = "rematch";
+    if (args.rematch_session) {
+#ifdef WITH_SESSION
+      engine = std::make_unique<regexbench::REmatchAutomataEngineSession>(
+          args.nmatch);
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+#endif
+    } else if (endsWith(args.rule_file, ".nfa")) {
+      engine = std::make_unique<regexbench::REmatchAutomataEngine>(args.nmatch);
+      engine->load(args.rule_file, args.num_threads);
+    } else if (endsWith(args.rule_file, ".so")) {
+      engine = std::make_unique<regexbench::REmatchSOEngine>();
+      engine->load(args.rule_file, args.num_threads);
+    } else {
+      engine = std::make_unique<regexbench::REmatchAutomataEngine>(args.nmatch,
+                                                                   args.reduce);
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    }
+    engine->init(nsessions);
+    break;
+  case EngineType::rematch2:
+    prefix = "rematch2";
+    if (endsWith(args.rule_file, ".nfa")) {
+      engine =
+          std::make_unique<regexbench::REmatch2AutomataEngine>(args.nmatch);
+      engine->load(args.rule_file, args.num_threads);
+    } else {
+      engine = std::make_unique<regexbench::REmatch2AutomataEngine>(args.nmatch,
+                                                                    args.reduce
+#ifdef USE_TURBO
+                                                                    ,
+                                                                    args.turbo
+#endif
+                                                                    );
+      engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
+    }
+    break;
+#endif
+  }
+
+  return engine;
 }
 
 bool endsWith(const std::string& obj, const char* end)
