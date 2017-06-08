@@ -21,34 +21,14 @@ endif()
 
 set(ENGINE_SRCS ${ENGINE_SRCS} CPPEngine.cpp BoostEngine.cpp)
 
-add_library(engines ${ENGINE_SRCS})
+add_library(engines OBJECT ${ENGINE_SRCS})
 
 set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp statistic.cpp)
-add_library(rb ${REGEXBENCH_SRCS})
-target_link_libraries(rb
-    engines ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT})
-
-if(HYPERSCAN_LIB)
-  target_link_libraries(rb ${HYPERSCAN_LIB})
-endif()
-if(PCRE2_LIB)
-  target_link_libraries(rb ${PCRE2_LIB})
-endif()
-if(REMATCHCOMP_LIB)
-  target_link_libraries(rb ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB})
-endif()
-if(RE2_LIB)
-  target_link_libraries(rb ${RE2_LIB})
-endif()
-
-if (OS_IS_LINUX)
-  # for dlopen, dlsym, ...
-  find_library(DL_LIB NAMES dl)
-endif()
+add_library(rebench $<TARGET_OBJECTS:engines> ${REGEXBENCH_SRCS})
 
 add_executable(regexbench main.cpp)
 target_link_libraries(regexbench
-  engines ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT} rb)
+   ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT} rebench)
 if (OS_IS_LINUX)
   target_link_libraries(regexbench ${DL_LIB})
 endif()
@@ -66,6 +46,6 @@ if(RE2_LIB)
   target_link_libraries(regexbench ${RE2_LIB})
 endif()
 
-set(RB_HDR_SRCS regexbench.h Engine.h PcapSource.h Rule.h Logger.h)
-install(FILES ${RB_HDR_SRCS} DESTINATION include)
-install(TARGETS engines rb DESTINATION lib)
+set(REBENCH_HDR_SRCS regexbench.h Engine.h PcapSource.h Rule.h Logger.h)
+install(FILES ${REBENCH_HDR_SRCS} DESTINATION include/rebench)
+install(TARGETS rebench DESTINATION lib)
