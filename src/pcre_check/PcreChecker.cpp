@@ -153,8 +153,8 @@ private:
   std::vector<unsigned> ids;
 };
 
-static int onMatch(unsigned id, size_t from, size_t to, unsigned flags,
-                   void* ctx)
+static int onMatch(unsigned id, unsigned long long from, unsigned long long to,
+                   unsigned flags, void* ctx)
 {
   auto res = static_cast<rematchResult*>(ctx);
   res->pushId(id);
