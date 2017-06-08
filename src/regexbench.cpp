@@ -44,6 +44,7 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 }
 
 static bool endsWith(const std::string&, const char*);
+static EngineType getEngineType(const std::string& engine);
 
 int regexbench::exec(Arguments& args, realtimeFunc func)
 {
@@ -170,6 +171,8 @@ regexbench::loadEngine(Arguments& args, std::string& prefix, size_t nsessions)
     }
     break;
 #endif
+  case EngineType::unknown:
+    break;
   }
 
   return engine;
@@ -237,6 +240,35 @@ static std::vector<size_t> setup_affinity(size_t num, const std::string& arg)
           static_cast<size_t>((i > maxCore) ? maxCore : i);
   }
   return cores;
+}
+
+EngineType getEngineType(const std::string& engine)
+{
+  if (engine == "boost")
+    return EngineType::boost;
+  else if (engine == "cpp")
+    return EngineType::std_regex;
+#ifdef HAVE_HYPERSCAN
+  else if (engine == "hyperscan")
+    return EngineType::hyperscan;
+#endif
+#ifdef HAVE_PCRE2
+  else if (engine == "pcre2")
+    return EngineType::pcre2;
+  else if (engine == "pcre2jit")
+    return EngineType::pcre2_jit;
+#endif
+#ifdef HAVE_RE2
+  else if (engine == "re2")
+    return EngineType::re2;
+#endif
+#ifdef HAVE_REMATCH
+  else if (engine == "rematch")
+    return EngineType::rematch;
+  else if (engine == "rematch2")
+    return EngineType::rematch2;
+#endif
+  return EngineType::unknown;
 }
 
 Arguments regexbench::parse_options(int argc, const char* argv[])
@@ -322,31 +354,8 @@ Arguments regexbench::parse_options(int argc, const char* argv[])
   if (vm.count("quiet"))
     args.quiet = true;
 
-  if (engine == "boost")
-    args.engine = EngineType::boost;
-  else if (engine == "cpp")
-    args.engine = EngineType::std_regex;
-#ifdef HAVE_HYPERSCAN
-  else if (engine == "hyperscan")
-    args.engine = EngineType::hyperscan;
-#endif
-#ifdef HAVE_PCRE2
-  else if (engine == "pcre2")
-    args.engine = EngineType::pcre2;
-  else if (engine == "pcre2jit")
-    args.engine = EngineType::pcre2_jit;
-#endif
-#ifdef HAVE_RE2
-  else if (engine == "re2")
-    args.engine = EngineType::re2;
-#endif
-#ifdef HAVE_REMATCH
-  else if (engine == "rematch")
-    args.engine = EngineType::rematch;
-  else if (engine == "rematch2")
-    args.engine = EngineType::rematch2;
-#endif
-  else {
+  args.engine = getEngineType(engine);
+  if (args.engine == EngineType::unknown) {
     std::cerr << "unknown engine: " << engine << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -413,15 +422,19 @@ Arguments regexbench::parse_options(int argc, const char* argv[])
 Arguments regexbench::init(const std::string& rule_file,
                            const std::string& pcap_file,
                            const std::string& output_file,
-                           const EngineType& engine, uint32_t nthreads,
+                           const std::string& engine, uint32_t nthreads,
                            const std::string& affinity, int32_t repeat)
 {
   Arguments args;
 
+  args.engine = getEngineType(engine);
+  if (args.engine == EngineType::unknown) {
+    throw std::invalid_argument("unknown engine " + engine);
+  }
+
   args.rule_file = rule_file;
   args.pcap_file = pcap_file;
   args.output_file = output_file;
-  args.engine = engine;
   args.repeat = repeat;
   args.pcre2_concat = 0;
   args.rematch_session = 0;

@@ -27,9 +27,7 @@ void regexbench::statistic(const uint32_t sec,
   struct ResultInfo stat = sec ? realtime(results) : total(results);
   std::map<std::string, size_t> m = make_statistic(sec, stat);
 
-  if (func == nullptr)
-    realtimeReport(m);
-  else
+  if (func)
     func(m);
 }
 

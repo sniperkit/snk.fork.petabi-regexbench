@@ -16,7 +16,8 @@ enum class EngineType : uint64_t {
   pcre2_jit,
   re2,
   rematch,
-  rematch2
+  rematch2,
+  unknown
 };
 
 struct Arguments {
@@ -123,9 +124,8 @@ void report(std::string& prefix, const PcapSource& pcap, const Arguments& args,
             const std::vector<MatchResult>& results);
 Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const std::string& output_file,
-               const EngineType& engine = EngineType::hyperscan,
-               uint32_t nthreads = 1, const std::string& affinity = "0",
-               int32_t repeat = 1);
+               const std::string& engine = "hyperscan", uint32_t nthreads = 1,
+               const std::string& affinity = "0", int32_t repeat = 1);
 int exec(Arguments& args, realtimeFunc func = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
 void statistic(const uint32_t sec, std::vector<MatchResult>& results,
