@@ -171,7 +171,7 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
   timersub(&(end.ru_utime), &(begin.ru_utime), &result->udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result->sdiff);
 #endif
-  result->stop = true;
+  result->stop.store(true);
 }
 
 std::vector<MatchResult> regexbench::match(Engine& engine,
@@ -226,7 +226,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
     statistic(sec, results, func);
 
     for (const auto& result : results) {
-      if (!result.stop) {
+      if (!result.stop.load()) {
         realTime = true;
         break;
       } else

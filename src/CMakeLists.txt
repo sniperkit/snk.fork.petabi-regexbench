@@ -66,6 +66,6 @@ if(RE2_LIB)
   target_link_libraries(regexbench ${RE2_LIB})
 endif()
 
-file(GLOB RB_HDR_SRCS "*.h")
+set(RB_HDR_SRCS regexbench.h Engine.h PcapSource.h)
 install(FILES ${RB_HDR_SRCS} DESTINATION include)
 install(TARGETS engines rb DESTINATION lib)

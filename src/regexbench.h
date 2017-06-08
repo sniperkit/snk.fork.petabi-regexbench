@@ -59,12 +59,32 @@ struct ResultInfo {
 
 struct MatchResult {
   MatchResult() : stop(false) {}
+  MatchResult(const MatchResult& s)
+  {
+    udiff = s.udiff;
+    sdiff = s.sdiff;
+    cur = s.cur;
+    old = s.old;
+    stop.store(s.stop.load());
+  }
+
+  MatchResult& operator=(const MatchResult& rhs)
+  {
+    if (this == &rhs)
+      return *this;
+    udiff = rhs.udiff;
+    sdiff = rhs.sdiff;
+    cur = rhs.cur;
+    old = rhs.old;
+    stop.store(rhs.stop.load());
+    return *this;
+  }
 
   struct timeval udiff;
   struct timeval sdiff;
   struct ResultInfo cur;
   struct ResultInfo old;
-  bool stop;
+  std::atomic_bool stop;
   char paddings[7];
 };
 
