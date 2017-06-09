@@ -26,16 +26,11 @@ add_library(engines OBJECT ${ENGINE_SRCS})
 set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp statistic.cpp)
 add_library(rebench $<TARGET_OBJECTS:engines> ${REGEXBENCH_SRCS})
 
-if (OS_IS_LINUX)
-  # for dlopen, dlsym, ...
-  find_library(DL_LIB NAMES dl)
-endif()
-
 add_executable(regexbench main.cpp)
 target_link_libraries(regexbench
    ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT} rebench)
 if (OS_IS_LINUX)
-  target_link_libraries(regexbench ${DL_LIB})
+  target_link_libraries(regexbench ${CMAKE_DL_LIBS})
 endif()
 
 if(HYPERSCAN_LIB)
