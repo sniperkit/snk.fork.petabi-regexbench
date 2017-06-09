@@ -19,6 +19,7 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <fstream>
 #include <iostream>

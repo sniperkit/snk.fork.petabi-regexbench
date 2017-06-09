@@ -4,8 +4,11 @@
 
 #include "Logger.h"
 #include "Rule.h"
+
+#include <atomic>
 #include <boost/timer/timer.hpp>
 #include <map>
+#include <memory>
 #include <vector>
 
 enum class EngineType : uint64_t {
