@@ -4,7 +4,11 @@
 
 #include "Logger.h"
 #include "Rule.h"
+
+#include <atomic>
 #include <boost/timer/timer.hpp>
+#include <map>
+#include <memory>
 #include <vector>
 
 enum class EngineType : uint64_t {
@@ -15,7 +19,8 @@ enum class EngineType : uint64_t {
   pcre2_jit,
   re2,
   rematch,
-  rematch2
+  rematch2,
+  unknown
 };
 
 struct Arguments {
@@ -48,13 +53,43 @@ namespace regexbench {
 class Engine;
 class PcapSource;
 
+struct ResultInfo {
+  ResultInfo() : nmatches(0), nmatched_pkts(0), npkts(0), nbytes(0) {}
+  size_t nmatches;
+  size_t nmatched_pkts;
+  size_t npkts;
+  size_t nbytes;
+};
+
 struct MatchResult {
-  MatchResult() : nmatches(0), nmatched_pkts(0) {}
+  MatchResult() : stop(false) {}
+  MatchResult(const MatchResult& s)
+  {
+    udiff = s.udiff;
+    sdiff = s.sdiff;
+    cur = s.cur;
+    old = s.old;
+    stop.store(s.stop.load());
+  }
+
+  MatchResult& operator=(const MatchResult& rhs)
+  {
+    if (this == &rhs)
+      return *this;
+    udiff = rhs.udiff;
+    sdiff = rhs.sdiff;
+    cur = rhs.cur;
+    old = rhs.old;
+    stop.store(rhs.stop.load());
+    return *this;
+  }
 
   struct timeval udiff;
   struct timeval sdiff;
-  size_t nmatches;
-  size_t nmatched_pkts;
+  struct ResultInfo cur;
+  struct ResultInfo old;
+  std::atomic_bool stop;
+  char paddings[7];
 };
 
 struct MatchMeta {
@@ -71,6 +106,8 @@ struct MatchMeta {
   size_t len;
 };
 
+typedef void (*realtimeFunc)(const std::map<std::string, size_t>&);
+
 int setAffinity(size_t core, const std::string& thrName = "");
 std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
 uint32_t getPLOffset(const std::string&);
@@ -81,7 +118,8 @@ void matchThread(Engine* engine, const PcapSource* src, long repeat,
 std::vector<MatchResult> match(Engine&, const PcapSource&, long,
                                const std::vector<size_t>&,
                                const std::vector<MatchMeta>&,
-                               const std::string&);
+                               const std::string&, realtimeFunc func = nullptr);
+void realtimeReport(const std::map<std::string, size_t>& m);
 std::string compileReport(const struct rusage& compileBegin,
                           const struct rusage& compileEnd,
                           const PcapSource& pcap, bool quiet);
@@ -89,11 +127,14 @@ void report(std::string& prefix, const PcapSource& pcap, const Arguments& args,
             const std::vector<MatchResult>& results);
 Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const std::string& output_file,
-               const EngineType& engine = EngineType::hyperscan,
-               uint32_t nthreads = 1, const std::string& affinity = "0",
-               int32_t repeat = 1);
-int exec(Arguments& args);
+               const std::string& engine = "hyperscan", uint32_t nthreads = 1,
+               const std::string& affinity = "0", int32_t repeat = 1);
+int exec(Arguments& args, realtimeFunc func = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
+void statistic(const uint32_t sec, std::vector<MatchResult>& results,
+               realtimeFunc func = nullptr);
+std::unique_ptr<Engine> loadEngine(Arguments& args, std::string& prefix,
+                                   size_t nsessions);
 }
 
 #endif // REGEXBENCH_H

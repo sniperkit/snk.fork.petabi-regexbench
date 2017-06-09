@@ -12,7 +12,7 @@
 #include <string>
 #include <thread>
 
-#include <boost/program_options.hpp>
+#include <boost/format.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -83,8 +83,8 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
     ss << "Thread" << coreInd++ << ".";
     std::string corePrefix = threadsPrefix + ss.str();
     pt.put(corePrefix + "Core", *coreIter++);
-    pt.put(corePrefix + "TotalMatches", result.nmatches);
-    pt.put(corePrefix + "TotalMatchedPackets", result.nmatched_pkts);
+    pt.put(corePrefix + "TotalMatches", result.cur.nmatches);
+    pt.put(corePrefix + "TotalMatchedPackets", result.cur.nmatched_pkts);
     ss.str("");
     auto t = result.udiff.tv_sec + result.udiff.tv_usec * 1e-6;
     ss << t;
@@ -117,6 +117,7 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
     pt.put(corePrefix + "MaximumMemoryUsed(MB)", stat.ru_maxrss / 1000);
 
     if (!args.quiet) {
+      std::cout << "\n";
       for (const auto& it : reportFields) {
         std::cout << it << " : " << pt.get<std::string>(corePrefix + it)
                   << "\n";
@@ -129,4 +130,33 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   write_json(buf, pt, true);
   std::ofstream outputFile(args.output_file, std::ios_base::trunc);
   outputFile << buf.str();
+}
+
+void regexbench::realtimeReport(const std::map<std::string, size_t>& m)
+{
+  size_t sec = m.find("Sec")->second;
+  bool isTotal = sec ? false : true;
+
+  if (isTotal) {
+    std::cout
+        << "==============================================================="
+        << "\n"
+        << "TOTAL";
+  } else
+    std::cout << boost::format("#%03d ") % sec;
+
+  for (const auto& it : m) {
+    std::string format = " %s: %6d";
+
+    if (it.first == "Sec")
+      continue;
+    else if (it.first == "Bytes")
+      format = " %s: %10d";
+
+    std::cout << boost::format(format) % it.first % it.second;
+  }
+  std::cout << std::endl;
+
+  if (isTotal)
+    std::cout << std::endl;
 }
