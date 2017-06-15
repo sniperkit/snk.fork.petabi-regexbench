@@ -79,7 +79,6 @@ int main(int argc, char** argv)
         select<Engine>(db, Engine::Name == "hyperscan").one().id.value();
     aux.str2EngineId["pcre"] =
         select<Engine>(db, Engine::Name == "pcre").one().id.value();
-    aux.nmatch = 10; // TODO
     auto& rules = aux.rules;
     vector<DbRule> dbRules = select<DbRule>(db).orderBy(DbRule::Id).all();
     for (const auto& dbRule : dbRules) {

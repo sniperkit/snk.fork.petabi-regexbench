@@ -324,7 +324,6 @@ template <> void CS::processCmd(CS::cmd_update_option &opt)
         select<Engine>(*pDb, Engine::Name == "hyperscan").one().id.value();
     aux.str2EngineId["pcre"] =
         select<Engine>(*pDb, Engine::Name == "pcre").one().id.value();
-    aux.nmatch = 10; // TODO
     aux.single = 0;
     auto& rules = aux.rules;
     vector<DbRule> dbRules = select<DbRule>(*pDb).orderBy(DbRule::Id).all();
@@ -387,7 +386,6 @@ template <> void CS::processCmd(CS::cmd_singletest_option &opt)
   }
   // cout << "Content Type   : " << aux.ctype.data() << endl;
   // cout << "Convert Data   : " << aux.data.data() << endl;
-  aux.nmatch = 1;
   aux.single = 1;
 
   checkPcre(dummyDb, aux);
