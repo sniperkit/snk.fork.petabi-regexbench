@@ -34,7 +34,8 @@ add_custom_command(
    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
    DEPENDS pcre_check_db.xml
    )
-add_executable(pcre_checker PcreChecker.cpp pcrecheckdb.cpp ../Rule.cpp CheckerShell.cpp db_setup.cpp)
+add_executable(pcre_checker PcreChecker.cpp pcrecheckdb.cpp ../Rule.cpp CheckerShell.cpp db_setup.cpp
+  $<TARGET_OBJECTS:engines>)
 
 if (USE_SYSTEM_LITESQL)
   target_link_libraries(pcre_checker ${LITESQL_LIBRARIES})
@@ -42,8 +43,14 @@ else()
   target_link_libraries(pcre_checker litesql litesql-util litesql_sqlite)
 endif()
 
-target_link_libraries(pcre_checker engines
+target_link_libraries(pcre_checker
   ${Boost_LIBRARIES} ${LIB_SQLITE3}
   ${PCRE2_LIB} ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${HYPERSCAN_LIB}
   ${EDITLINE_LIB} ${LIB_JSONCPP} ${PCAP_LIB}
 )
+
+if(RE2_INCLUDE_DIR)
+  # this is for the case when RE2 library is found
+  # (in that case engine objects are referencing RE2 library)
+  target_link_libraries(pcre_checker ${RE2_LIB})
+endif()
