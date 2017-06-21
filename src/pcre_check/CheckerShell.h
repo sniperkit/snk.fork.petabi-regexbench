@@ -7,7 +7,7 @@
 
 #include <pius/auto-opt.h>
 
-#include "db_setup.h"
+#include "PcreChecker.h"
 
 // clang-format off
 // define command structure
@@ -176,7 +176,7 @@ private:
   bool parseCsvLine(const std::string &s, std::vector<std::string> &v);
 
   // PCRE related
-  std::unique_ptr<PcreCheckDb> pDb;
+  std::unique_ptr<pcre_check::PcreCheckDb> pDb;
   std::string dbName;
 };
 #endif

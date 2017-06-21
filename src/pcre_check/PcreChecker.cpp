@@ -1,7 +1,9 @@
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -13,11 +15,13 @@
 #include <rematch/compile.h>
 #include <rematch/execute.h>
 #include <rematch/rematch.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "../Rule.h"
 #include "CheckerShell.h"
 #include "PcreChecker.h"
-#include "db_setup.h"
 
 using std::cout;
 using std::cerr;
@@ -29,165 +33,380 @@ using regexbench::Rule;
 
 namespace po = boost::program_options;
 
-static void usage(const po::options_description& pos,
-                  const po::options_description& opt)
+// pcre_check namespace aliases
+using pcre_check::PcreCheckDb;
+using DbRule = pcre_check::Rule;
+using pcre_check::Pattern;
+using pcre_check::Grammar;
+using pcre_check::Engine;
+using pcre_check::Result;
+using pcre_check::Test;
+using pcre_check::TestGrammar;
+using pcre_check::TestResult;
+
+// litesql namespace aliases
+using litesql::select;
+using litesql::Blob;
+using litesql::Except;
+using litesql::NotFound;
+
+const std::string PcreChecker::DB_PREFIX = "database=";
+const char* PcreChecker::TMP_TEMPLATE = "tmpdbfilXXX";
+
+PcreChecker::PcreChecker(const std::string& dbFileNam, bool debug)
+    : dbFile(dbFileNam)
 {
-  cout << "Usage: pcre_checker <mode> options..." << endl;
-  cout << pos << endl << opt << endl;
+  if (dbFile.empty()) {
+    tmpFile = std::make_unique<char[]>(strlen(TMP_TEMPLATE) + 1);
+    strncpy(tmpFile.get(), TMP_TEMPLATE, strlen(TMP_TEMPLATE));
+    int tmpFd = mkstemp(tmpFile.get());
+    if (tmpFd == -1)
+      throw std::runtime_error("Could not make temporary db file");
+    close(tmpFd);
+    dbFile = tmpFile.get();
+  }
+  dbFile = DB_PREFIX + dbFile;
+
+  pDb = std::make_unique<PcreCheckDb>("sqlite3", dbFile);
+  if (debug)
+    pDb->verbose = true;
+  if (pDb->needsUpgrade())
+    pDb->upgrade();
 }
 
-static int runShell();
-
-int main(int argc, char** argv)
+PcreChecker::~PcreChecker()
 {
-  string mode;
-  string dbFile;
-  string jsonIn;
-  string jsonOut;
-  po::options_description posargs;
-  posargs.add_options()(
-      "mode", po::value<string>(&mode),
-      "mode to execute : 'shell' or 'command' (default to 'command')");
-  po::positional_options_description positions;
-  positions.add("mode", 1);
-  po::options_description optargs("Options");
-  optargs.add_options()("help,h", "Print usage information.");
-  optargs.add_options()("db,d", po::value<string>(&dbFile),
-                        "sqlite3 db file name to use");
-  optargs.add_options()("input,i", po::value<string>(&jsonIn),
-                        "json input file");
-  optargs.add_options()("output,o", po::value<string>(&jsonOut),
-                        "json output file");
-  po::options_description cliargs;
-  cliargs.add(posargs).add(optargs);
-  po::variables_map vm;
-  po::store(po::command_line_parser(argc, argv)
-                .options(cliargs)
-                .positional(positions)
-                .run(),
-            vm);
-  po::notify(vm);
+  pDb.reset();
+  // make sure db is closed before unlinking temp file
+  if (tmpFile)
+    unlink(tmpFile.get());
+}
 
-  if (vm.count("help")) {
-    usage(posargs, optargs);
-    std::exit(EXIT_SUCCESS);
+void PcreChecker::attach(const std::string& dbFileNam)
+{
+  if (pDb) {
+    cerr << "Already attached to a DB "
+         << dbFile.substr(dbFile.find(DB_PREFIX) + DB_PREFIX.size()) << endl;
+    cerr << "Detach first" << endl;
+    return;
   }
+  if (dbFileNam.empty())
+    throw std::runtime_error("Must specify DB file name to attach");
 
-  if (vm.count("mode")) {
-    if (std::string("shell").find(mode) == 0) {
-      cout << "Entering shell mode" << endl;
-      return runShell();
-    } else if (std::string("command").find(mode) != 0) {
-      cout << "Unknown mode '" << mode << "' specified!!" << endl;
-      usage(posargs, optargs);
-      std::exit(EXIT_SUCCESS);
-    }
+  dbFile = DB_PREFIX + dbFileNam;
+}
+
+void PcreChecker::detach()
+{
+  pDb.reset();
+  if (tmpFile) {
+    unlink(tmpFile.get());
+    tmpFile.reset();
   }
+}
 
-  //
-  // From this point on we are gonna do works related to command mode
-  //
+void PcreChecker::setupDb(const std::string& jsonIn)
+{
+  if (jsonIn.empty())
+    throw std::runtime_error("input json file is not specified");
 
-  if (dbFile.empty()) {
-    cout << "db file name must be specified" << endl;
-    std::exit(EXIT_FAILURE);
+  std::ifstream jsonFile(jsonIn);
+
+  // Parse json file
+  Json::Value root;
+  try {
+    jsonFile >> root;
+  } catch (const std::exception& e) {
+    cerr << "json file parse error" << e.what() << endl;
+    return;
   }
 
   try {
-    dbFile = "database=" + dbFile;
-    PcreCheckDb db("sqlite3", dbFile);
-    // db.verbose = true; // turn on when debugging
+    pDb->begin();
 
-    if (db.needsUpgrade()) // TODO : revisit!!
-      db.upgrade();
+    // Parse 'rules'
+    json2DbTables<DbRule, JsonFillNameContentDesc<DbRule>>("rules", root);
 
-    db.begin();
+    // Parse 'grammars'
+    json2DbTables<Grammar, JsonFillNameContentDesc<Grammar>>("grammars", root);
 
-    AuxInfo aux;
-    aux.resMatchId =
-        select<Result>(db, Result::Name == "match").one().id.value();
-    aux.resNomatchId =
-        select<Result>(db, Result::Name == "nomatch").one().id.value();
-    aux.resErrorId =
-        select<Result>(db, Result::Name == "error").one().id.value();
-    aux.str2EngineId["rematch"] =
-        select<Engine>(db, Engine::Name == "rematch").one().id.value();
-    aux.str2EngineId["hyperscan"] =
-        select<Engine>(db, Engine::Name == "hyperscan").one().id.value();
-    aux.str2EngineId["pcre"] =
-        select<Engine>(db, Engine::Name == "pcre").one().id.value();
-    auto& rules = aux.rules;
-    vector<DbRule> dbRules = select<DbRule>(db).orderBy(DbRule::Id).all();
-    for (const auto& dbRule : dbRules) {
-      auto blob = dbRule.content.value();
-      size_t len = blob.length();
-      auto temp = std::make_unique<char[]>(len);
-      blob.getData(reinterpret_cast<unsigned char*>(temp.get()), len, 0);
-      std::string line(temp.get(), len);
-      rules.emplace_back(Rule(line, static_cast<size_t>(dbRule.id.value())));
-    }
-    // for debugging
-    // for (const auto &r : rules) {
-    //  cout << "rule " << r.getID() << ": " << r.getRegexp() << endl;
-    //}
+    // Parse 'patterns'
+    json2DbTables<Pattern, JsonFillNameContentDesc<Pattern>>("patterns", root);
 
-    checkRematch(db, aux);
-    checkHyperscan(db, aux);
-    checkPcre(db, aux);
+    json2DbTables<Engine, JsonFillNameOnly<Engine>>("engines", root);
+    json2DbTables<Result, JsonFillNameOnly<Result>>("results", root);
 
-    db.commit(); // commit changes (mostly about result)
+    // Parse 'tests' (involves tables 'Test', 'TestGrammar', 'TestResult')
+    jsonTests2DbTables(root);
 
-  } catch (Except& e) { // litesql exception
+    pDb->commit(); // commit changes
+  } catch (Except e) {
     cerr << e << endl;
-    return -1;
-  } catch (const std::exception& e) {
-    cerr << e.what() << endl;
-    return -1;
+    throw std::runtime_error(
+        "litesql exception caught setting up db from json input");
   }
-  return 0;
+  updateDbMeta();
 }
 
-class rematchResult {
-public:
-  rematchResult(size_t res = 32)
-  {
-    // reserving appropriate size could improve initial performance
-    ids.reserve(res);
+void PcreChecker::updateDbMeta()
+{
+  // scan result ids
+  dbMeta.resMatchId =
+      select<Result>(*pDb, Result::Name == "match").one().id.value();
+  dbMeta.resNomatchId =
+      select<Result>(*pDb, Result::Name == "nomatch").one().id.value();
+  dbMeta.resErrorId =
+      select<Result>(*pDb, Result::Name == "error").one().id.value();
+
+  // engine ids
+  dbMeta.engRematchId =
+      select<Engine>(*pDb, Engine::Name == "rematch").one().id.value();
+  dbMeta.engHyperscanId =
+      select<Engine>(*pDb, Engine::Name == "hyperscan").one().id.value();
+  dbMeta.engPcreId =
+      select<Engine>(*pDb, Engine::Name == "pcre").one().id.value();
+
+  // transform DB rules into regexbench rules (most importantly with id info)
+  dbMeta.rules.clear();
+  vector<DbRule> dbRules = select<DbRule>(*pDb).orderBy(DbRule::Id).all();
+  for (const auto& dbRule : dbRules) {
+    auto blob = dbRule.content.value();
+    size_t len = blob.length();
+    auto temp = std::make_unique<char[]>(len);
+    blob.getData(reinterpret_cast<unsigned char*>(temp.get()), len, 0);
+    std::string line(temp.get(), len);
+    dbMeta.rules.emplace_back(
+        regexbench::Rule(line, static_cast<size_t>(dbRule.id.value())));
   }
-  void clear() { ids.clear(); }
-  void pushId(unsigned id) { ids.push_back(id); }
 
-  bool isMatched() { return !ids.empty(); }
+  dbMeta.needsUpdate = 0;
+}
 
-  // just a wrapper over std::vector<unsigned>::iterator
-  class iterator : public std::iterator<std::input_iterator_tag, unsigned> {
-  public:
-    iterator(std::vector<unsigned>::iterator i) : it(i) {}
-    iterator& operator++()
-    {
-      ++it;
-      return *this;
+void PcreChecker::checkDb()
+{
+  if (dbMeta.needsUpdate)
+    updateDbMeta();
+
+  try {
+    pDb->begin();
+
+    checkRematch();
+    checkHyperscan();
+    checkPcre();
+
+    pDb->commit(); // commit changes
+  } catch (Except e) {
+    cerr << e << endl;
+    throw std::runtime_error(
+        "litesql exception caught updating match result to db");
+  }
+}
+
+std::array<int, 3> PcreChecker::checkSingle(const std::string& rule,
+                                            const std::string& data, bool hex)
+{
+  std::array<int, 3> results;
+  std::string trans;
+  const std::string* pData = &data;
+  regexbench::Rule singleRule(rule, 1);
+
+  if (hex) {
+    trans = convertHexData(data);
+    pData = &trans;
+  }
+
+  results[0] = checkRematch(&singleRule, pData);
+  results[1] = checkHyperscan(&singleRule, pData);
+  results[2] = checkPcre(&singleRule, pData);
+
+  return results;
+}
+
+void PcreChecker::writeJson(const std::string& jsonOut)
+{
+  if (jsonOut.empty())
+    throw std::runtime_error("input json file is not specified");
+  if (!pDb)
+    throw std::runtime_error("DB must have been attached for writing json");
+
+  std::ofstream jsonFile(jsonOut);
+  Json::Value root;
+
+  // rules
+  dbTables2Json<DbRule, JsonFillNameContentDesc<DbRule>>("rules", root);
+
+  // patterns
+  dbTables2Json<Pattern, JsonFillNameContentDesc<Pattern>>("patterns", root);
+
+  // grammars
+  dbTables2Json<Grammar, JsonFillNameContentDesc<Grammar>>("grammars", root);
+
+  // engines & results
+  dbTables2Json<Engine, JsonFillNameOnly<Engine>>("engines", root);
+  dbTables2Json<Result, JsonFillNameOnly<Result>>("results", root);
+
+  // tests : these are tricky parts because we should mix rule, pattern, grammar
+  // and result altogether
+  dbTables2JsonTests(root); // TBD
+
+  // time to write to a file
+  Json::StreamWriterBuilder wbuilder;
+  jsonFile << Json::writeString(wbuilder, root);
+  jsonFile << endl;
+}
+
+void PcreChecker::dbTables2JsonTests(Json::Value& /*root*/) const
+{
+  // TODO
+}
+
+void PcreChecker::jsonTests2DbTables(const Json::Value& root)
+{
+  const auto& tests = root["tests"];
+  if (tests.empty())
+    return;
+  if (!tests.isArray()) {
+    throw std::runtime_error("tests should be array type");
+  }
+
+  std::map<string, int> engineMap;
+  std::map<string, int> resultMap;
+
+  std::vector<Engine> engineSels = select<Engine>(*pDb).all();
+  for (const auto& e : engineSels) {
+    engineMap[e.name.value()] = e.id.value();
+  }
+  std::vector<Result> resultSels = select<Result>(*pDb).all();
+  for (const auto& r : resultSels) {
+    resultMap[r.name.value()] = r.id.value();
+  }
+
+  // rule => DbRule name
+  // pattern => Pattern name
+  // grammars => array of Grammar names
+  // result => json object of result for each engine
+  for (const auto& test : tests) {
+    if (test["rule"].empty() || !test["rule"].isString())
+      throw std::runtime_error("test rule name must be specfied (as string)");
+    if (test["pattern"].empty() || !test["pattern"].isString())
+      throw std::runtime_error(
+          "test pattern name must be specfied (as string)");
+    const auto& rulename = test["rule"].asString();
+    const auto& patternname = test["pattern"].asString();
+
+    // find ids of rule, pattern, grammar
+    int rule_id;
+    int pattern_id;
+    try {
+      const auto& rule_db =
+          select<DbRule>(*pDb, DbRule::Name == rulename).one();
+      rule_id = rule_db.id.value();
+      const auto& pattern_db =
+          select<Pattern>(*pDb, Pattern::Name == patternname).one();
+      pattern_id = pattern_db.id.value();
+    } catch (NotFound e) {
+      cerr << "rule(" << rulename << ") or pattern(" << patternname
+           << ") not found (" << e << ") (skipping this)" << endl;
+      continue;
     }
-    iterator operator++(int)
-    {
-      iterator retval = *this;
-      ++(*this);
-      return retval;
+    // find expect id : this is actually a result id
+    int expect_id = 0;
+    if (!test["expect"].empty() && test["expect"].isString()) {
+      if (resultMap.count(test["expect"].asString()))
+        expect_id = resultMap.at(test["expect"].asString());
     }
-    bool operator==(iterator other) const { return it == other.it; }
-    bool operator!=(iterator other) const { return !(*this == other); }
-    reference operator*() const { return *it; }
 
-  private:
-    std::vector<unsigned>::iterator it;
-  };
+    // now rule_id, pattern_id, expect_id are valid
+    // find out Test table id if any or create one
+    int test_id;
+    try {
+      const auto& test_db =
+          select<Test>(*pDb,
+                       Test::Ruleid == rule_id && Test::Patternid == pattern_id)
+              .one();
+      test_id = test_db.id.value();
+    } catch (NotFound) {
+      Test test_db(*pDb);
+      test_db.ruleid = rule_id;
+      test_db.patternid = pattern_id;
+      test_db.expectid = expect_id;
+      test_db.update();
+      test_id = test_db.id.value();
+    }
 
-  iterator begin() { return iterator(ids.begin()); }
-  iterator end() { return iterator(ids.end()); }
+    std::vector<int> grammar_ids;
+    if (!test["grammars"].empty()) {
+      const auto& grammars = test["grammars"];
+      for (const auto& gr : grammars) {
+        if (!gr.isString())
+          continue; // TODO
+        try {
+          const auto& gr_db =
+              select<Grammar>(*pDb, Grammar::Name == gr.asString()).one();
+          grammar_ids.push_back(gr_db.id.value());
+        } catch (NotFound) {
+          // just register this grammar on the fly (w/o description)
+          Grammar new_gr(*pDb);
+          new_gr.name = gr.asString();
+          new_gr.update();
+          grammar_ids.push_back(new_gr.id.value());
+        }
+      }
+    }
 
-private:
-  std::vector<unsigned> ids;
-};
+    for (auto gid : grammar_ids) {
+      try {
+        select<TestGrammar>(*pDb,
+                            TestGrammar::Testid == test_id &&
+                                TestGrammar::Grammarid == gid)
+            .one();
+      } catch (NotFound) {
+        TestGrammar tg(*pDb);
+        tg.testid = test_id;
+        tg.grammarid = gid;
+        tg.update();
+      }
+    }
+
+    std::map<string, string> verdictMap;
+    if (!test["result"].empty() && test["result"].isObject()) {
+      const auto& result = test["result"];
+      for (const auto& engine : result.getMemberNames()) {
+        if (engineMap.find(engine) != engineMap.end()) { // engine names
+          const auto& verdict = result[engine].asString();
+          if (result[engine].isString() &&
+              resultMap.find(verdict) != resultMap.end()) {
+            verdictMap[engine] = verdict;
+          } else {
+            cerr << "result for engine " << engine << " set incorrectly"
+                 << endl;
+          }
+        } else {
+          cerr << "unknown engine " << engine << " for result" << endl;
+        }
+      }
+    }
+
+    for (auto e2V : verdictMap) {
+      try {
+        auto resEntry = *(
+            select<TestResult>(*pDb,
+                               TestResult::Testid == test_id &&
+                                   TestResult::Engineid == engineMap[e2V.first])
+                .cursor());
+
+        resEntry.resultid = resultMap[e2V.second];
+        resEntry.update();
+      } catch (NotFound) {
+        TestResult resEntry(*pDb);
+        resEntry.testid = test_id;
+        resEntry.engineid = engineMap[e2V.first];
+        resEntry.resultid = resultMap[e2V.second];
+        resEntry.update();
+      }
+    }
+  }
+}
 
 static int onMatch(unsigned id, unsigned long long from, unsigned long long to,
                    unsigned flags, void* ctx)
@@ -197,14 +416,15 @@ static int onMatch(unsigned id, unsigned long long from, unsigned long long to,
   return 0; // continue till there's no more match
 }
 
-void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
+int PcreChecker::checkRematch(const regexbench::Rule* singleRule,
+                              const std::string* data)
 {
-  int engineId = 0;
-  if (!aux.single)
-    engineId = aux.str2EngineId.at("rematch");
-  int resMatchId = aux.resMatchId;
-  int resNomatchId = aux.resNomatchId;
-  const auto& rules = aux.rules;
+  int result = 0;
+  int engineId = dbMeta.engRematchId;
+
+  if (singleRule && !data)
+    throw std::runtime_error(
+        "If rule was given data should also be given in single check mode");
 
   rematch2_t* matcher;
   rematch_scratch_t* scratch;
@@ -212,7 +432,8 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   vector<const char*> rematchExps;
   vector<unsigned> rematchMods;
   vector<unsigned> rematchIds;
-  for (const auto& rule : rules) {
+  if (singleRule) {
+    const auto& rule = *singleRule;
     rematchExps.push_back(rule.getRegexp().data());
     rematchIds.push_back(static_cast<unsigned>(rule.getID()));
     uint32_t opt = 0;
@@ -223,6 +444,19 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
     if (rule.isSet(regexbench::MOD_DOTALL))
       opt |= REMATCH_MOD_DOTALL;
     rematchMods.push_back(opt);
+  } else {
+    for (const auto& rule : dbMeta.rules) {
+      rematchExps.push_back(rule.getRegexp().data());
+      rematchIds.push_back(static_cast<unsigned>(rule.getID()));
+      uint32_t opt = 0;
+      if (rule.isSet(regexbench::MOD_CASELESS))
+        opt |= REMATCH_MOD_CASELESS;
+      if (rule.isSet(regexbench::MOD_MULTILINE))
+        opt |= REMATCH_MOD_MULTILINE;
+      if (rule.isSet(regexbench::MOD_DOTALL))
+        opt |= REMATCH_MOD_DOTALL;
+      rematchMods.push_back(opt);
+    }
   }
   matcher =
       rematch2_compile(rematchIds.data(), rematchExps.data(),
@@ -242,22 +476,22 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   rematchResult matchRes;
   // prepare data (only need the data specified in Test table)
   int lastPid = -1;
-  if (aux.single) {   // single test mode
+  if (singleRule) {   // single test mode
     matchRes.clear(); // must be done to get right result
-    int ret = rematch_scan_block(matcher, aux.data.data(), aux.data.size(),
-                                 context, scratch, onMatch, &matchRes);
+    int ret = rematch_scan_block(matcher, data->data(), data->size(), context,
+                                 scratch, onMatch, &matchRes);
     if (ret == MREG_FAILURE)
       cerr << "rematch failed during matching for a packet" << endl;
-    aux.result = matchRes.isMatched() ? 1 : 0;
+    result = matchRes.isMatched() ? 1 : 0;
   } else {
-    vector<Test> tests = select<Test>(db).orderBy(Test::Patternid).all();
+    vector<Test> tests = select<Test>(*pDb).orderBy(Test::Patternid).all();
     for (const auto& t : tests) {
       if (t.patternid.value() == lastPid)
         continue;
       lastPid = t.patternid.value();
       // we can get excption below
       // (which should not happen with a db correctly set up)
-      const auto& pattern = select<Pattern>(db, Pattern::Id == lastPid).one();
+      const auto& pattern = select<Pattern>(*pDb, Pattern::Id == lastPid).one();
       auto blob = pattern.content.value();
       size_t len = blob.length();
       auto temp = std::make_unique<char[]>(len);
@@ -271,7 +505,7 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
       // set up Rule-id to (Test-id, result) mapping to be used for TestResult
       // update
       std::map<int, std::pair<int, bool>> rule2TestMap;
-      auto curTest = select<Test>(db, Test::Patternid == lastPid).cursor();
+      auto curTest = select<Test>(*pDb, Test::Patternid == lastPid).cursor();
       for (; curTest.rowsLeft(); curTest++) {
         rule2TestMap[(*curTest).ruleid.value()] =
             std::make_pair((*curTest).id.value(), false);
@@ -308,20 +542,22 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
       for (const auto& p : rule2TestMap) {
         try {
           auto cur =
-              *(select<TestResult>(db,
+              *(select<TestResult>(*pDb,
                                    TestResult::Testid == p.second.first &&
                                        TestResult::Engineid == engineId)
                     .cursor());
-          cur.resultid = (p.second.second ? resMatchId : resNomatchId);
+          cur.resultid =
+              (p.second.second ? dbMeta.resMatchId : dbMeta.resNomatchId);
           cur.update();
           // for debugging
           // cout << " TestResult id " << cur.id << " updated to  result "
           //     << cur.resultid << "(" << p.second.second << ")" << endl;
         } catch (NotFound) {
-          TestResult res(db);
+          TestResult res(*pDb);
           res.testid = p.second.first;
           res.engineid = engineId;
-          res.resultid = (p.second.second ? resMatchId : resNomatchId);
+          res.resultid =
+              (p.second.second ? dbMeta.resMatchId : dbMeta.resNomatchId);
           res.update();
         }
       }
@@ -332,6 +568,8 @@ void checkRematch(PcreCheckDb& db, struct AuxInfo& aux)
   rematch_free_scratch(scratch);
   rematch2ContextFree(context);
   rematch2Free(matcher);
+
+  return result;
 }
 
 static int hsOnMatch(unsigned int, unsigned long long, unsigned long long,
@@ -342,24 +580,23 @@ static int hsOnMatch(unsigned int, unsigned long long, unsigned long long,
   return 0;
 }
 
-void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
+int PcreChecker::checkHyperscan(const regexbench::Rule* singleRule,
+                                const std::string* data)
 {
-  int engineId = 0;
-  if (!aux.single)
-    engineId = aux.str2EngineId.at("hyperscan");
-  int resMatchId = aux.resMatchId;
-  int resNomatchId = aux.resNomatchId;
-  int resErrorId = aux.resErrorId;
-  const auto& rules = aux.rules;
+  if (singleRule && !data)
+    throw std::runtime_error(
+        "If rule was given data should also be given in single check mode");
+
+  int result = 0;
+  int engineId = dbMeta.engHyperscanId;
 
   hs_database_t* hsDb = nullptr;
   hs_scratch_t* hsScratch = nullptr;
   // hs_platform_info_t hsPlatform;
   hs_compile_error_t* hsErr = nullptr;
 
-  if (aux.single) {
-    const auto& rule = rules[0];
-
+  if (singleRule) {
+    const auto& rule = *singleRule;
     unsigned flag = HS_FLAG_ALLOWEMPTY;
     if (rule.isSet(regexbench::MOD_CASELESS))
       flag |= HS_FLAG_CASELESS;
@@ -378,23 +615,22 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
       }
     } else {
       hs_free_compile_error(hsErr);
-      aux.result = -1;
-      return;
+      return -1;
     }
 
     size_t nmatches = 0;
-    hs_scan(hsDb, aux.data.data(), static_cast<unsigned>(aux.data.size()), 0,
+    hs_scan(hsDb, data->data(), static_cast<unsigned>(data->size()), 0,
             hsScratch, hsOnMatch, &nmatches);
-    aux.result = (nmatches > 0) ? 1 : 0;
+    result = (nmatches > 0) ? 1 : 0;
 
     hs_free_scratch(hsScratch);
     hs_free_database(hsDb);
-    return;
+    return result;
   }
 
-  auto cur = select<Test>(db).orderBy(Test::Ruleid).cursor();
+  auto cur = select<Test>(*pDb).orderBy(Test::Ruleid).cursor();
   if (!cur.rowsLeft()) // nothing to do
-    return;
+    return result;
 
   // map of Test-id to Result-id
   std::map<int, int> test2ResMap;
@@ -406,7 +642,7 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
   // in terms of containing rule id's.
   // Below outer and inner loop is assuming the above constraints
   // to prevent multiple rule compile for a same rule
-  for (const auto& rule : rules) {
+  for (const auto& rule : dbMeta.rules) {
     if (!cur.rowsLeft())
       break;
     if (rule.getID() != static_cast<size_t>((*cur).ruleid.value()))
@@ -439,12 +675,12 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
          cur++) {
 
       if (resCompile != HS_SUCCESS) {
-        test2ResMap[(*cur).id.value()] = resErrorId;
+        test2ResMap[(*cur).id.value()] = dbMeta.resErrorId;
         continue;
       }
 
       const auto& pattern =
-          select<Pattern>(db, Pattern::Id == (*cur).patternid).one();
+          select<Pattern>(*pDb, Pattern::Id == (*cur).patternid).one();
       auto blob = pattern.content.value();
       size_t len = blob.length();
       auto temp = std::make_unique<char[]>(len);
@@ -454,7 +690,7 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
       hs_scan(hsDb, temp.get(), static_cast<unsigned>(len), 0, hsScratch,
               hsOnMatch, &nmatches);
       test2ResMap[(*cur).id.value()] =
-          (nmatches > 0) ? resMatchId : resNomatchId;
+          (nmatches > 0) ? dbMeta.resMatchId : dbMeta.resNomatchId;
     }
 
     hs_free_scratch(hsScratch);
@@ -464,39 +700,41 @@ void checkHyperscan(PcreCheckDb& db, struct AuxInfo& aux)
   // cout << "Hyper scan result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = *(select<TestResult>(db,
+      auto curT = *(select<TestResult>(*pDb,
                                        TestResult::Testid == p.first &&
                                            TestResult::Engineid == engineId)
                         .cursor());
       curT.resultid = p.second;
       curT.update();
     } catch (NotFound) {
-      TestResult res(db);
+      TestResult res(*pDb);
       res.testid = p.first;
       res.engineid = engineId;
       res.resultid = p.second;
       res.update();
     }
     // for debugging
-    // const auto& test = select<Test>(db, Test::Id == p.first).one();
+    // const auto& test = select<Test>(*pDb, Test::Id == p.first).one();
     // cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
     //     << ", pattern id " << test.patternid.value()
     //     << ") => result : " << p.second << endl;
   }
+
+  return result;
 }
 
-void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
+int PcreChecker::checkPcre(const regexbench::Rule* singleRule,
+                           const std::string* data)
 {
-  int engineId = 0;
-  if (!aux.single)
-    engineId = aux.str2EngineId.at("pcre");
-  int resMatchId = aux.resMatchId;
-  int resNomatchId = aux.resNomatchId;
-  int resErrorId = aux.resErrorId;
-  const auto& rules = aux.rules;
+  if (singleRule && !data)
+    throw std::runtime_error(
+        "If rule was given data should also be given in single check mode");
 
-  if (aux.single) {
-    const auto& rule = rules[0];
+  int result = 0;
+  int engineId = dbMeta.engPcreId;
+
+  if (singleRule) {
+    const auto& rule = *singleRule;
     PCRE2_SIZE erroffset = 0;
     int errcode = 0;
     pcre2_code* re =
@@ -506,25 +744,23 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
     pcre2_match_data* mdata = nullptr;
     if (re != nullptr) {
       mdata = pcre2_match_data_create_from_pattern(re, nullptr);
-    } else {
-      aux.result = -1;
-      return;
-    }
+    } else
+      return -1;
 
     int rc = pcre2_match(
-        re, reinterpret_cast<PCRE2_SPTR>(aux.data.data()), aux.data.size(), 0,
+        re, reinterpret_cast<PCRE2_SPTR>(data->data()), data->size(), 0,
         PCRE2_NOTEMPTY_ATSTART | PCRE2_NOTEMPTY, mdata, nullptr);
 
-    aux.result = (rc >= 0) ? 1 : 0;
+    result = (rc >= 0) ? 1 : 0;
 
     pcre2_code_free(re);
     pcre2_match_data_free(mdata);
-    return;
+    return result;
   }
 
-  auto cur = select<Test>(db).orderBy(Test::Ruleid).cursor();
+  auto cur = select<Test>(*pDb).orderBy(Test::Ruleid).cursor();
   if (!cur.rowsLeft()) // nothing to do
-    return;
+    return result;
 
   // map of Test-id to Result-id
   std::map<int, int> test2ResMap;
@@ -536,7 +772,7 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
   // in terms of containing rule id's.
   // Below outer and inner loop is assuming the above constraints
   // to prevent multiple rule compile for a same rule
-  for (const auto& rule : rules) {
+  for (const auto& rule : dbMeta.rules) {
     if (!cur.rowsLeft())
       break;
     if (rule.getID() != static_cast<size_t>((*cur).ruleid.value()))
@@ -558,12 +794,12 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
          cur++) {
 
       if (re == nullptr) {
-        test2ResMap[(*cur).id.value()] = resErrorId;
+        test2ResMap[(*cur).id.value()] = dbMeta.resErrorId;
         continue;
       }
 
       const auto& pattern =
-          select<Pattern>(db, Pattern::Id == (*cur).patternid).one();
+          select<Pattern>(*pDb, Pattern::Id == (*cur).patternid).one();
       auto ctype = pattern.ctype.value();
       auto blob = pattern.content.value();
       size_t len = blob.length();
@@ -574,7 +810,8 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
           pcre2_match(re, reinterpret_cast<PCRE2_SPTR>(temp.get()), len, 0,
                       PCRE2_NOTEMPTY_ATSTART | PCRE2_NOTEMPTY, mdata, nullptr);
 
-      test2ResMap[(*cur).id.value()] = (rc >= 0) ? resMatchId : resNomatchId;
+      test2ResMap[(*cur).id.value()] =
+          (rc >= 0) ? dbMeta.resMatchId : dbMeta.resNomatchId;
     }
 
     pcre2_code_free(re);
@@ -584,25 +821,26 @@ void checkPcre(PcreCheckDb& db, struct AuxInfo& aux)
   // cout << "PCRE match result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = *(select<TestResult>(db,
+      auto curT = *(select<TestResult>(*pDb,
                                        TestResult::Testid == p.first &&
                                            TestResult::Engineid == engineId)
                         .cursor());
       curT.resultid = p.second;
       curT.update();
     } catch (NotFound) {
-      TestResult res(db);
+      TestResult res(*pDb);
       res.testid = p.first;
       res.engineid = engineId;
       res.resultid = p.second;
       res.update();
     }
     // for debugging
-    // const auto& test = select<Test>(db, Test::Id == p.first).one();
+    // const auto& test = select<Test>(*pDb, Test::Id == p.first).one();
     // cout << "test " << test.id.value() << " (rule id " << test.ruleid.value()
     //     << ", pattern id " << test.patternid.value()
     //     << ") => result : " << p.second << endl;
   }
+  return result;
 }
 
 std::string convertHexData(const std::string& data)
@@ -623,6 +861,16 @@ std::string convertHexData(const std::string& data)
   return resultStr;
 }
 
+std::string convertBlob2String(const litesql::Blob& blobConst)
+{
+  auto blob = blobConst; // ugly but
+                         // getData is not declared const
+  size_t len = blob.length();
+  auto temp = std::make_unique<char[]>(len);
+  blob.getData(reinterpret_cast<unsigned char*>(temp.get()), len, 0);
+  return std::string(temp.get(), len);
+}
+
 bool hexToCh(std::string& hex, std::string& conv)
 {
   for (auto d : hex) {
@@ -638,18 +886,4 @@ bool hexToCh(std::string& hex, std::string& conv)
     return false;
   }
   return true;
-}
-
-int runShell()
-{
-  try {
-    CheckerShell shell;
-    shell.initialize();
-    shell.run();
-  } catch (const std::exception& ex) {
-    cerr << ex.what() << endl;
-    return -1;
-  }
-
-  return 0;
 }

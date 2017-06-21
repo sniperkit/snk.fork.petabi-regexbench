@@ -34,7 +34,8 @@ add_custom_command(
    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
    DEPENDS pcre_check_db.xml
    )
-add_executable(pcre_checker PcreChecker.cpp pcrecheckdb.cpp ../Rule.cpp CheckerShell.cpp db_setup.cpp
+add_executable(pcre_checker
+  main.cpp PcreChecker.cpp pcrecheckdb.cpp ../Rule.cpp
   $<TARGET_OBJECTS:engines>)
 
 if (USE_SYSTEM_LITESQL)
