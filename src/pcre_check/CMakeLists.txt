@@ -35,7 +35,7 @@ add_custom_command(
    DEPENDS pcre_check_db.xml
    )
 add_executable(pcre_checker
-  main.cpp PcreChecker.cpp pcrecheckdb.cpp ../Rule.cpp
+  main.cpp PcreChecker.cpp CheckerShell.cpp pcrecheckdb.cpp ../Rule.cpp
   $<TARGET_OBJECTS:engines>)
 
 if (USE_SYSTEM_LITESQL)

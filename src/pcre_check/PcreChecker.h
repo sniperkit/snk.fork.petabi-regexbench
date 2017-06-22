@@ -1,6 +1,7 @@
 #ifndef PCRE_CHECKER_H
 #define PCRE_CHECKER_H
 
+#include <array>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -22,17 +23,20 @@ public:
   PcreChecker(const std::string& dbFile = "", bool debug = false);
   ~PcreChecker();
 
-  void attach(const std::string& dbFile);
+  int attach(std::string& dbFile, bool debug = false);
   void detach();
 
   void setupDb(const std::string& jsonIn);
+  int clearResultTable();
   void checkDb();
   std::array<int, 3> checkSingle(const std::string& rule,
                                  const std::string& data, bool hex = false);
   void writeJson(const std::string& jsonOut);
 
-private:
+  const pcre_check::PcreCheckDb& getDb() const { return *pDb; }
   template <typename T> std::vector<T> getAllFromDb() const;
+
+private:
   template <typename T, typename F>
   void dbTables2Json(const std::string& member, Json::Value& root) const;
   void dbTables2JsonTests(Json::Value& root) const;

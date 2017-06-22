@@ -15,7 +15,7 @@
 #include <rematch/rematch.h>
 
 #include "../Rule.h"
-//#include "CheckerShell.h" // TODO
+#include "CheckerShell.h"
 #include "PcreChecker.h"
 
 using std::cout;
@@ -58,8 +58,7 @@ int main(int argc, char** argv)
   optargs.add_options()("output,o", po::value<string>(&jsonOut),
                         "write db content to json output file");
   optargs.add_options()("setup,s", "setup db from json input");
-  optargs.add_options()("update,u",
-                        "update the result to db");
+  optargs.add_options()("update,u", "update the result to db");
   po::options_description cliargs;
   cliargs.add(posargs).add(optargs);
   po::variables_map vm;
@@ -110,7 +109,6 @@ int main(int argc, char** argv)
 
 int runShell()
 {
-  /*
   try {
     CheckerShell shell;
     shell.initialize();
@@ -119,7 +117,6 @@ int runShell()
     cerr << ex.what() << endl;
     return -1;
   }
-  */ // TODO
 
   return 0;
 }

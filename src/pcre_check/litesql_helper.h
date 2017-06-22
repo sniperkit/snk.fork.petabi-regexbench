@@ -187,18 +187,28 @@ public:
     orderAsc = asc;
     return *this;
   }
+  void clearOrdering()
+  {
+    ordering = "";
+    orderAsc = true;
+  }
 
   litesql::Records queryRaw(const litesql::Expr& e = litesql::Expr())
   {
-    lastQuery = queryRawDry(e);
+    lastQuery = queryRawDry(e.asString());
     return db.query(lastQuery);
   }
 
   std::vector<tuple_type> query(const litesql::Expr& e = litesql::Expr())
   {
+    return queryString(e.asString());
+  }
+
+  std::vector<tuple_type> queryString(const std::string& whereStr)
+  {
     std::vector<tuple_type> results;
-    // std::vector<litesql::Records> results;
-    auto recs = queryRaw(e);
+    lastQuery = queryRawDry(whereStr);
+    auto recs = db.query(lastQuery);
 
     for (const auto& rec : recs) {
       combineTuple(results, rec);
@@ -206,7 +216,7 @@ public:
     return results;
   }
 
-  std::string queryRawDry(const litesql::Expr& e = litesql::Expr())
+  std::string queryRawDry(const std::string& whereStr)
   {
     JoinedQuery sel;
 
@@ -220,7 +230,8 @@ public:
       } else
         sel.source(tables[i]);
     }
-    sel.where(e.asString());
+    if (!whereStr.empty())
+      sel.where(whereStr);
     for (size_t i = 0; i < fdatas.size(); i++)
       sel.result(fdatas[i].table() + "." + fdatas[i].name());
 

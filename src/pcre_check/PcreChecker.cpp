@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 #include "../Rule.h"
-#include "CheckerShell.h"
 #include "PcreChecker.h"
 #include "litesql_helper.h"
 
@@ -84,18 +83,22 @@ PcreChecker::~PcreChecker()
     unlink(tmpFile.get());
 }
 
-void PcreChecker::attach(const std::string& dbFileNam)
+int PcreChecker::attach(std::string& dbFileNam, bool debug)
 {
   if (pDb) {
-    cerr << "Already attached to a DB "
-         << dbFile.substr(dbFile.find(DB_PREFIX) + DB_PREFIX.size()) << endl;
-    cerr << "Detach first" << endl;
-    return;
+    dbFileNam = dbFile.substr(dbFile.find(DB_PREFIX) + DB_PREFIX.size());
+    return -1;
   }
   if (dbFileNam.empty())
     throw std::runtime_error("Must specify DB file name to attach");
 
   dbFile = DB_PREFIX + dbFileNam;
+  pDb = std::make_unique<PcreCheckDb>("sqlite3", dbFile);
+  if (debug)
+    pDb->verbose = true;
+  if (pDb->needsUpgrade())
+    pDb->upgrade();
+  return 0;
 }
 
 void PcreChecker::detach()
@@ -148,6 +151,17 @@ void PcreChecker::setupDb(const std::string& jsonIn)
         "litesql exception caught setting up db from json input");
   }
   updateDbMeta();
+}
+
+int PcreChecker::clearResultTable()
+{
+  if (!pDb) {
+    cerr << "DB must be attached beforehand" << endl;
+    return -1;
+  }
+  pDb->query("DELETE FROM " + TestResult::table__);
+  pDb->commit();
+  return 0;
 }
 
 void PcreChecker::updateDbMeta()

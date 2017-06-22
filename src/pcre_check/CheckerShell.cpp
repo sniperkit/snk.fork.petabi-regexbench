@@ -1,3 +1,4 @@
+#include <array>
 #include <cstdlib>
 #include <fstream>
 #include <functional>
@@ -9,8 +10,9 @@
 
 #include <jsoncpp/json/json.h>
 
-#include "PcreChecker.h"
 #include "CheckerShell.h"
+#include "PcreChecker.h"
+#include "litesql_helper.h"
 
 using std::cout;
 using std::cerr;
@@ -19,11 +21,34 @@ using std::string;
 
 using std::vector;
 
+// pcre_check namespace aliases
+using pcre_check::PcreCheckDb;
+using DbRule = pcre_check::Rule;
+using pcre_check::Pattern;
+using pcre_check::Grammar;
+using pcre_check::Engine;
+using pcre_check::Result;
+using pcre_check::Test;
+using pcre_check::TestGrammar;
+using pcre_check::TestResult;
+
+// litesql namespace aliases
+using litesql::select;
+using litesql::Blob;
+using litesql::Except;
+using litesql::Expr;
+using litesql::And;
+using litesql::NotFound;
+using litesql::Eq;
+using litesql::NotEq;
+using litesql::Split;
+
 using CS = CheckerShell;
 
-CS *CS::instance = nullptr;
+CS* CS::instance = nullptr;
 
-void CS::initialize() {
+void CS::initialize()
+{
   el = el_init("CheckerShell", stdin, stdout, stderr);
   el_set(el, EL_PROMPT, &CS::prompt);
   el_set(el, EL_EDITOR, "emacs");
@@ -49,9 +74,10 @@ void CS::initialize() {
   cmdOpts[id::show][id::table][id::test][id::result][id::engine].setExcl();
 }
 
-void CS::run() {
+void CS::run()
+{
   int count;
-  const char *line;
+  const char* line;
   HistEvent histEv;
   running = 1;
   while (running) {
@@ -65,12 +91,14 @@ void CS::run() {
   }
 }
 
-char *CS::prompt(EditLine *) {
+char* CS::prompt(EditLine*)
+{
   static char prStr[16] = "PCREChk:$ ";
   return prStr; // shell prompt
 }
 
-unsigned char CS::complete(EditLine *, int /*ch*/) {
+unsigned char CS::complete(EditLine*, int /*ch*/)
+{
   if (instance)
     return instance->doComplete();
   return CC_ERROR;
@@ -80,8 +108,9 @@ unsigned char CS::complete(EditLine *, int /*ch*/) {
 // extracts common string part from the list of strings
 // and returns the length of the common string
 //
-static size_t getCommon(const std::vector<std::string> &cands,
-                        std::string &common, size_t offset = 0) {
+static size_t getCommon(const std::vector<std::string>& cands,
+                        std::string& common, size_t offset = 0)
+{
   // caller should guarantee that [0, offset) range of every cands strings are
   // equal because this function assumes so
   size_t newLen = offset; // value to return
@@ -114,13 +143,14 @@ static size_t getCommon(const std::vector<std::string> &cands,
   return newLen;
 }
 
-unsigned char CS::doComplete() {
+unsigned char CS::doComplete()
+{
   static char line[LINE_MAX + 1]; // including null character
   static size_t lastCurpos = 0;
   static size_t lastLen = 0;
   static bool first = true;
   unsigned char ret = CC_REDISPLAY;
-  const LineInfo *lf;
+  const LineInfo* lf;
   bool list = false;
   int cmpl = 1; // complete last argument
   lf = el_line(el);
@@ -152,7 +182,7 @@ unsigned char CS::doComplete() {
   tok_reset(tok);
   cmdOpts.reset();
   int cmdsC;
-  const char **cmds;
+  const char** cmds;
 
   if (len > 0) {
     int r = tok_str(tok, line, &cmdsC, &cmds);
@@ -184,34 +214,22 @@ unsigned char CS::doComplete() {
       if (list && ret != CC_REFRESH) {
         std::cout << "\n";
         std::cout << "command candidates ...\n";
-        for (auto &c : cCtx.getCmpl())
+        for (auto& c : cCtx.getCmpl())
           std::cout << " " << c << "\n";
       }
     }
-  } catch (std::runtime_error & /*ex*/) {
+  } catch (std::runtime_error& /*ex*/) {
     ret = CC_ERROR;
   }
 
   return ret;
 }
 
-static std::unique_ptr<char[]> blob2String(litesql::Blob blob)
+template <> void CS::processCmd(CS::cmd_attach_option& opt)
 {
-  size_t len = blob.length();
-  auto ret = std::make_unique<char[]>(len + 1);
-  blob.getData(reinterpret_cast<unsigned char*>(ret.get()), len, 0);
-  ret[len] = '\0';
-  return ret;
-}
-
-template <> void CS::processCmd(CS::cmd_attach_option &opt) {
-  //std::cout << "\"attach\" command\n";
-  if (pDb) {
-    // Note that unique_ptr can be converted to bool
-    // Converted value is true if it owns an object
-    cerr << "Already attached to a DB " << dbName << endl;
-    cerr << "Detach first" << endl;
-    return;
+  if (neverAttached) {
+    checker.detach(); // checker is attached to a temporary file automatically
+    neverAttached = false;
   }
 
   if (!opt[id::db].isValid()) {
@@ -219,143 +237,42 @@ template <> void CS::processCmd(CS::cmd_attach_option &opt) {
     return;
   }
 
-  dbName = opt[id::db](); // should be string
-  try {
-    pDb.reset(new PcreCheckDb("sqlite3", "database=" + dbName));
-    if (pDb->needsUpgrade()) // TODO : revisit!!
-      pDb->upgrade();
-
-    pDb->begin();
-    cout << "DB attached" << endl;
-  } catch (const std::exception &e) {
-    cerr << "error while attaching to db file " << dbName << endl;
-    cerr << e.what() << endl;
-    if (pDb)
-      pDb.reset();
-  } catch (Except& e) {
-    cerr << "error while attaching to db file " << dbName << endl;
-    cerr << e << endl;
-    if (pDb)
-      pDb.reset();
+  std::string dbFile = opt[id::db]();
+  if (checker.attach(dbFile) < 0) {
+    cerr << "Already attached to a DB " << dbFile << endl;
+    cerr << "Detach first" << endl;
+    return;
   }
 }
 
-template <> void CS::processCmd(CS::cmd_detach_option &opt) {
-  //cout << "\"detach\" command" << endl;
-  if (!pDb) {
-    cerr << "Nothing to detach" << endl;
-    return;
-  }
-  pDb.reset();
-  dbName = "";
+template <> void CS::processCmd(CS::cmd_detach_option& opt)
+{
+  checker.detach();
   cout << "DB detached" << endl;
 }
 
-template <> void CS::processCmd(CS::cmd_setup_option &opt) {
-  if (opt[id::from].isValid() && opt[id::from][id::json].isValid()) {
-    std::ifstream jsonFile(opt[id::from][id::json]());
-
-    // Parse json file
-    Json::Value root;
+template <> void CS::processCmd(CS::cmd_setup_option& opt)
+{
+  if (opt[id::from].isValid() && opt[id::from][id::json].isValid())
     try {
-      jsonFile >> root;
+      checker.setupDb(opt[id::from][id::json]());
     } catch (const std::exception& e) {
-      cerr << "json file parse error" << e.what() << endl;
+      cerr << e.what() << endl;
       return;
     }
-
-    // now play with DB
-    try {
-
-      // Parse 'rules'
-      const auto& rules = root["rules"];
-      if (!rules.empty())
-        parseRules(*pDb, rules);
-
-      // Parse 'grammars'
-      const auto& grammars = root["grammars"];
-      if (!grammars.empty())
-        parseGrammars(*pDb, grammars);
-
-      // Parse 'patterns'
-      const auto& patterns = root["patterns"];
-      if (!patterns.empty())
-        parsePatterns(*pDb, patterns);
-
-      parseNameList<Engine>(*pDb, "engines", root);
-      parseNameList<Result>(*pDb, "results", root);
-
-      // Parse 'tests' (involves tables 'Test', 'TestGrammar', 'TestResult')
-      const auto& tests = root["tests"];
-      if (!tests.empty())
-        parseTests(*pDb, tests);
-
-      pDb->commit(); // commit changes
-
-    } catch (const std::exception& e) {
-      cerr << "error during parsing" << e.what() << endl;
-      return;
-    } catch (Except e) {
-      cerr << e << endl;
-      return;
-    }
-  } // setup from json command
 }
 
-template <> void CS::processCmd(CS::cmd_update_option &opt)
+template <> void CS::processCmd(CS::cmd_update_option& opt)
 {
-  if (!pDb) {
-    cerr << "DB must be attached beforehand" << endl;
-    return;
-  }
-
   try {
-
-    AuxInfo aux;
-    aux.resMatchId =
-        select<Result>(*pDb, Result::Name == "match").one().id.value();
-    aux.resNomatchId =
-        select<Result>(*pDb, Result::Name == "nomatch").one().id.value();
-    aux.resErrorId =
-        select<Result>(*pDb, Result::Name == "error").one().id.value();
-    aux.str2EngineId["rematch"] =
-        select<Engine>(*pDb, Engine::Name == "rematch").one().id.value();
-    aux.str2EngineId["hyperscan"] =
-        select<Engine>(*pDb, Engine::Name == "hyperscan").one().id.value();
-    aux.str2EngineId["pcre"] =
-        select<Engine>(*pDb, Engine::Name == "pcre").one().id.value();
-    aux.single = 0;
-    auto& rules = aux.rules;
-    vector<DbRule> dbRules = select<DbRule>(*pDb).orderBy(DbRule::Id).all();
-    for (const auto &dbRule : dbRules) {
-      auto blob = dbRule.content.value();
-      size_t len = blob.length();
-      auto temp = std::make_unique<char[]>(len);
-      blob.getData(reinterpret_cast<unsigned char*>(temp.get()), len, 0);
-      std::string line(temp.get(), len);
-      rules.emplace_back(regexbench::Rule(line, static_cast<size_t>(dbRule.id.value())));
-    }
-    // for debugging
-    //for (const auto &r : rules) {
-    //  cout << "rule " << r.getID() << ": " << r.getRegexp() << endl;
-    //}
-
-    checkRematch(*pDb, aux);
-    checkHyperscan(*pDb, aux);
-    checkPcre(*pDb, aux);
-
-    pDb->commit(); // commit changes (mostly about result)
-
-  } catch (const std::exception &e) {
+    checker.checkDb();
+  } catch (const std::exception& e) {
     cerr << e.what() << endl;
     return;
-  } catch (Except& e) { // litesql exception
-    cerr << e << endl;
-    return;
   }
 }
 
-template <> void CS::processCmd(CS::cmd_singletest_option &opt)
+template <> void CS::processCmd(CS::cmd_singletest_option& opt)
 {
   if (!opt[id::re].isValid() || !opt[id::data].isValid()) {
     cerr << "'re' and 'data' should be specified" << endl;
@@ -368,190 +285,137 @@ template <> void CS::processCmd(CS::cmd_singletest_option &opt)
     return;
   }
 
-  PcreCheckDb dummyDb("sqlite3", "database=dummy");
+  std::string rule = opt[id::re]();
+  std::string data = opt[id::data]();
 
-  AuxInfo aux;
-  aux.rules.emplace_back(regexbench::Rule(opt[id::re](), 1));
-  // cout << "Rule           : " << opt[id::re]() << endl;
-  // cout << "Data           : " << opt[id::data]() << endl;
-  if (!opt[id::ctype]().empty()) {
-    aux.ctype = opt[id::ctype]();
-  } else {
-    aux.ctype = "str";
-  }
-  if (aux.ctype == "hex") {
-    aux.data = convertHexData(opt[id::data]());
-  } else {
-    aux.data = opt[id::data]();
-  }
-  // cout << "Content Type   : " << aux.ctype.data() << endl;
-  // cout << "Convert Data   : " << aux.data.data() << endl;
-  aux.single = 1;
+  auto results = checker.checkSingle(
+      rule, data, (!opt[id::ctype]().empty() && opt[id::ctype]() == "hex"));
 
-  checkPcre(dummyDb, aux);
-  cout << "Result : pcre => " << aux.result << endl;
-  checkRematch(dummyDb, aux);
-  cout << "Result : rematch => " << aux.result << endl;
-  checkHyperscan(dummyDb, aux);
-  cout << "Result : hyperscan => " << aux.result << endl;
-}
-
-// TODO : move this to header file
-template <typename Table>
-void setIdFromName(PcreCheckDb& db, const std::string& name, int& id)
-{
-  try {
-    const auto& entry = select<Table>(db, Table::Name == name).one();
-    id = entry.id.value();
-  } catch (NotFound) {
-  }
-}
-
-template <typename Table>
-void setNameFromId(PcreCheckDb& db, const int id, std::string& name)
-{
-  try {
-    const auto& entry = select<Table>(db, Table::Id == id).one();
-    name = entry.name.value();
-  } catch (NotFound) {
-  }
+  cout << "Result : rematch => " << results[0] << endl;
+  cout << "Result : hyperscan => " << results[1] << endl;
+  cout << "Result : pcre => " << results[2] << endl;
 }
 
 void CS::processTestTable(CS::cmd_show_table_test_option& opt)
 {
-  // TODO : this implementation is brute force
-  // use join and select query if possible (using litesql features)
-  int condRule = 0;
-  int condPattern = 0;
-  //vector<int> condGrammars;
-  int condExpect = 0; // expect id
   bool condFailed = false;
-  int condEngine = 0;
   bool showContent = opt[id::detailed].isValid() ? true : false;
+  auto matchResult = // for reference
+      select<Result>(checker.getDb(), Result::Name == "match").one();
+
+  std::string condExpect, condEngine;
+  Split queryFirst;
 
   if (opt[id::cond].isValid()) {
-    auto &cond = opt[id::cond];
+    auto& cond = opt[id::cond];
     if (cond[id::rule].isValid())
-      setIdFromName<DbRule>(*pDb, cond[id::rule](), condRule);
+      queryFirst.push_back((DbRule::Name == cond[id::rule]()).asString());
     if (cond[id::pattern].isValid())
-      setIdFromName<Pattern>(*pDb, cond[id::pattern](), condRule);
+      queryFirst.push_back((Pattern::Name == cond[id::pattern]()).asString());
   }
   if (opt[id::result].isValid()) {
-    auto &result = opt[id::result];
+    auto& result = opt[id::result];
+    if (result[id::failed].isValid())
+      condFailed = true;
     if (result[id::expect].isValid()) {
       if (result[id::expect][id::match].isValid())
-        setIdFromName<Result>(*pDb, "match", condExpect);
+        condExpect = (Result::Name == "match").asString();
       if (result[id::expect][id::nomatch].isValid())
-        setIdFromName<Result>(*pDb, "nomatch", condExpect);
+        condExpect = (Result::Name == "nomatch").asString();
       if (result[id::expect][id::error].isValid())
-        setIdFromName<Result>(*pDb, "error", condExpect);
+        condExpect = (Result::Name == "error").asString();
+      if (!condExpect.empty())
+        queryFirst.push_back(condExpect);
     }
     if (result[id::engine].isValid()) {
       if (result[id::engine][id::pcre].isValid())
-        setIdFromName<Engine>(*pDb, "pcre", condEngine);
+        condEngine = (Engine::Name == "pcre").asString();
       if (result[id::engine][id::rematch].isValid())
-        setIdFromName<Engine>(*pDb, "rematch", condEngine);
+        condEngine = (Engine::Name == "rematch").asString();
       if (result[id::engine][id::hyperscan].isValid())
-        setIdFromName<Engine>(*pDb, "hyperscan", condEngine);
+        condEngine = (Engine::Name == "hyperscan").asString();
     }
-    if (result[id::failed].isValid())
-      condFailed = true;
   }
 
-  vector<Test> tests = select<Test>(*pDb).all();
-  for (auto& t : tests) {
-    if (condRule > 0 && t.ruleid.value() != condRule)
-      continue;
-    if (condPattern > 0 && t.patternid.value() != condPattern)
-      continue;
-    if (condExpect > 0 && t.expectid.value() != condExpect)
-      continue;
+  JoinedSource<Test, DbRule, Pattern, Result> source(checker.getDb(),
+                                                     true); // left join
+  // result table can be empty (because expectid can be 0)
+  source.joinCond(Eq(DbRule::Id, Test::Ruleid))
+      .joinCond(Eq(Pattern::Id, Test::Patternid))
+      .joinCond(Eq(Result::Id, Test::Expectid));
 
-    int testId = t.id.value();
+  // tuple of Test, DbRule, Pattern, Result
+  auto testTuples =
+      source.orderBy(Test::Id).queryString(queryFirst.join(" AND "));
+  for (const auto& t : testTuples) {
+    const auto& test = std::get<Test>(t);
+    const auto& rule = std::get<DbRule>(t);
+    const auto& pattern = std::get<Pattern>(t);
+    const auto& result = std::get<Result>(t); // result can be empty
 
-    vector<TestResult> results;
-    if (condExpect > 0) {
-      results =
-          condFailed
-              ? select<TestResult>(*pDb, TestResult::Testid == testId &&
-                                             TestResult::Resultid != condExpect)
-                    .all()
-              : select<TestResult>(*pDb, TestResult::Testid == testId &&
-                                             TestResult::Resultid == condExpect)
-                    .all();
-      if (results.empty())
-        continue;
-    } else {
-      results =
-          condFailed
-              ? select<TestResult>(*pDb, TestResult::Testid == testId &&
-                                             TestResult::Resultid !=
-                                                 t.expectid.value())
-                    .all()
-              : select<TestResult>(*pDb, TestResult::Testid == testId).all();
-      if (condFailed && results.empty())
-        continue;
-    }
+    auto expectid = (test.expectid.value() == 0) ? matchResult.id.value()
+                                                 : test.expectid.value();
 
-    std::string ruleName;
-    std::string patternName;
-    std::string expectName;
-    setNameFromId<DbRule>(*pDb, t.ruleid.value(), ruleName);
-    setNameFromId<Pattern>(*pDb, t.patternid.value(), patternName);
-    setNameFromId<Result>(*pDb, t.expectid.value(), expectName);
+    Split queryDetail;
+    if (!condEngine.empty())
+      queryDetail.push_back(condEngine);
+    if (condFailed)
+      queryDetail.push_back((TestResult::Resultid != expectid).asString());
+    else if (!condExpect.empty())
+      queryDetail.push_back((TestResult::Resultid == expectid).asString());
 
-    cout << "ID : " << t.id.value() << " (" << ruleName << ", " << patternName << ")" <<
-      " expect : " << expectName << " results... ";
-    if (results.empty())
+    queryDetail.push_back((TestResult::Testid == test.id.value()).asString());
+
+    JoinedSource<TestResult, Result, Engine> trSource(checker.getDb(), true);
+    auto trs = trSource.joinCond(Eq(Result::Id, TestResult::Resultid))
+                   .joinCond(Eq(Engine::Id, TestResult::Engineid))
+                   .orderBy(TestResult::Id)
+                   .queryString(queryDetail.join(" AND "));
+
+    cout << "ID : " << test.id.value() << " (" << rule.name.value() << ", "
+         << pattern.name.value() << ")"
+         << " expect : "
+         << ((result.id.value() > 0) ? result.name.value() : "NULL")
+         << " results... ";
+    if (trs.empty())
       cout << " (empty)";
-    for (const auto& r : results) {
-      if (condEngine > 0 && r.engineid.value() != condEngine)
-        continue;
-      std::string engineName;
-      std::string resultName;
-      setNameFromId<Engine>(*pDb, r.engineid.value(), engineName);
-      setNameFromId<Result>(*pDb, r.resultid.value(), resultName);
-      cout << engineName << "=>" << resultName << " ";
-    }
+    for (const auto& tr : trs)
+      cout << std::get<Engine>(tr).name.value() << "=>"
+           << std::get<Result>(tr).name.value() << " ";
 
     cout << endl;
     if (showContent) {
-      const auto &r = select<DbRule>(*pDb, DbRule::Id == t.ruleid.value()).one();
-      const auto &p = select<Pattern>(*pDb, Pattern::Id == t.patternid.value()).one();
-      auto rContent = blob2String(r.content.value()); // char[]
-      auto pContent = blob2String(p.content.value()); // char[]
-      cout << "  rule : " << rContent.get() << endl;
-      cout << "  pattern : " << pContent.get() << endl;
+      auto rContent = convertBlob2String(rule.content.value());
+      auto pContent = convertBlob2String(pattern.content.value());
+      cout << "  rule : " << rContent << endl;
+      cout << "  pattern : " << pContent << endl;
     }
   }
 }
 
-template <> void CS::processCmd(CS::cmd_show_option &opt) {
+template <> void CS::processCmd(CS::cmd_show_option& opt)
+{
   // show table
   if (!opt[id::table].isValid()) {
     cerr << "command incomplete" << endl;
     return;
   }
-  if (!pDb) {
-    cerr << "DB must be attached beforehand" << endl;
-    return;
-  }
-  auto &tbl = opt[id::table];
+  auto& tbl = opt[id::table];
   try {
     if (tbl[id::rule].isValid()) {
-      vector<DbRule> dbRules = select<DbRule>(*pDb).all();
+      vector<DbRule> dbRules = checker.getAllFromDb<DbRule>();
       for (const auto& r : dbRules) {
-        auto content = blob2String(r.content.value()); // char[]
-        cout << "ID : " << r.id.value() << " (" << r.name.value()
-             << ") =>" << content.get() << endl;
+        auto content = convertBlob2String(r.content.value());
+        cout << "ID : " << r.id.value() << " (" << r.name.value() << ") =>"
+             << content << endl;
       }
     }
     if (tbl[id::pattern].isValid()) {
-      vector<Pattern> patterns = select<Pattern>(*pDb).all();
+      vector<Pattern> patterns = checker.getAllFromDb<Pattern>();
       for (const auto& p : patterns) {
-        auto content = blob2String(p.content.value()); // char[]
-        cout << "ID : " << p.id.value() << " (" << p.name.value()
-             << ") =>" << content.get() << endl;
+        auto content = convertBlob2String(p.content.value());
+        cout << "ID : " << p.id.value() << " (" << p.name.value() << ") =>"
+             << content << endl;
       }
     }
     if (tbl[id::test].isValid()) {
@@ -559,33 +423,33 @@ template <> void CS::processCmd(CS::cmd_show_option &opt) {
     }
   } catch (const Except& e) { // litesql exception
     cerr << e << endl;
-  }
-}
-
-template <> void CS::processCmd(CS::cmd_clear_option &opt)
-{
-  if (!pDb) {
-    cerr << "DB must be attached beforehand" << endl;
+  } catch (const std::exception& e) {
+    cerr << e.what() << endl;
     return;
   }
-
-  if (opt[id::result].isValid()) {
-    // clear TestResult table contents
-    pDb->query("DELETE FROM " + TestResult::table__);
-  }
-  pDb->commit();
-  cout << "table " << TestResult::table__ << " cleared" << endl;
 }
 
-template <> void CS::processCmd(CS::cmd_exit_option &) {
+template <> void CS::processCmd(CS::cmd_clear_option& opt)
+{
+  if (opt[id::result].isValid()) {
+    // clear TestResult table contents
+    if (checker.clearResultTable() < 0)
+      return;
+    cout << "table TestResult cleared" << endl;
+  }
+}
+
+template <> void CS::processCmd(CS::cmd_exit_option&)
+{
   // exit from the shell
   std::cout << "bye\n";
   running = 0;
 }
 
-void CS::dispatchCmds(const char *line) {
+void CS::dispatchCmds(const char* line)
+{
   int cmdsC, ret;
-  const char **cmds;
+  const char** cmds;
   tok_reset(tok); // this is needed because of tab completion
   ret = tok_line(tok, el_line(el), &cmdsC, &cmds, nullptr, nullptr);
   if (ret != 0 || line == nullptr) {
@@ -602,7 +466,7 @@ void CS::dispatchCmds(const char *line) {
 
   try {
     cmdOpts.parseCmdline(cCtx);
-  } catch (std::runtime_error &ex) {
+  } catch (std::runtime_error& ex) {
     std::cerr << "error : command parsing fail\n";
     std::cerr << ex.what() << "\n";
     return;
@@ -619,9 +483,10 @@ void CS::dispatchCmds(const char *line) {
   }
 }
 
-template <typename T> bool CS::convertToInt(const std::string &s, T &t) {
+template <typename T> bool CS::convertToInt(const std::string& s, T& t)
+{
   static_assert(std::is_integral<T>::value, "integer required");
-  char *end;
+  char* end;
   long ret = strtol(s.c_str(), &end, 10);
   if (end != nullptr && *end == '\0') { // all characters are valid integral
     t = static_cast<T>(ret);
@@ -630,7 +495,8 @@ template <typename T> bool CS::convertToInt(const std::string &s, T &t) {
   return false;
 }
 
-bool CS::parseCsvLine(const std::string &s, std::vector<std::string> &v) {
+bool CS::parseCsvLine(const std::string& s, std::vector<std::string>& v)
+{
   std::string ifcStr = s;
   std::replace(ifcStr.begin(), ifcStr.end(), ',', ' ');
   std::istringstream is(ifcStr);

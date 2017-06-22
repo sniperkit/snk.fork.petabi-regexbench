@@ -104,14 +104,16 @@ using cmd_opts_type = auto_opt_def<
 class CheckerShell {
 public:
   CheckerShell()
-      : running(0), el(nullptr), hist(nullptr), tok(nullptr), cmdFunc(*this) {
+      : running(0), el(nullptr), hist(nullptr), tok(nullptr), cmdFunc(*this)
+  {
     if (instance != nullptr)
       throw std::runtime_error("Test shell instance already exists");
     // it's not that unreasonable that
     // we keep a sole instance of shell
     instance = this;
   }
-  ~CheckerShell() {
+  ~CheckerShell()
+  {
     if (hist != nullptr)
       history_end(hist);
     if (el != nullptr)
@@ -123,17 +125,17 @@ public:
   void run();
 
 private:
-  static char *prompt(EditLine *);
-  static unsigned char complete(EditLine *e, int ch); // func pointer export
+  static char* prompt(EditLine*);
+  static unsigned char complete(EditLine* e, int ch); // func pointer export
   unsigned char doComplete();                         // does the real job
 
-  static CheckerShell *instance;
+  static CheckerShell* instance;
   int running;
   // EditLine related pointers
   char _padding[4];
-  EditLine *el;
-  History *hist;
-  Tokenizer *tok;
+  EditLine* el;
+  History* hist;
+  Tokenizer* tok;
 
   // command and option parsing
   cmd_opts_type cmdOpts;
@@ -154,29 +156,30 @@ public:
 
 private:
   // dispatcher
-  void dispatchCmds(const char *line);
-  template <typename T> void processCmd(T &o);
+  void dispatchCmds(const char* line);
+  template <typename T> void processCmd(T& o);
   void processTestTable(cmd_show_table_test_option&);
   struct cmd_functor { // to be used by fusion::map for_each
-    cmd_functor(CheckerShell &p) : sh(p) {}
-    template <typename T> void operator()(T &t) const {
+    cmd_functor(CheckerShell& p) : sh(p) {}
+    template <typename T> void operator()(T& t) const
+    {
       if (t.second.isValid()) {
         sh.processCmd(t.second);
       }
     }
 
   private:
-    CheckerShell &sh;
+    CheckerShell& sh;
   };
   friend cmd_functor;
   cmd_functor cmdFunc;
 
   // helper funcs
-  template <typename T> bool convertToInt(const std::string &s, T &t);
-  bool parseCsvLine(const std::string &s, std::vector<std::string> &v);
+  template <typename T> bool convertToInt(const std::string& s, T& t);
+  bool parseCsvLine(const std::string& s, std::vector<std::string>& v);
 
-  // PCRE related
-  std::unique_ptr<pcre_check::PcreCheckDb> pDb;
-  std::string dbName;
+  PcreChecker checker;
+
+  bool neverAttached = true;
 };
 #endif
