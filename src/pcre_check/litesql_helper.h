@@ -181,6 +181,13 @@ public:
   }
   void clearJoinCond() { joinConds.clear(); }
 
+  JoinedSource& orderBy(litesql::FieldType f, bool asc = true)
+  {
+    ordering = f.fullName();
+    orderAsc = asc;
+    return *this;
+  }
+
   litesql::Records queryRaw(const litesql::Expr& e = litesql::Expr())
   {
     lastQuery = queryRawDry(e);
@@ -216,6 +223,9 @@ public:
     sel.where(e.asString());
     for (size_t i = 0; i < fdatas.size(); i++)
       sel.result(fdatas[i].table() + "." + fdatas[i].name());
+
+    if (!ordering.empty())
+      sel.orderBy(ordering, orderAsc);
 
     return std::string(sel);
   }
@@ -294,6 +304,8 @@ private:
 
   bool leftjoin;
   litesql::Split joinConds;
+  std::string ordering;
+  bool orderAsc = true;
 
   // helper data
   map_type typeMap;

@@ -22,6 +22,7 @@
 #include "../Rule.h"
 #include "CheckerShell.h"
 #include "PcreChecker.h"
+#include "litesql_helper.h"
 
 using std::cout;
 using std::cerr;
@@ -49,6 +50,7 @@ using litesql::select;
 using litesql::Blob;
 using litesql::Except;
 using litesql::NotFound;
+using litesql::Eq;
 
 const std::string PcreChecker::DB_PREFIX = "database=";
 const char* PcreChecker::TMP_TEMPLATE = "tmpdbfilXXX";
@@ -255,9 +257,48 @@ void PcreChecker::writeJson(const std::string& jsonOut)
   jsonFile << endl;
 }
 
-void PcreChecker::dbTables2JsonTests(Json::Value& /*root*/) const
+void PcreChecker::dbTables2JsonTests(Json::Value& root) const
 {
-  // TODO
+  JoinedSource<Test, DbRule, Pattern, Result> source(*pDb,
+                                                     true); // use left join
+  // result table can be empty (because expectid can be 0)
+  source.joinCond(Eq(DbRule::Id, Test::Ruleid))
+      .joinCond(Eq(Pattern::Id, Test::Patternid))
+      .joinCond(Eq(Result::Id, Test::Expectid));
+
+  auto tuples = source.orderBy(Test::Id).query();
+  for (const auto& t : tuples) {
+    Json::Value entry;
+    const auto& test = std::get<Test>(t);
+    const auto& rule = std::get<DbRule>(t);
+    const auto& pattern = std::get<Pattern>(t);
+    const auto& result = std::get<Result>(t); // result can be empty
+
+    entry["rule"] = rule.name.value();
+    entry["pattern"] = pattern.name.value();
+    if (result.id.value() > 0)
+      entry["expect"] = result.name.value();
+
+    // now check TestGrammar
+    JoinedSource<TestGrammar, Grammar> grSource(*pDb, true);
+    auto grs = grSource.joinCond(Eq(Grammar::Id, TestGrammar::Grammarid))
+                   .orderBy(Grammar::Id)
+                   .query(TestGrammar::Testid == test.id.value());
+    for (const auto& gr : grs)
+      entry["grammars"].append(std::get<Grammar>(gr).name.value());
+
+    // now check TestResult
+    JoinedSource<TestResult, Result, Engine> trSource(*pDb, true);
+    auto trs = trSource.joinCond(Eq(Result::Id, TestResult::Resultid))
+                   .joinCond(Eq(Engine::Id, TestResult::Engineid))
+                   .orderBy(TestResult::Id)
+                   .query(TestResult::Testid == test.id.value());
+    for (const auto& tr : trs)
+      entry["result"][std::get<Engine>(tr).name.value()] =
+          std::get<Result>(tr).name.value();
+
+    root["tests"].append(entry);
+  }
 }
 
 void PcreChecker::jsonTests2DbTables(const Json::Value& root)
