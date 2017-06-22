@@ -1,5 +1,7 @@
+#include <iterator>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -20,6 +22,7 @@ class JoinedQuery {
   int _limit, _offset;
   litesql::Split _results;
   litesql::Split _sources;
+  litesql::Split _ljoins;
   std::string _where;
   litesql::Split _groupBy;
   std::string _having;
@@ -61,6 +64,12 @@ public:
     if (!alias.empty())
       s += " AS " + alias;
     _sources.push_back(s);
+    return *this;
+  }
+
+  JoinedQuery& ljoin(std::string s)
+  {
+    _ljoins.push_back(s);
     return *this;
   }
 
@@ -111,6 +120,8 @@ public:
     res += _results.join(",");
     res += " FROM ";
     res += _sources.join(",");
+    for (const auto& lj : _ljoins)
+      res += " LEFT JOIN " + lj;
     if (_where != "True")
       res += " WHERE " + _where;
     if (_groupBy.size() > 0)
@@ -131,27 +142,85 @@ public:
 
 template <typename... T> class JoinedSource {
 public:
-  typedef boost::fusion::map<boost::fusion::pair<T, std::pair<int, int>>...>
+  typedef boost::fusion::map<
+      boost::fusion::pair<T, std::pair<size_t, size_t>>...>
       map_type;
+  typedef std::tuple<T...> tuple_type;
 
-  JoinedSource(const litesql::Database& db_, bool leftjoin = false)
-      : db(db_), typeMap(boost::fusion::make_pair<T>(std::make_pair(0, 0))...)
+  JoinedSource(const litesql::Database& db_, bool left = false)
+      : db(db_), leftjoin(left),
+        typeMap(boost::fusion::make_pair<T>(std::make_pair(0, 0))...)
   {
     setupInternal();
   }
 
+  template <typename... E> JoinedSource& joinCond(E&&... e)
+  {
+    if (!leftjoin)
+      return *this;
+
+    // if joinConds are not empty we just add cond on tail of it
+    // but we ignore joinCond call attempt when joinConds size has
+    // already exceeded table size - 1
+    if (joinConds.size() >= tables.size())
+      return *this;
+
+    int dummy[] = {0, ((void)joinConds.push_back(e.asString()), 0)...};
+    (void)dummy[0]; // to suppress warning
+    if (joinConds.size() >= tables.size())
+      joinConds.resize(tables.size() - 1);
+
+    return *this;
+  }
+  std::vector<std::string> getJoinConds()
+  {
+    std::vector<std::string> results;
+    for (const auto& e : joinConds)
+      results.emplace_back(e);
+    return results;
+  }
+  void clearJoinCond() { joinConds.clear(); }
+
   litesql::Records queryRaw(const litesql::Expr& e = litesql::Expr())
+  {
+    lastQuery = queryRawDry(e);
+    return db.query(lastQuery);
+  }
+
+  std::vector<tuple_type> query(const litesql::Expr& e = litesql::Expr())
+  {
+    std::vector<tuple_type> results;
+    // std::vector<litesql::Records> results;
+    auto recs = queryRaw(e);
+
+    for (const auto& rec : recs) {
+      combineTuple(results, rec);
+    }
+    return results;
+  }
+
+  std::string queryRawDry(const litesql::Expr& e = litesql::Expr())
   {
     JoinedQuery sel;
 
-    for (size_t i = 0; i < tables.size(); i++)
-      sel.source(tables[i]);
+    for (size_t i = 0; i < tables.size(); i++) {
+      if (leftjoin && i > 0) {
+        // std::string joinTable = "LEFT JOIN ";
+        std::string joinTable = tables[i];
+        if (joinConds.size() > i - 1 && joinConds[i - 1] != "True")
+          joinTable += " ON " + joinConds[i - 1];
+        sel.ljoin(joinTable);
+      } else
+        sel.source(tables[i]);
+    }
     sel.where(e.asString());
     for (size_t i = 0; i < fdatas.size(); i++)
       sel.result(fdatas[i].table() + "." + fdatas[i].name());
 
-    return db.query(sel);
+    return std::string(sel);
   }
+
+  std::string getLastQuery() { return lastQuery; }
 
 private:
   struct fill_field_type {
@@ -159,9 +228,13 @@ private:
         : fdatasRef(fdatas_)
     {
     }
-    template <typename U> void operator()(U&) const
+    template <typename U> void operator()(U& m) const
     {
+      auto start = fdatasRef.size();
       U::first_type::getFieldTypes(fdatasRef);
+      auto end = fdatasRef.size();
+      m.second.first = start; // start index in fdata
+      m.second.second = end;  // end + 1
     }
 
   private:
@@ -179,11 +252,54 @@ private:
       }
   }
 
+  struct separate_recs {
+    using ConstIter = std::vector<std::string>::const_iterator;
+    using DiffType = std::iterator_traits<ConstIter>::difference_type;
+    separate_recs(litesql::Records& sepRecs_, ConstIter c)
+        : sepRecsRef(sepRecs_), absStart(c)
+    {
+    }
+
+    template <typename U> void operator()(U& m) const
+    {
+      litesql::Record sepRec;
+      for (auto iter = absStart + static_cast<DiffType>(m.second.first);
+           iter != absStart + static_cast<DiffType>(m.second.second); ++iter)
+        sepRec.push_back(*iter);
+      sepRecsRef.push_back(sepRec);
+    }
+
+  private:
+    litesql::Records& sepRecsRef;
+    ConstIter absStart;
+  };
+
+  void combineTuple(std::vector<tuple_type>& vecs, const litesql::Record& rec)
+  {
+    litesql::Records sepRecs;
+    boost::fusion::for_each(typeMap, separate_recs(sepRecs, rec.cbegin()));
+    for (auto& sepRec : sepRecs)
+      if (sepRec[0] == "NULL") {
+        sepRec[0] = "0";
+        auto i = sepRec.begin();
+        i++;
+        for (; i != sepRec.end(); ++i)
+          *i = "";
+      }
+    auto iter = sepRecs.cbegin();
+    vecs.push_back(tuple_type{T(db, *iter++)...});
+  }
+
   const litesql::Database& db;
+
+  bool leftjoin;
+  litesql::Split joinConds;
 
   // helper data
   map_type typeMap;
   std::vector<litesql::FieldType> fdatas;
   litesql::Split tables;
   std::set<std::string> tableSet;
+
+  std::string lastQuery;
 };
