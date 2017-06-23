@@ -8,11 +8,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-padded")
 
 find_package(Lua REQUIRED) # TODO revisit!!!
 find_library(LIB_SQLITE3 NAMES sqlite3)
-find_library(LIB_JSONCPP NAMES jsoncpp)
 find_library(LIB_LITESQL NAMES litesql)
 find_library(LIB_LITESQL_UTIL NAMES litesql-util)
 find_library(LIB_LITESQL_SQLITE NAMES litesql_sqlite)
 find_library(EDITLINE_LIB NAMES edit)
+
+find_package(PkgConfig)
+pkg_check_modules(JSONCPP jsoncpp)
+include_directories(SYSTEM ${JSONCPP_INCLUDE_DIR})
+link_directories(${JSONCPP_LIBRARY_DIRS})
 
 include_directories(SYSTEM ${LUA_INCLUDE_DIR})
 
@@ -47,7 +51,7 @@ endif()
 target_link_libraries(pcre_checker
   ${Boost_LIBRARIES} ${LIB_SQLITE3}
   ${PCRE2_LIB} ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${HYPERSCAN_LIB}
-  ${EDITLINE_LIB} ${LIB_JSONCPP} ${PCAP_LIB}
+  ${EDITLINE_LIB} ${JSONCPP_LIBRARIES} ${PCAP_LIB}
 )
 
 if(RE2_INCLUDE_DIR)

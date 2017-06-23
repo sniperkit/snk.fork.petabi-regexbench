@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <litesql.hpp>
 
 #include "../Rule.h"

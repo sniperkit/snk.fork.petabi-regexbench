@@ -8,8 +8,6 @@
 
 #include <fcntl.h>
 
-#include <jsoncpp/json/json.h>
-
 #include "CheckerShell.h"
 #include "PcreChecker.h"
 #include "litesql_helper.h"
