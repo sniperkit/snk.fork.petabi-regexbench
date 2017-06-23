@@ -15,7 +15,7 @@ find_library(EDITLINE_LIB NAMES edit)
 
 find_package(PkgConfig)
 pkg_check_modules(JSONCPP jsoncpp)
-include_directories(SYSTEM ${JSONCPP_INCLUDE_DIR})
+include_directories(SYSTEM ${JSONCPP_INCLUDEDIR})
 link_directories(${JSONCPP_LIBRARY_DIRS})
 
 include_directories(SYSTEM ${LUA_INCLUDE_DIR})
