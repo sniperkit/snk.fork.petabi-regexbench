@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {"name": "alt", "content": "/abc|def|xyz/"}
+  ],
+
+  "grammars": [
+    {"name": "alt"}
+  ],
+
+  "patterns": [
+    {"name": "alt", "content": "abcdefxyzqwer"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "alt",
+     "pattern": "alt",
+     "grammars" : ["alt"], "expect": "match"}
+  ]
+}

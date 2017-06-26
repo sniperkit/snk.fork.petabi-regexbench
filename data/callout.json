@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {"name": "callout-anonymous", "content": "/(?C)abc(?C)def/"},
+    {"name": "callout-num", "content": "/(?C1)abc(?C2)def/"}
+  ],
+
+  "grammars": [
+    {"name": "callout-anonymous"},
+    {"name": "callout-num"}
+  ],
+
+  "patterns": [
+    {"name": "callout-anonymous", "content": "abcdefabcabcdef"},
+    {"name": "callout-num", "content": "abcdefabcabcdef"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "callout-anonymous",
+     "pattern": "callout-anonymous",
+     "grammars" : ["callout-anonymous"], "expect": "match"},
+    {"rule": "callout-num",
+     "pattern": "callout-num",
+     "grammars" : ["callout-num"], "expect": "match"}
+  ]
+}

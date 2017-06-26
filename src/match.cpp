@@ -122,6 +122,9 @@ int regexbench::setAffinity(size_t core, const std::string& thrName)
     }
     return -1;
   }
+#else
+  (void)core;
+  (void)thrName;
 #endif
   return 0;
 }

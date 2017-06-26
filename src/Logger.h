@@ -23,7 +23,7 @@ public:
 
     // initializer list trick
     using expander = int[];
-    (void)expander{0, (void(file << std::forward<Args>(args)), 0)...};
+    (void)expander{0, ((void)(file << std::forward<Args>(args)), 0)...};
     file << std::endl;
   }
 

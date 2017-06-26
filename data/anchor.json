@@ -1,0 +1,64 @@
+{
+  "rules": [
+    {"name": "anchor-word_boundary", "content": "/aaa\\b/"},
+    {"name": "anchor-non_word_boundary", "content": "/aaa\\B/"},
+    {"name": "anchor-sos1", "content": "/^aaa/"},
+    {"name": "anchor-sos2", "content": "/\\Aaaa/"},
+    {"name": "anchor-eos1", "content": "/aaa$/"},
+    {"name": "anchor-eos2", "content": "/aaa\\Z/"},
+    {"name": "anchor-eos3", "content": "/aaa\\z/"},
+    {"name": "anchor-first_match_pos", "content": "/\\Gaaa/"}
+  ],
+
+  "grammars": [
+    {"name": "anchor-word_boundary"},
+    {"name": "anchor-non_word_boundary"},
+    {"name": "anchor-sos1"},
+    {"name": "anchor-sos2"},
+    {"name": "anchor-eos1"},
+    {"name": "anchor-eos2"},
+    {"name": "anchor-eos3"},
+    {"name": "anchor-first_match_pos"}
+  ],
+
+  "patterns": [
+    {"name": "anchor-word_boundary", "content": "aaabbbaaacccaaa"},
+    {"name": "anchor-non_word_boundary", "content": "aaabbbaaacccaaa"},
+    {"name": "anchor-sos1", "content": "aaa&bbbaaacccaaa"},
+    {"name": "anchor-sos2", "content": "aaa&bbbaaacccaaa"},
+    {"name": "anchor-eos1", "content": "aaa&bbbaaacccaaa"},
+    {"name": "anchor-eos2", "content": "aaa&bbbaaacccaaa"},
+    {"name": "anchor-eos3", "content": "aaa&bbbaaacccaaa"},
+    {"name": "anchor-first_match_pos", "content": "aaa&bbbaaacccaaa"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "anchor-word_boundary",
+     "pattern": "anchor-word_boundary",
+     "grammars" : ["anchor-word_boundary"], "expect": "match"},
+    {"rule": "anchor-non_word_boundary",
+     "pattern": "anchor-non_word_boundary",
+     "grammars" : ["anchor-non_word_boundary"], "expect": "match"},
+    {"rule": "anchor-sos1",
+     "pattern": "anchor-sos1",
+     "grammars" : ["anchor-sos1"], "expect": "match"},
+    {"rule": "anchor-sos2",
+     "pattern": "anchor-sos2",
+     "grammars" : ["anchor-sos2"], "expect": "match"},
+    {"rule": "anchor-eos1",
+     "pattern": "anchor-eos1",
+     "grammars" : ["anchor-eos1"], "expect": "match"},
+    {"rule": "anchor-eos2",
+     "pattern": "anchor-eos2",
+     "grammars" : ["anchor-eos2"], "expect": "match"},
+    {"rule": "anchor-eos3",
+     "pattern": "anchor-eos3",
+     "grammars" : ["anchor-eos3"], "expect": "match"},
+    {"rule": "anchor-first_match_pos",
+     "pattern": "anchor-first_match_pos",
+     "grammars" : ["anchor-first_match_pos"], "expect": "match"}
+  ]
+}

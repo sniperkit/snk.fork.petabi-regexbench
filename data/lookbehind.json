@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {"name": "lookbehind-positive", "content": "/(?<=f)abcd/"},
+    {"name": "lookbehind-negative", "content": "/(?<!f)abcd/"}
+  ],
+
+  "grammars": [
+    {"name": "lookbehind-positive"},
+    {"name": "lookbehind-negative"}
+  ],
+
+  "patterns": [
+    {"name": "lookbehind-positive", "content": "fabcd"},
+    {"name": "lookbehind-negative", "content": "abcdf"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "lookbehind-positive",
+     "pattern": "lookbehind-positive",
+     "grammars" : ["lookbehind-positive"], "expect": "match"},
+    {"rule": "lookbehind-negative",
+     "pattern": "lookbehind-negative",
+     "grammars" : ["lookbehind-negative"], "expect": "match"}
+  ]
+}

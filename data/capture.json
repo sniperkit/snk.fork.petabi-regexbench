@@ -1,0 +1,52 @@
+{
+  "rules": [
+    {"name": "capture-anonymous", "content": "/(abc)/"},
+    {"name": "capture-named1", "content": "/(?<x>abc){3}/"},
+    {"name": "capture-named2", "content": "/(?'x'abc){3}/"},
+    {"name": "capture-named3", "content": "/(?P<x>abc){3}/"},
+    {"name": "capture-noncapture1", "content": "/(?:abc){3}/"},
+    {"name": "capture-noncapture2", "content": "/(?|abc){3}/"}
+  ],
+
+  "grammars": [
+    {"name": "capture-anonymous"},
+    {"name": "capture-named1"},
+    {"name": "capture-named2"},
+    {"name": "capture-named3"},
+    {"name": "capture-noncapture1"},
+    {"name": "capture-noncapture2"}
+  ],
+
+  "patterns": [
+    {"name": "capture-anonymous", "content": "abcaaabbbcccabcabcabc"},
+    {"name": "capture-named1", "content": "abcaaabbbcccabcabcabc"},
+    {"name": "capture-named2", "content": "abcaaabbbcccabcabcabc"},
+    {"name": "capture-named3", "content": "abcaaabbbcccabcabcabc"},
+    {"name": "capture-noncapture1", "content": "abcaaabbbcccabcabcabc"},
+    {"name": "capture-noncapture2", "content": "abcaaabbbcccabcabcabc"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "capture-anonymous",
+     "pattern": "capture-anonymous",
+     "grammars" : ["capture-anonymous"], "expect": "match"},
+    {"rule": "capture-named1",
+     "pattern": "capture-named1",
+     "grammars" : ["capture-named1"], "expect": "match"},
+    {"rule": "capture-named2",
+     "pattern": "capture-named2",
+     "grammars" : ["capture-named2"], "expect": "match"},
+    {"rule": "capture-named3",
+     "pattern": "capture-named3",
+     "grammars" : ["capture-named3"], "expect": "match"},
+    {"rule": "capture-noncapture1",
+     "pattern": "capture-noncapture1",
+     "grammars" : ["capture-noncapture1"], "expect": "match"},
+    {"rule": "capture-noncapture2",
+     "pattern": "capture-noncapture2",
+     "grammars" : ["capture-noncapture2"], "expect": "match"}
+  ]
+}

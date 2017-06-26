@@ -1,0 +1,66 @@
+{
+  "rules": [
+    {"name": "cond-absolute_ref", "content": "/(a)?(?(1)b|c)/"},
+    {"name": "cond-relplus_ref", "content": "/((?(+1)b|c)(d)?){2}/"},
+    {"name": "cond-relminus_ref", "content": "/(a)?(?(-1)b|c)/"},
+    {"name": "cond-named_ref1", "content": "/(?<one>a)?(?(<one>)b|c)/"},
+    {"name": "cond-named_ref2", "content": "/(?'one'a)?(?('one')b|c)/"},
+    {"name": "cond-named_ref3", "content": "/(?<one>a)?(?(one)b|c)/"},
+    {"name": "cond-named_recur", "content": "/(?<petabi>abc){3}(?(R&petabi)yes|no)/"},
+    {"name": "cond-assert", "content": "/(?(?=[^a-z]*[a-z])\\d{2}-[a-z]{3}-\\d{2}|\\d{2}-\\d{2}-\\d{2})/"}
+  ],
+
+  "grammars": [
+    {"name": "cond-absolute_ref"},
+    {"name": "cond-relplus_ref"},
+    {"name": "cond-relminus_ref"},
+    {"name": "cond-named_ref1"},
+    {"name": "cond-named_ref2"},
+    {"name": "cond-named_ref3"},
+    {"name": "cond-overall_recur"},
+    {"name": "cond-num_recur"},
+    {"name": "cond-named_recur"},
+    {"name": "cond-assert"}
+  ],
+
+  "patterns": [
+    {"name": "cond-absolute_ref", "content": "babxcacabbacabaabc"},
+    {"name": "cond-relplus_ref", "content": "bdbdccxcdcxcdb"},
+    {"name": "cond-relminus_ref", "content": "bdbdccxcdcxcdb"},
+    {"name": "cond-named_ref1", "content": "babxcacabbacabaabc"},
+    {"name": "cond-named_ref2", "content": "babxcacabbacabaabc"},
+    {"name": "cond-named_ref3", "content": "babxcacabbacabaabc"},
+    {"name": "cond-named_recur", "content": "abcabcabcyesabcabcabcno"},
+    {"name": "cond-assert", "content": "11-aaa-1111-11-11"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "cond-absolute_ref",
+     "pattern": "cond-absolute_ref",
+     "grammars" : ["cond-absolute_ref"], "expect": "match"},
+    {"rule": "cond-relplus_ref",
+     "pattern": "cond-relplus_ref",
+     "grammars" : ["cond-relplus_ref"], "expect": "match"},
+    {"rule": "cond-relminus_ref",
+     "pattern": "cond-relminus_ref",
+     "grammars" : ["cond-relminus_ref"], "expect": "match"},
+    {"rule": "cond-named_ref1",
+     "pattern": "cond-named_ref1",
+     "grammars" : ["cond-named_ref1"], "expect": "match"},
+    {"rule": "cond-named_ref2",
+     "pattern": "cond-named_ref2",
+     "grammars" : ["cond-named_ref2"], "expect": "match"},
+    {"rule": "cond-named_ref3",
+     "pattern": "cond-named_ref3",
+     "grammars" : ["cond-named_ref3"], "expect": "match"},
+    {"rule": "cond-named_recur",
+     "pattern": "cond-named_recur",
+     "grammars" : ["cond-named_recur"], "expect": "match"},
+    {"rule": "cond-assert",
+     "pattern": "cond-assert",
+     "grammars" : ["cond-assert"], "expect": "match"}
+  ]
+}

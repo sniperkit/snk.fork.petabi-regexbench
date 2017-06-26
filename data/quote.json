@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {"name": "quote-bs_x", "content": "/123\\*zxc/"},
+    {"name": "quote-bs_q_e", "content": "/123\\Q*\\E456/"}
+  ],
+
+  "grammars": [
+    {"name": "quote-bs_x"},
+    {"name": "quote-bs_q_e"}
+  ],
+
+  "patterns": [
+    {"name": "quote-bs_x", "content": "123*zxc"},
+    {"name": "quote-bs_q_e", "content": "123*456"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "quote-bs_x",
+     "pattern": "quote-bs_x",
+     "grammars" : ["quote-bs_x"], "expect": "match"},
+    {"rule": "quote-bs_q_e",
+     "pattern": "quote-bs_q_e",
+     "grammars" : ["quote-bs_q_e"], "expect": "match"}
+  ]
+}

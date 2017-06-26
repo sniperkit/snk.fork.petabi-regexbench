@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {"name": "atomic-noncapture1", "content": "/(?>\\d+)foo/"},
+    {"name": "atomic-noncapture2", "content": "/(?>(abc)+)...def/"}
+  ],
+
+  "grammars": [
+    {"name": "atomic-noncapture1"},
+    {"name": "atomic-noncapture2"}
+  ],
+
+  "patterns": [
+    {"name": "atomic-noncapture1", "content": "123456foo"},
+    {"name": "atomic-noncapture2", "content": "abcabcdef"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "atomic-noncapture1",
+     "pattern": "atomic-noncapture1",
+     "grammars" : ["atomic-noncapture"], "expect": "match"},
+    {"rule": "atomic-noncapture2",
+     "pattern": "atomic-noncapture2",
+     "grammars" : ["atomic-noncapture"], "expect": "nomatch"}
+  ]
+}

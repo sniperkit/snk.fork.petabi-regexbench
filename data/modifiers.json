@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {"name": "match_reset-start", "content": "//"}
+  ],
+
+  "grammars": [
+    {"name": "match_reset-start"}
+  ],
+
+  "patterns": [
+    {"name": "match_reset-start", "content": ""}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "match_reset-start",
+     "pattern": "match_reset-start",
+     "grammars" : ["match_reset-start"], "expect": "match"}
+  ]
+}

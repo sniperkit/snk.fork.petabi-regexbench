@@ -1,0 +1,22 @@
+{
+  "rules": [
+    {"name": "comment", "content": "/aaa(?#[bcd]aadf)b/"}
+  ],
+
+  "grammars": [
+    {"name": "comment"}
+  ],
+
+  "patterns": [
+    {"name": "comment", "content": "aaabcdaaac"}
+  ],
+
+  "engines" : ["pcre", "rematch", "hyperscan"],
+  "results" : ["match", "nomatch", "error"],
+
+  "tests" : [
+    {"rule": "comment",
+     "pattern": "comment",
+     "grammars" : ["comment"], "expect": "match"}
+  ]
+}
