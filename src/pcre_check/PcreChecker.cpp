@@ -52,7 +52,7 @@ using litesql::NotFound;
 using litesql::Eq;
 
 const std::string PcreChecker::DB_PREFIX = "database=";
-const char* PcreChecker::TMP_TEMPLATE = "tmpdbfilXXX";
+const char* PcreChecker::TMP_TEMPLATE = "tmpdbfilXXXXXX";
 
 PcreChecker::PcreChecker(const std::string& dbFileNam, bool debug)
     : dbFile(dbFileNam)
