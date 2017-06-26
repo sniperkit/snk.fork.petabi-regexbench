@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <fstream>
@@ -7,6 +8,7 @@
 #include <vector>
 
 #include <fcntl.h>
+#include <string.h>
 
 #include "CheckerShell.h"
 #include "PcreChecker.h"

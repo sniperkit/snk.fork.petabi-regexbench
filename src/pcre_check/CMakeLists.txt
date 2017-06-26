@@ -54,6 +54,10 @@ target_link_libraries(pcre_checker
   ${EDITLINE_LIB} ${JSONCPP_LIBRARIES} ${PCAP_LIB}
 )
 
+if (OS_IS_LINUX)
+  target_link_libraries(pcre_checker ${CMAKE_DL_LIBS})
+endif()
+
 if(RE2_INCLUDE_DIR)
   # this is for the case when RE2 library is found
   # (in that case engine objects are referencing RE2 library)
