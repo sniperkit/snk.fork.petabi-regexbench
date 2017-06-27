@@ -8,9 +8,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-padded")
 
 find_package(Lua REQUIRED) # TODO revisit!!!
 find_library(LIB_SQLITE3 NAMES sqlite3)
-find_library(LIB_LITESQL NAMES litesql)
-find_library(LIB_LITESQL_UTIL NAMES litesql-util)
-find_library(LIB_LITESQL_SQLITE NAMES litesql_sqlite)
+find_library(LIB_LITESQL NAMES litesql PATH_SUFFIXES static)
+find_library(LIB_LITESQL_UTIL NAMES litesql-util PATH_SUFFIXES static)
+find_library(LIB_LITESQL_SQLITE NAMES litesql_sqlite PATH_SUFFIXES static)
 find_library(EDITLINE_LIB NAMES edit)
 
 find_package(PkgConfig)
