@@ -43,6 +43,7 @@ int main(int argc, char** argv)
   string dbFile;
   string jsonIn;
   string jsonOut;
+  string pcapOut;
   po::options_description posargs;
   posargs.add_options()(
       "mode", po::value<string>(&mode),
@@ -57,6 +58,8 @@ int main(int argc, char** argv)
                         "json input file");
   optargs.add_options()("output,o", po::value<string>(&jsonOut),
                         "write db content to json output file");
+  optargs.add_options()("pcap,p", po::value<string>(&pcapOut),
+                        "write json patterns to pcap file");
   optargs.add_options()("setup,s", "setup db from json input");
   optargs.add_options()("update,u", "update the result to db");
   po::options_description cliargs;
@@ -90,12 +93,18 @@ int main(int argc, char** argv)
   //
   bool setup = vm.count("setup") ? true : false;
   bool update = vm.count("update") ? true : false;
+  bool pcap = vm.count("pcap") ? true : false;
+
+  if (pcap && dbFile.empty())
+    setup = true;
 
   try {
     PcreChecker chk(dbFile); // if debugging is needed,
                              // set debug true
     if (setup)
       chk.setupDb(jsonIn);
+    if (pcap)
+      chk.writePcap(pcapOut);
     if (update)
       chk.checkDb();
     if (!jsonOut.empty())

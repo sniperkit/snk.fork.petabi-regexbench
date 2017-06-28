@@ -7,10 +7,12 @@
 #include <utility>
 #include <vector>
 
+#include <arpa/inet.h>
 #include <boost/program_options.hpp>
 #include <hs/hs_compile.h>
 #include <hs/hs_runtime.h>
 #define PCRE2_CODE_UNIT_WIDTH 8
+#include <netinet/in.h>
 #include <pcre2.h>
 #include <rematch/compile.h>
 #include <rematch/execute.h>
@@ -269,6 +271,82 @@ void PcreChecker::writeJson(const std::string& jsonOut)
   Json::StreamWriterBuilder wbuilder;
   jsonFile << Json::writeString(wbuilder, root);
   jsonFile << endl;
+}
+
+struct pcap_slot {
+  uint32_t tv_sec;
+  uint32_t tv_usec;
+  uint32_t caplen;
+  uint32_t len;
+  char buf[2032];
+};
+
+struct pcap_file_header {
+  const uint32_t magic = 0xa1b2c3d4;
+  const uint16_t version_major = 2;
+  const uint16_t version_minor = 4;
+  const uint32_t thiszone = 0;
+  const uint32_t sigfigs = 0;
+  const uint32_t snaplen = 2048;
+  const uint32_t linktype = 1;
+};
+
+static size_t writePcapPktHeader(char* header, uint16_t plLen)
+{
+  // write default values
+
+  // Ethernet header
+  memset(&header[0], 0xff, 6);
+  memset(&header[6], 0x00, 6);
+  *reinterpret_cast<uint16_t*>(&header[12]) = htons(0x0800);
+
+  // IPv4 header
+  *reinterpret_cast<uint16_t*>(&header[14]) = htons(0x4500);
+  *reinterpret_cast<uint16_t*>(&header[16]) = htons(20 + 8 + plLen); // tot len
+  *reinterpret_cast<uint16_t*>(&header[18]) = 0;                     // ip_id
+  *reinterpret_cast<uint16_t*>(&header[20]) = 0;          // frag & ip_off
+  *reinterpret_cast<uint8_t*>(&header[22]) = 0x10;        // ttl
+  *reinterpret_cast<uint8_t*>(&header[23]) = IPPROTO_UDP; // protocol
+  *reinterpret_cast<uint16_t*>(&header[24]) = 0;          // csum (TODO)
+  *reinterpret_cast<uint32_t*>(&header[26]) = htonl(0x0a010101); // srcip
+  *reinterpret_cast<uint32_t*>(&header[30]) = htonl(0x0a010102); // dstip
+
+  // UDP header
+  *reinterpret_cast<uint16_t*>(&header[34]) = htons(0x0010);
+  *reinterpret_cast<uint16_t*>(&header[36]) = htons(0x0020);
+  *reinterpret_cast<uint16_t*>(&header[38]) = htons(8 + plLen); // udp len
+  *reinterpret_cast<uint16_t*>(&header[40]) = 0;                // csum (TODO)
+
+  return 14 + 20 + 8; // currently this is fixed (TODO)
+}
+
+void PcreChecker::writePcap(const std::string& pcapOut)
+{
+  if (pcapOut.empty()) {
+    cerr << "pcap output file must be specified" << endl;
+    return;
+  }
+  std::ofstream pcapStream(pcapOut);
+  if (!pcapStream.is_open())
+    cerr << "pcap stream cannot be opened with the file: " << pcapOut << endl;
+  struct pcap_file_header header;
+  pcapStream.write(reinterpret_cast<const char*>(&header), sizeof(header));
+
+  auto patterns = getAllFromDb<Pattern>();
+  if (patterns.empty()) {
+    cerr << "patterns are not set to db (pcap write ignored)" << endl;
+    return;
+  }
+  struct pcap_slot slot;
+  for (const auto& pkt : patterns) {
+    std::string content = convertBlob2String(pkt.content.value());
+    const auto hdrLen =
+        writePcapPktHeader(slot.buf, static_cast<uint16_t>(content.size()));
+    memcpy(slot.buf + hdrLen, content.data(), content.size());
+    slot.len = slot.caplen = static_cast<uint32_t>(content.size() + hdrLen);
+
+    pcapStream.write(reinterpret_cast<const char*>(&slot), slot.len + 16);
+  }
 }
 
 void PcreChecker::dbTables2JsonTests(Json::Value& root) const

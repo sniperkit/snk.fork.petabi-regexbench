@@ -32,6 +32,7 @@ public:
   std::array<int, 3> checkSingle(const std::string& rule,
                                  const std::string& data, bool hex = false);
   void writeJson(const std::string& jsonOut);
+  void writePcap(const std::string& pcapOut);
 
   const pcre_check::PcreCheckDb& getDb() const { return *pDb; }
   template <typename T> std::vector<T> getAllFromDb() const;
