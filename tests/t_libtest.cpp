@@ -5,7 +5,7 @@
 
 using namespace regexbench;
 
-static void report(const std::map<std::string, size_t>& m)
+void report(const std::map<std::string, size_t>& m, void *p)
 {
   std::ostringstream buf;
   std::ofstream outputFile(DATA_DIR "/realtime", std::ios_base::app);
@@ -45,7 +45,7 @@ ATF_TEST_CASE_BODY(lib_test)
   ATF_REQUIRE_EQ(1, result);
 
   args.engine = EngineType::rematch2;
-  result = regexbench::exec(args, report);
+  result = regexbench::exec(args, report, nullptr);
   ATF_REQUIRE_EQ(0, result);
 }
 
