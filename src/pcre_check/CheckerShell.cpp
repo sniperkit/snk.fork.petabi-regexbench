@@ -372,6 +372,11 @@ void CS::processTestTable(CS::cmd_show_table_test_option& opt)
                    .orderBy(TestResult::Id)
                    .queryString(queryDetail.join(" AND "));
 
+    if (!queryDetail.empty() && trs.empty())
+      // in this case, user explicitly wants only those results that meet
+      // the specified condition to be displayed
+      continue;
+
     cout << "ID : " << test.id.value() << " (" << rule.name.value() << ", "
          << pattern.name.value() << ")"
          << " expect : "
