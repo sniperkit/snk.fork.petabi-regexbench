@@ -5,7 +5,7 @@
 
 using namespace regexbench;
 
-void report(const std::map<std::string, size_t>& m, void *p)
+void report(const std::map<std::string, size_t>& m, void* p)
 {
   std::ostringstream buf;
   std::ofstream outputFile(DATA_DIR "/realtime", std::ios_base::app);

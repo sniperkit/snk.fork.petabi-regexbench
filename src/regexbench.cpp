@@ -46,7 +46,7 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 static bool endsWith(const std::string&, const char*);
 static EngineType getEngineType(const std::string& engine);
 
-int regexbench::exec(Arguments& args, realtimeFunc func, void *p)
+int regexbench::exec(Arguments& args, realtimeFunc func, void* p)
 {
   try {
     std::string prefix;

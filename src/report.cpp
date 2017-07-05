@@ -132,7 +132,7 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   outputFile << buf.str();
 }
 
-void regexbench::realtimeReport(const std::map<std::string, size_t>& m, void *p)
+void regexbench::realtimeReport(const std::map<std::string, size_t>& m, void* p)
 {
   size_t sec = m.find("Sec")->second;
   bool isTotal = sec ? false : true;

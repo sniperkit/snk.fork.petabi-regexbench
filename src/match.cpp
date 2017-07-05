@@ -183,7 +183,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                            const std::vector<size_t>& cores,
                                            const std::vector<MatchMeta>& meta,
                                            const std::string& logfile,
-                                           realtimeFunc func, void *p)
+                                           realtimeFunc func, void* p)
 {
   std::vector<std::thread> threads;
   std::vector<size_t>::const_iterator coreIter, coreEnd;

@@ -17,12 +17,14 @@
 using namespace regexbench;
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const struct ResultInfo& stat, const struct ResultInfo& total);
+make_statistic(const uint32_t sec, const struct ResultInfo& stat,
+               const struct ResultInfo& total);
 static struct ResultInfo realtime(std::vector<MatchResult>& results);
 static struct ResultInfo total(std::vector<MatchResult>& results);
 
 void regexbench::statistic(const uint32_t sec,
-                           std::vector<MatchResult>& results, realtimeFunc func, void *p)
+                           std::vector<MatchResult>& results, realtimeFunc func,
+                           void* p)
 {
   struct ResultInfo stat = realtime(results);
   struct ResultInfo tstat = total(results);
@@ -68,7 +70,8 @@ static struct ResultInfo total(std::vector<MatchResult>& results)
 }
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const struct ResultInfo& stat, const struct ResultInfo& total)
+make_statistic(const uint32_t sec, const struct ResultInfo& stat,
+               const struct ResultInfo& total)
 {
   std::map<std::string, size_t> m;
 
