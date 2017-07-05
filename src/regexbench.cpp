@@ -46,7 +46,7 @@ static_unique_ptr_cast(std::unique_ptr<Base, Del>&& p)
 static bool endsWith(const std::string&, const char*);
 static EngineType getEngineType(const std::string& engine);
 
-int regexbench::exec(Arguments& args, realtimeFunc func)
+int regexbench::exec(Arguments& args, realtimeFunc func, void* p)
 {
   try {
     std::string prefix;
@@ -72,7 +72,7 @@ int regexbench::exec(Arguments& args, realtimeFunc func)
 
     std::vector<regexbench::MatchResult> results =
         match(*engine, pcap, args.repeat, args.cores, match_info, args.log_file,
-              func);
+              func, p);
 
     report(prefix, pcap, args, results);
 

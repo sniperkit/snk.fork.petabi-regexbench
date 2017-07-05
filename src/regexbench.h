@@ -106,7 +106,7 @@ struct MatchMeta {
   size_t len;
 };
 
-typedef void (*realtimeFunc)(const std::map<std::string, size_t>&);
+typedef void (*realtimeFunc)(const std::map<std::string, size_t>&, void* p);
 
 int setAffinity(size_t core, const std::string& thrName = "");
 std::vector<MatchMeta> buildMatchMeta(const PcapSource&, size_t&);
@@ -118,8 +118,9 @@ void matchThread(Engine* engine, const PcapSource* src, long repeat,
 std::vector<MatchResult> match(Engine&, const PcapSource&, long,
                                const std::vector<size_t>&,
                                const std::vector<MatchMeta>&,
-                               const std::string&, realtimeFunc func = nullptr);
-void realtimeReport(const std::map<std::string, size_t>& m);
+                               const std::string&, realtimeFunc func = nullptr,
+                               void* p = nullptr);
+void realtimeReport(const std::map<std::string, size_t>& m, void* p = nullptr);
 std::string compileReport(const struct rusage& compileBegin,
                           const struct rusage& compileEnd,
                           const PcapSource& pcap, bool quiet);
@@ -129,10 +130,10 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const std::string& output_file,
                const std::string& engine = "hyperscan", uint32_t nthreads = 1,
                const std::string& affinity = "0", int32_t repeat = 1);
-int exec(Arguments& args, realtimeFunc func = nullptr);
+int exec(Arguments& args, realtimeFunc func = nullptr, void* p = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
 void statistic(const uint32_t sec, std::vector<MatchResult>& results,
-               realtimeFunc func = nullptr);
+               realtimeFunc func = nullptr, void* p = nullptr);
 std::unique_ptr<Engine> loadEngine(Arguments& args, std::string& prefix,
                                    size_t nsessions);
 }

@@ -183,7 +183,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                            const std::vector<size_t>& cores,
                                            const std::vector<MatchMeta>& meta,
                                            const std::string& logfile,
-                                           realtimeFunc func)
+                                           realtimeFunc func, void* p)
 {
   std::vector<std::thread> threads;
   std::vector<size_t>::const_iterator coreIter, coreEnd;
@@ -227,7 +227,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     sec++;
-    statistic(sec, results, func);
+    statistic(sec, results, func, p);
 
     for (const auto& result : results) {
       if (!result.stop.load()) {
@@ -239,9 +239,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   }
 
   sec++;
-  statistic(sec, results, func);
-
-  statistic(0, results, func);
+  statistic(sec, results, func, p);
 
   for (auto& thr : threads)
     thr.join();
