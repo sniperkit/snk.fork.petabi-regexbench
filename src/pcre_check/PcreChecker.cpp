@@ -271,6 +271,14 @@ void PcreChecker::writeJson(const std::string& jsonOut)
   jsonFile << endl;
 }
 
+const PcreCheckDb& PcreChecker::getDb() const
+{
+  if (!isAttached())
+    throw std::runtime_error("DB must have been attached before");
+
+  return *pDb;
+}
+
 void PcreChecker::dbTables2JsonTests(Json::Value& root) const
 {
   JoinedSource<Test, DbRule, Pattern, Result> source(*pDb,

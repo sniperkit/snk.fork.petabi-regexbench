@@ -405,6 +405,10 @@ template <> void CS::processCmd(CS::cmd_show_option& opt)
     cerr << "command incomplete" << endl;
     return;
   }
+  if (!checker.isAttached()) {
+    cerr << "DB must have been attached before" << endl;
+    return;
+  }
   auto& tbl = opt[id::table];
   try {
     if (tbl[id::rule].isValid()) {

@@ -25,6 +25,7 @@ public:
 
   int attach(std::string& dbFile, bool debug = false);
   void detach();
+  bool isAttached() const { return pDb ? true : false; }
 
   void setupDb(const std::string& jsonIn);
   int clearResultTable();
@@ -33,7 +34,7 @@ public:
                                  const std::string& data, bool hex = false);
   void writeJson(const std::string& jsonOut);
 
-  const pcre_check::PcreCheckDb& getDb() const { return *pDb; }
+  const pcre_check::PcreCheckDb& getDb() const;
   template <typename T> std::vector<T> getAllFromDb() const;
 
 private:
