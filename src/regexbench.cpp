@@ -54,7 +54,6 @@ int regexbench::exec(Arguments& args, realtimeFunc func, void *p)
     regexbench::PcapSource pcap(args.pcap_file);
     auto match_info = buildMatchMeta(pcap, nsessions);
 
-    std::cout << std::endl;
     struct rusage compileBegin, compileEnd;
     getrusage(RUSAGE_SELF, &compileBegin);
 
