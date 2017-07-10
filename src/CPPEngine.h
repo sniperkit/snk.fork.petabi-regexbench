@@ -11,12 +11,12 @@ namespace regexbench {
 
 class CPPEngine : public Engine {
 public:
-  CPPEngine() = default;
+  CPPEngine(uint32_t nm = 1) : Engine(nm) {}
   virtual ~CPPEngine() = default;
 
   virtual void compile(const std::vector<Rule>&, size_t);
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 private:
   std::vector<std::unique_ptr<std::regex>> res;

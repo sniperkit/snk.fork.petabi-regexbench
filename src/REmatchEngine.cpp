@@ -19,10 +19,9 @@ const char NFA_FUNC_NAME[] = "run";
 const char NFA_NSTATES_NAME[] = "nstates";
 
 REmatchAutomataEngine::REmatchAutomataEngine(uint32_t nm, bool red)
-    : flow(nullptr), matcher(nullptr), txtbl(nullptr),
-      regmatchMem(std::make_unique<mregmatch_t[]>(nm)),
-      regmatch(regmatchMem.get()), nmatch((nm < 1) ? MAX_NMATCH : nm),
-      reduce(red)
+    : Engine((nm < 1) ? MAX_NMATCH : nm), flow(nullptr), matcher(nullptr),
+      txtbl(nullptr), regmatchMem(std::make_unique<mregmatch_t[]>(nm)),
+      regmatch(regmatchMem.get()), reduce(red)
 {
 }
 
@@ -74,14 +73,14 @@ void REmatchAutomataEngine::load(const std::string& filename, size_t)
 }
 
 size_t REmatchAutomataEngine::match(const char* data, size_t len, size_t,
-                                    size_t /*thr*/, size_t* /*pId*/)
+                                    size_t /*thr*/, match_rule_offset*)
 {
   mregexec_single(txtbl, data, len, nmatch, regmatch, matcher, flow);
   return matcher->matches;
 }
 
-REmatchSOEngine::REmatchSOEngine()
-    : run(nullptr), ctx(nullptr), dlhandle(nullptr)
+REmatchSOEngine::REmatchSOEngine(uint32_t nm)
+    : Engine(nm), run(nullptr), ctx(nullptr), dlhandle(nullptr)
 {
 }
 
@@ -134,7 +133,7 @@ REmatchAutomataEngineSession::~REmatchAutomataEngineSession()
 
 size_t REmatchAutomataEngineSession::match(const char* pkt, size_t len,
                                            size_t idx, size_t /*thr*/,
-                                           size_t* /*pId*/)
+                                           match_rule_offset*)
 {
   matcher_t* cur = child->mindex[idx];
   size_t ret = 0;
@@ -179,7 +178,7 @@ REmatch2AutomataEngine::REmatch2AutomataEngine(uint32_t nm, bool red
                                                bool tur
 #endif
                                                )
-    : nmatch(nm), version(0), reduce(red)
+    : Engine(nm), version(0), reduce(red)
 #ifdef USE_TURBO
       ,
       turbo(tur)
@@ -317,23 +316,8 @@ void REmatch2AutomataEngine::load_updated(const std::string& file)
   std::cout << "Rule update soon to be applied" << std::endl;
 }
 
-static int count_matches(unsigned id, unsigned long long, unsigned long long,
-                         unsigned, void* ctx)
-{
-  std::tuple<size_t, uint32_t, unsigned int>* matchRes =
-      static_cast<std::tuple<size_t, uint32_t, unsigned int>*>(ctx);
-  auto& count = std::get<0>(*matchRes);
-  ++count;
-  if (count == 1)
-    std::get<2>(*matchRes) = id;
-  auto nmatch = std::get<1>(*matchRes);
-  if (nmatch > 0 && count >= nmatch)
-    return 1;
-  return 0;
-}
-
 size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
-                                     size_t thr, size_t* pId)
+                                     size_t thr, match_rule_offset* res)
 {
   auto scratch = scratches[thr];
   auto context = contexts[thr];
@@ -352,15 +336,10 @@ size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
       throw std::runtime_error("Could not initialize context.");
   }
   auto cur_matcher = matchers[cur_version];
-  std::tuple<size_t, uint32_t, unsigned int> matchResult{
-      0, nmatch, 0}; // 1st : match count
-                     // 2nd : nmatch (how many times to match)
-                     // 3rd : id of first match
-  rematch_scan_block(cur_matcher, pkt, len, context, scratch, count_matches,
-                     &matchResult);
-  size_t matched = std::get<0>(matchResult);
-  if (matched > 0)
-    *pId = std::get<2>(matchResult);
+  result_type matchRes{this, 0, res};
+  rematch_scan_block(cur_matcher, pkt, len, context, scratch, onMatchCallback,
+                     &matchRes);
+
   rematch2ContextClear(context, true);
-  return matched;
+  return matchRes.count;
 }

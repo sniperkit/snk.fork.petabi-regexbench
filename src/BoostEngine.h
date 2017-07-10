@@ -11,12 +11,12 @@ namespace regexbench {
 
 class BoostEngine : public Engine {
 public:
-  BoostEngine() = default;
+  BoostEngine(uint32_t nm = 1) : Engine(nm) {}
   virtual ~BoostEngine() = default;
 
   virtual void compile(const std::vector<Rule>&, size_t);
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 private:
   std::vector<std::unique_ptr<boost::regex>> res;

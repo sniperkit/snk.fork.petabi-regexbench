@@ -18,9 +18,10 @@ struct match_handler_context {
 
 class HyperscanEngine : public Engine {
 public:
-  HyperscanEngine();
+  HyperscanEngine(uint32_t nm = 0);
   HyperscanEngine(const HyperscanEngine&) = delete;
-  HyperscanEngine(HyperscanEngine&& o) : db(o.db), scratches(o.scratches)
+  HyperscanEngine(HyperscanEngine&& o, uint32_t nm = 0)
+      : Engine(nm), db(o.db), scratches(o.scratches)
   {
     o.db = nullptr;
     o.scratches.clear();
@@ -42,7 +43,7 @@ public:
   virtual void compile(const std::vector<Rule>&, size_t = 1);
   void compile_test(const std::vector<Rule>&) const;
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 protected:
   void reportFailedRules(const std::vector<Rule>&);
@@ -54,13 +55,13 @@ protected:
 
 class HyperscanEngineStream : public HyperscanEngine {
 public:
-  HyperscanEngineStream() = default;
+  HyperscanEngineStream(uint32_t nm = 0) : HyperscanEngine(nm) {}
   virtual ~HyperscanEngineStream();
   virtual void init(size_t);
 
   void compile(const std::vector<Rule>&, size_t = 1);
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 private:
   std::unique_ptr<hs_stream* []> streams;

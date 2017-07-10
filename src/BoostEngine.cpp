@@ -33,7 +33,7 @@ void BoostEngine::compile(const std::vector<Rule>& rules, size_t)
 }
 
 size_t BoostEngine::match(const char* data, size_t, size_t, size_t /*thr*/,
-                          size_t* /*pId*/)
+                          match_rule_offset*)
 {
   boost::cmatch m;
   for (const auto& re : res) {

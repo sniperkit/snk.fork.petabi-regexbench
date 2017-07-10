@@ -157,16 +157,29 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
   getrusage(RUSAGE_THREAD, &begin);
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src->getNumberOfPackets(); j++) {
-      size_t matchId;
+      match_rule_offset pktRes;
       auto matches =
           engine->match((*src)[j].data() + (*meta)[j].oft, (*meta)[j].len,
-                        (*meta)[j].sid, sel, &matchId);
+                        (*meta)[j].sid, sel, &pktRes);
       if (matches) {
         result->cur.nmatches += matches;
         result->cur.nmatched_pkts++;
         if (logger)
-          logger->log("Thread ", sel, "(@", core, ") packet ", j,
-                      " matches rule ", matchId);
+          for (const auto& res : pktRes) {
+            std::string offPairStr;
+            for (auto offPairItr = res.second.cbegin();
+                 offPairItr != res.second.cend(); ++offPairItr) {
+              if (offPairItr != res.second.cbegin())
+                offPairStr += ", ";
+              offPairStr += "(" + std::to_string(offPairItr->first) + ", " +
+                            std::to_string(offPairItr->first) + ")";
+            }
+            logger->log("Thread ", sel, "(@", core, ") packet ", j,
+                        " matches rule ", res.first,
+                        "=> offsets : ", offPairStr);
+          }
+        if (!result->detail.count(j) && !pktRes.empty())
+          result->detail[j] = std::move(pktRes);
       }
       result->cur.nbytes += (*src)[j].length();
       result->cur.npkts++;

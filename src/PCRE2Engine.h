@@ -13,13 +13,13 @@ namespace regexbench {
 
 class PCRE2Engine : public Engine {
 public:
-  PCRE2Engine() = default;
+  PCRE2Engine(uint32_t nm = 1) : Engine(nm) {}
   virtual ~PCRE2Engine() = default;
 
   virtual void compile(const std::vector<Rule>&, size_t);
   virtual void init(size_t);
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 protected:
   struct PCRE2_DATA {
@@ -46,7 +46,7 @@ protected:
 
 class PCRE2JITEngine : public PCRE2Engine {
 public:
-  PCRE2JITEngine() = default;
+  PCRE2JITEngine(uint32_t nm = 1) : PCRE2Engine(nm) {}
   virtual ~PCRE2JITEngine() = default;
 
   virtual void compile(const std::vector<Rule>&, size_t);

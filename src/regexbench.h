@@ -2,6 +2,7 @@
 #ifndef REGEXBENCH_H
 #define REGEXBENCH_H
 
+#include "Engine.h"
 #include "Logger.h"
 #include "Rule.h"
 
@@ -88,6 +89,10 @@ struct MatchResult {
   struct timeval sdiff;
   struct ResultInfo cur;
   struct ResultInfo old;
+  // detailed result :
+  //  map of pkt # =>
+  //    map of rule id => set of match offset (inside a packet) pair
+  std::map<size_t, match_rule_offset> detail;
   std::atomic_bool stop;
   char paddings[7];
 };

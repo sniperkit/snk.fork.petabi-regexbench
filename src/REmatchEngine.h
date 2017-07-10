@@ -23,7 +23,7 @@ public:
   virtual void compile(const std::vector<Rule>&, size_t = 1);
   virtual void load(const std::string&, size_t = 1);
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 private:
   mregflow_t* flow;
@@ -34,7 +34,6 @@ protected:
   std::unique_ptr<mregmatch_t[]> regmatchMem;
   mregmatch_t* regmatch;
   static constexpr uint32_t MAX_NMATCH = 32; // TODO
-  const uint32_t nmatch;
   bool reduce = false;
   char __padding[3];
 };
@@ -43,12 +42,12 @@ class REmatchSOEngine : public Engine {
   using run_func_t = bool (*)(const char*, size_t, matchctx_t*);
 
 public:
-  REmatchSOEngine();
+  REmatchSOEngine(uint32_t nm = 1);
   virtual ~REmatchSOEngine();
 
   virtual void load(const std::string&, size_t = 1);
   virtual size_t match(const char* data, size_t len, size_t, size_t = 0,
-                       size_t* = nullptr)
+                       match_rule_offset* = nullptr)
   {
     return run(data, len, ctx);
   }
@@ -68,7 +67,7 @@ public:
 
   using Engine::match;
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
-                       size_t* = nullptr);
+                       match_rule_offset* = nullptr);
 
 private:
   static constexpr size_t unit_total = 1u << 17;
@@ -79,7 +78,7 @@ private:
 
 class REmatch2AutomataEngine : public Engine {
 public:
-  REmatch2AutomataEngine(uint32_t nm = 1, bool red = false
+  REmatch2AutomataEngine(uint32_t nm = 0, bool red = false
 #ifdef USE_TURBO
                          ,
                          bool turbo = false
@@ -92,7 +91,7 @@ public:
   void update_test(const std::vector<Rule>&) override;
   void load(const std::string& file, size_t = 1) override;
   size_t match(const char* pkt, size_t len, size_t, size_t = 0,
-               size_t* = nullptr) override;
+               match_rule_offset* = nullptr) override;
 
 private:
   void load_updated(const std::string& file); // for possible use
@@ -103,7 +102,6 @@ private:
   std::vector<rematch_match_context_t*> contexts;
   std::vector<rematch_scratch_t*> scratches;
   std::vector<int> versions;
-  const uint32_t nmatch;
   std::atomic_int version;
   bool reduce = false;
 #ifdef USE_TURBO
