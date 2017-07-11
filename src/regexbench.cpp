@@ -307,6 +307,9 @@ Arguments regexbench::parse_options(int argc, const char* argv[])
       "output,o", po::value<std::string>(&args.output_file)->default_value(""),
       "Output JSON file.");
   optargs.add_options()(
+      "detail,d", po::value<std::string>(&args.detail_file)->default_value(""),
+      "Save detailed match result to a json file");
+  optargs.add_options()(
       "logfile,l", po::value<std::string>(&args.log_file)->default_value(""),
       "Log file.");
   optargs.add_options()(

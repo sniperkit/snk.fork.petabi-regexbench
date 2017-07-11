@@ -130,6 +130,35 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   write_json(buf, pt, true);
   std::ofstream outputFile(args.output_file, std::ios_base::trunc);
   outputFile << buf.str();
+
+  if (!args.detail_file.empty() && !results.empty()) {
+    const auto& pkt2RuleOffset = results[0].detail;
+    boost::property_tree::ptree detailTree;
+
+    for (const auto& pkt : pkt2RuleOffset) {
+      std::string pktNo =
+          std::string("pkt_") + std::to_string(pkt.first); // pkt no
+      for (const auto& ruleOff : pkt.second) {
+        std::string ruleNo =
+            std::string("rule_") + std::to_string(ruleOff.first);
+        boost::property_tree::ptree offsets;
+        for (const auto& offPair : ruleOff.second) {
+          boost::property_tree::ptree from, to, offset;
+          from.put("", offPair.first);
+          to.put("", offPair.second);
+          offset.push_back(std::make_pair("", from));
+          offset.push_back(std::make_pair("", to));
+          offsets.push_back(std::make_pair("", offset));
+        }
+        detailTree.add_child(pktNo + "." + ruleNo, offsets);
+      }
+    }
+
+    std::ostringstream detailBuf;
+    write_json(detailBuf, detailTree, true);
+    std::ofstream detailFile(args.detail_file, std::ios_base::trunc);
+    detailFile << detailBuf.str();
+  }
 }
 
 void regexbench::realtimeReport(const std::map<std::string, size_t>& m, void*)

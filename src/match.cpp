@@ -172,7 +172,7 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
               if (offPairItr != res.second.cbegin())
                 offPairStr += ", ";
               offPairStr += "(" + std::to_string(offPairItr->first) + ", " +
-                            std::to_string(offPairItr->first) + ")";
+                            std::to_string(offPairItr->second) + ")";
             }
             logger->log("Thread ", sel, "(@", core, ") packet ", j,
                         " matches rule ", res.first,

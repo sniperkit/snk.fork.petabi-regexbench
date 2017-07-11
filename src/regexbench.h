@@ -26,6 +26,7 @@ enum class EngineType : uint64_t {
 
 struct Arguments {
   std::string output_file;
+  std::string detail_file;
   std::string log_file;
   std::string pcap_file;
   std::string rule_file;
