@@ -70,6 +70,7 @@ int regexbench::exec(Arguments& args, realtimeFunc func, void* p)
     bgj.start(); // launch background jobs (to actually run or not will be
                  // determined inside class instance)
 
+    engine->setSaveDetail(!args.detail_file.empty());
     std::vector<regexbench::MatchResult> results =
         match(*engine, pcap, args.repeat, args.cores, match_info, args.log_file,
               func, p);

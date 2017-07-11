@@ -25,6 +25,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <thread>
 
 #include "Engine.h"
@@ -158,13 +159,15 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
   for (long i = 0; i < repeat; ++i) {
     for (size_t j = 0; j < src->getNumberOfPackets(); j++) {
       match_rule_offset pktRes;
-      auto matches =
-          engine->match((*src)[j].data() + (*meta)[j].oft, (*meta)[j].len,
-                        (*meta)[j].sid, sel, &pktRes);
+      auto matches = engine->match((*src)[j].data() + (*meta)[j].oft,
+                                   (*meta)[j].len, (*meta)[j].sid, sel,
+                                   engine->isSaveDetail() ? &pktRes : nullptr);
       if (matches) {
         result->cur.nmatches += matches;
         result->cur.nmatched_pkts++;
-        if (logger)
+        if (logger) {
+          std::stringstream logStr;
+          logStr << "Thread " << sel << "(@" << core << ") packet " << j;
           for (const auto& res : pktRes) {
             std::string offPairStr;
             for (auto offPairItr = res.second.cbegin();
@@ -174,10 +177,11 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
               offPairStr += "(" + std::to_string(offPairItr->first) + ", " +
                             std::to_string(offPairItr->second) + ")";
             }
-            logger->log("Thread ", sel, "(@", core, ") packet ", j,
-                        " matches rule ", res.first,
-                        "=> offsets : ", offPairStr);
+            logStr << " matches rule " << res.first
+                   << "=> offsets : " << offPairStr;
           }
+          logger->log(logStr.str());
+        }
         if (!result->detail.count(j) && !pktRes.empty())
           result->detail[j] = std::move(pktRes);
       }

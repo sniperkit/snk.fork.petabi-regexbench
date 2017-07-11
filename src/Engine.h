@@ -34,9 +34,13 @@ public:
   virtual size_t match(const char*, size_t, size_t, size_t = 0,
                        match_rule_offset* = nullptr) = 0;
 
+  void setSaveDetail(bool set = true) { saveDetail = set ? 1 : 0; }
+  bool isSaveDetail() { return saveDetail != 0; }
+
 protected:
   size_t numThreads = 1;
   const uint32_t nmatch = 0;
+  uint32_t saveDetail = 0;
 
   // common callback signature (originally from hyperscan) to be used for
   // rematch2 and hyperscan

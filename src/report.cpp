@@ -132,6 +132,8 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   outputFile << buf.str();
 
   if (!args.detail_file.empty() && !results.empty()) {
+    // only check the first thread result
+    // as for now all the threads are processing same traffic
     const auto& pkt2RuleOffset = results[0].detail;
     boost::property_tree::ptree detailTree;
 
