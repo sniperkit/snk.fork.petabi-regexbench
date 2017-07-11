@@ -4,10 +4,13 @@ using namespace regexbench;
 
 Engine::~Engine() {}
 
+// match callback with hyperscan compatible signature
+// this will be used by rematch2 and hyperscan
 int Engine::onMatchCallback(unsigned id, unsigned long long from,
-                            unsigned long long to, unsigned flags, void* ctx)
+                            unsigned long long to, unsigned /*flags*/,
+                            void* ctx)
 {
-  auto res = static_cast<result_type*>(ctx);
+  auto res = static_cast<cb_ctxt_type*>(ctx);
   ++(res->count);
   if (res->resMap)
     (*res->resMap)[id].insert(

@@ -10,15 +10,19 @@
 
 namespace regexbench {
 
+// match information for each packet
+// map of rule id to offset pairs at which matches have occurred
 using match_rule_offset = std::map<size_t, std::set<std::pair<size_t, size_t>>>;
 
 class Engine;
 
+// callback context type that will be used for opaque context pointer
+// delivered to match callback
 typedef struct {
   Engine* eng;
   size_t count;
   match_rule_offset* resMap;
-} result_type;
+} cb_ctxt_type;
 
 class Engine {
 public:

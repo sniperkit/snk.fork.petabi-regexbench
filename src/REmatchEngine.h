@@ -35,7 +35,7 @@ protected:
   mregmatch_t* regmatch;
   static constexpr uint32_t MAX_NMATCH = 32; // TODO
   bool reduce = false;
-  char __padding[3];
+  char __padding[7];
 };
 
 class REmatchSOEngine : public Engine {
@@ -110,9 +110,9 @@ private:
 
 protected:
 #ifdef USE_TURBO
-  char __padding[6];
+  char __padding[2];
 #else
-  char __padding[7];
+  char __padding[3];
 #endif
 };
 

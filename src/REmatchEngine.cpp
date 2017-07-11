@@ -336,7 +336,7 @@ size_t REmatch2AutomataEngine::match(const char* pkt, size_t len, size_t,
       throw std::runtime_error("Could not initialize context.");
   }
   auto cur_matcher = matchers[cur_version];
-  result_type matchRes{this, 0, res};
+  cb_ctxt_type matchRes{this, 0, res};
   rematch_scan_block(cur_matcher, pkt, len, context, scratch, onMatchCallback,
                      &matchRes);
 

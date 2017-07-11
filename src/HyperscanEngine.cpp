@@ -145,7 +145,7 @@ HyperscanEngineStream::~HyperscanEngineStream()
 size_t HyperscanEngine::match(const char* data, size_t len, size_t, size_t thr,
                               match_rule_offset* res)
 {
-  result_type matchRes{this, 0, res};
+  cb_ctxt_type matchRes{this, 0, res};
   hs_scan(db, data, static_cast<unsigned>(len), 0, scratches[thr],
           onMatchCallback, &matchRes);
   return matchRes.count;
@@ -156,7 +156,7 @@ void HyperscanEngineStream::init(size_t nsessions_) { nsessions = nsessions_; }
 size_t HyperscanEngineStream::match(const char* data, size_t len, size_t sid,
                                     size_t thr, match_rule_offset* res)
 {
-  result_type matchRes{this, 0, res};
+  cb_ctxt_type matchRes{this, 0, res};
   hs_scan_stream(streams[sid], data, static_cast<unsigned>(len), 0,
                  scratches[thr], onMatchCallback, &matchRes);
   return matchRes.count > 0;
