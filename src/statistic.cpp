@@ -17,20 +17,53 @@
 using namespace regexbench;
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const struct ResultInfo& stat,
-               const struct ResultInfo& total);
+make_statistic(const uint32_t sec, const double usec,
+               const struct ResultInfo& stat, const struct ResultInfo& total);
 static struct ResultInfo realtime(std::vector<MatchResult>& results);
 static struct ResultInfo total(std::vector<MatchResult>& results);
 
-void regexbench::statistic(const uint32_t sec,
+void regexbench::statistic(const uint32_t sec, timeval& begin,
                            std::vector<MatchResult>& results, realtimeFunc func,
                            void* p)
 {
   struct ResultInfo stat = realtime(results);
   struct ResultInfo tstat = total(results);
-  std::map<std::string, size_t> m = make_statistic(sec, stat, tstat);
+  double usec = 0.0;
+  timeval end, diff;
 
-  if (func)
+  gettimeofday(&end, NULL);
+
+  for (auto& r : results) {
+    // not ended yet.
+    if (r.endtime.tv_sec == 0 && r.endtime.tv_usec == 0) {
+      usec = 0.0;
+      break;
+    }
+
+    timersub(&(r.endtime), &begin, &diff);
+
+    // if sec is less than 0, then already finished before begin time.
+    if (diff.tv_sec < 0)
+      continue;
+
+    double m_usec = diff.tv_sec * 1e+6 + diff.tv_usec;
+    if (usec < m_usec)
+      usec = m_usec;
+  }
+
+  if (usec == 0.0) {
+    timersub(&end, &begin, &diff);
+    begin = end;
+    usec = diff.tv_sec * 1e+6 + diff.tv_usec;
+  }
+
+  // std::cout << std::fixed << std::setprecision(6) << "usec : " << usec <<
+  // std::endl;
+
+  std::map<std::string, size_t> m = make_statistic(sec, usec, stat, tstat);
+
+  // if the number of processed packets is 0, then complete.
+  if (func && m["Packets"] != 0)
     func(m, p);
 }
 
@@ -70,12 +103,13 @@ static struct ResultInfo total(std::vector<MatchResult>& results)
 }
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const struct ResultInfo& stat,
+make_statistic(const uint32_t sec, const double usec, const struct ResultInfo& stat,
                const struct ResultInfo& total)
 {
   std::map<std::string, size_t> m;
 
   m["Sec"] = sec;
+  m["Usec"] = static_cast<size_t>(usec);
   m["Matches"] = stat.nmatches;
   m["MatchedPackets"] = stat.nmatched_pkts;
   m["Packets"] = stat.npkts;

@@ -173,6 +173,7 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
     }
   }
   getrusage(RUSAGE_THREAD, &end);
+  gettimeofday(&(result->endtime), NULL); // Use this time calculate Mbps.
   timersub(&(end.ru_utime), &(begin.ru_utime), &result->udiff);
   timersub(&(end.ru_stime), &(begin.ru_stime), &result->sdiff);
   result->stop.store(true);
@@ -188,6 +189,9 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   std::vector<std::thread> threads;
   std::vector<size_t>::const_iterator coreIter, coreEnd;
   std::vector<size_t> defaultCores;
+  bool realTime = true;
+  uint32_t sec = 0;
+  timeval begin;
 
   std::vector<MatchResult> results;
   if (cores.size() < 2) {
@@ -220,14 +224,12 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                   (pLogger ? pLogger.get() : nullptr)));
   }
 
-  uint32_t sec = 0;
-  bool realTime = true;
+  gettimeofday(&begin, NULL);
 
   while (realTime) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-
     sec++;
-    statistic(sec, results, func, p);
+    statistic(sec, begin, results, func, p);
 
     for (const auto& result : results) {
       if (!result.stop.load()) {
@@ -239,7 +241,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   }
 
   sec++;
-  statistic(sec, results, func, p);
+  statistic(sec, begin, results, func, p);
 
   for (auto& thr : threads)
     thr.join();

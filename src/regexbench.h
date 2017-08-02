@@ -62,7 +62,7 @@ struct ResultInfo {
 };
 
 struct MatchResult {
-  MatchResult() : stop(false) {}
+  MatchResult() : endtime({0,0}), stop(false) {}
   MatchResult(const MatchResult& s)
   {
     udiff = s.udiff;
@@ -86,6 +86,7 @@ struct MatchResult {
 
   struct timeval udiff;
   struct timeval sdiff;
+  struct timeval endtime;
   struct ResultInfo cur;
   struct ResultInfo old;
   std::atomic_bool stop;
@@ -132,8 +133,9 @@ Arguments init(const std::string& rule_file, const std::string& pcap_file,
                const std::string& affinity = "0", int32_t repeat = 1);
 int exec(Arguments& args, realtimeFunc func = nullptr, void* p = nullptr);
 Arguments parse_options(int argc, const char* argv[]);
-void statistic(const uint32_t sec, std::vector<MatchResult>& results,
-               realtimeFunc func = nullptr, void* p = nullptr);
+void statistic(const uint32_t sec, timeval& begin,
+               std::vector<MatchResult>& results, realtimeFunc func = nullptr,
+               void* p = nullptr);
 std::unique_ptr<Engine> loadEngine(Arguments& args, std::string& prefix,
                                    size_t nsessions);
 }
