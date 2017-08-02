@@ -29,9 +29,7 @@ void regexbench::statistic(const uint32_t sec, timeval& begin,
   struct ResultInfo stat = realtime(results);
   struct ResultInfo tstat = total(results);
   double usec = 0.0;
-  timeval end, diff;
-
-  gettimeofday(&end, NULL);
+  timeval diff;
 
   for (auto& r : results) {
     // not ended yet.
@@ -52,7 +50,11 @@ void regexbench::statistic(const uint32_t sec, timeval& begin,
   }
 
   if (usec == 0.0) {
+    timeval end;
+
+    gettimeofday(&end, NULL);
     timersub(&end, &begin, &diff);
+
     begin = end;
     usec = diff.tv_sec * 1e+6 + diff.tv_usec;
   }
