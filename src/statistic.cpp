@@ -17,7 +17,7 @@
 using namespace regexbench;
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const double usec,
+make_statistic(const uint32_t sec, const size_t usec,
                const struct ResultInfo& stat, const struct ResultInfo& total);
 static struct ResultInfo realtime(std::vector<MatchResult>& results);
 static struct ResultInfo total(std::vector<MatchResult>& results);
@@ -28,13 +28,13 @@ void regexbench::statistic(const uint32_t sec, timeval& begin,
 {
   struct ResultInfo stat = realtime(results);
   struct ResultInfo tstat = total(results);
-  double usec = 0.0;
+  size_t usec = 0;
   timeval diff;
 
   for (auto& r : results) {
     // not ended yet.
     if (r.endtime.tv_sec == 0 && r.endtime.tv_usec == 0) {
-      usec = 0.0;
+      usec = 0;
       break;
     }
 
@@ -44,19 +44,19 @@ void regexbench::statistic(const uint32_t sec, timeval& begin,
     if (diff.tv_sec < 0)
       continue;
 
-    double m_usec = diff.tv_sec * 1e+6 + diff.tv_usec;
+    size_t m_usec = static_cast<size_t>(diff.tv_sec * 1e+6 + diff.tv_usec);
     if (usec < m_usec)
       usec = m_usec;
   }
 
-  if (usec == 0.0) {
+  if (usec == 0) {
     timeval end;
 
     gettimeofday(&end, NULL);
     timersub(&end, &begin, &diff);
 
     begin = end;
-    usec = diff.tv_sec * 1e+6 + diff.tv_usec;
+    usec = static_cast<size_t>(diff.tv_sec * 1e+6 + diff.tv_usec);
   }
 
   // std::cout << std::fixed << std::setprecision(6) << "usec : " << usec <<
@@ -105,13 +105,13 @@ static struct ResultInfo total(std::vector<MatchResult>& results)
 }
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const double usec, const struct ResultInfo& stat,
+make_statistic(const uint32_t sec, const size_t usec, const struct ResultInfo& stat,
                const struct ResultInfo& total)
 {
   std::map<std::string, size_t> m;
 
   m["Sec"] = sec;
-  m["Usec"] = static_cast<size_t>(usec);
+  m["Usec"] = usec;
   m["Matches"] = stat.nmatches;
   m["MatchedPackets"] = stat.nmatched_pkts;
   m["Packets"] = stat.npkts;
