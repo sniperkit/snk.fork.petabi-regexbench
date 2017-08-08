@@ -152,6 +152,7 @@ void regexbench::matchThread(Engine* engine, const PcapSource* src, long repeat,
                              MatchResult* result, Logger* logger)
 {
   setAffinity(core, "match");
+  gettimeofday(&(result->begintime), NULL); // Use this time calculate Mbps.
 
   struct rusage begin, end;
   getrusage(RUSAGE_THREAD, &begin);
@@ -191,7 +192,6 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   std::vector<size_t> defaultCores;
   bool realTime = true;
   uint32_t sec = 0;
-  timeval begin;
 
   std::vector<MatchResult> results;
   if (cores.size() < 2) {
@@ -224,12 +224,10 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
                                   (pLogger ? pLogger.get() : nullptr)));
   }
 
-  gettimeofday(&begin, NULL);
-
   while (realTime) {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     sec++;
-    statistic(sec, begin, results, func, p);
+    statistic(sec, results, func, p);
 
     for (const auto& result : results) {
       if (!result.stop.load()) {
@@ -241,7 +239,7 @@ std::vector<MatchResult> regexbench::match(Engine& engine,
   }
 
   sec++;
-  statistic(sec, begin, results, func, p);
+  statistic(sec, results, func, p);
 
   for (auto& thr : threads)
     thr.join();
