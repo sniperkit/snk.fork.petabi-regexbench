@@ -22,7 +22,7 @@ make_statistic(const uint32_t sec, const size_t usec,
 static struct ResultInfo realtime(std::vector<MatchResult>& results);
 static struct ResultInfo total(std::vector<MatchResult>& results);
 
-void regexbench::statistic(const uint32_t sec,
+void regexbench::statistic(const uint32_t sec, timeval& begin,
                            std::vector<MatchResult>& results, realtimeFunc func,
                            void* p)
 {
@@ -38,7 +38,7 @@ void regexbench::statistic(const uint32_t sec,
       break;
     }
 
-    timersub(&(r.endtime), &(r.begintime), &diff);
+    timersub(&(r.endtime), &begin, &diff);
 
     // if sec is less than 0, then already finished before begin time.
     if (diff.tv_sec < 0)
@@ -51,15 +51,11 @@ void regexbench::statistic(const uint32_t sec,
 
   if (usec == 0) {
     timeval end;
+
     gettimeofday(&end, NULL);
+    timersub(&end, &begin, &diff);
 
-    // The first thread (index is 0) is set the time earlier than the other thread.
-    timersub(&end, &(results[0].begintime), &diff);
-
-    for (auto& r : results) {
-      r.begintime = end;
-    }
-
+    begin = end;
     usec = static_cast<size_t>(diff.tv_sec * 1e+6 + diff.tv_usec);
   }
 
