@@ -516,11 +516,8 @@ int PcreChecker::checkRematch(const regexbench::Rule* singleRule,
   matcher =
       rematch2_compile(rematchIds.data(), rematchExps.data(),
                        rematchMods.data(), rematchIds.size(), false /* reduce */
-#ifdef USE_TURBO
                        ,
-                       false
-#endif
-                       );
+                       false);
   if (!matcher)
     throw std::runtime_error("Could not build REmatch2 matcher.");
   scratch = rematch_alloc_scratch(matcher);

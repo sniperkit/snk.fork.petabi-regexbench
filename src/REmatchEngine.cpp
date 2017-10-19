@@ -173,17 +173,8 @@ void REmatchAutomataEngineSession::init(size_t nsessions)
 }
 #endif // WITH_SESSION
 
-REmatch2AutomataEngine::REmatch2AutomataEngine(uint32_t nm, bool red
-#ifdef USE_TURBO
-                                               ,
-                                               bool tur
-#endif
-                                               )
-    : nmatch(nm), version(0), reduce(red)
-#ifdef USE_TURBO
-      ,
-      turbo(tur)
-#endif
+REmatch2AutomataEngine::REmatch2AutomataEngine(uint32_t nm, bool red, bool tur)
+    : nmatch(nm), version(0), reduce(red), turbo(tur)
 {
 }
 REmatch2AutomataEngine::~REmatch2AutomataEngine()
@@ -214,13 +205,8 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto matcher =
-      rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce
-#ifdef USE_TURBO
-                       ,
-                       turbo
-#endif
-                       );
+  auto matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
+                                  ids.size(), reduce, turbo);
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -249,13 +235,8 @@ void REmatch2AutomataEngine::compile_test(const std::vector<Rule>& rules) const
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto testMatcher =
-      rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce
-#ifdef USE_TURBO
-                       ,
-                       turbo
-#endif
-                       );
+  auto testMatcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
+                                      ids.size(), reduce, turbo);
   if (testMatcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -279,13 +260,8 @@ void REmatch2AutomataEngine::update_test(const std::vector<Rule>& rules)
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto tmp_matcher =
-      rematch2_compile(ids.data(), exps.data(), mods.data(), ids.size(), reduce
-#ifdef USE_TURBO
-                       ,
-                       turbo
-#endif
-                       );
+  auto tmp_matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
+                                      ids.size(), reduce, turbo);
   if (tmp_matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
