@@ -205,8 +205,8 @@ void REmatch2AutomataEngine::compile(const std::vector<Rule>& rules,
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                  ids.size(), reduce, turbo);
+  auto matcher = rematch2_compile_with_shortcuts(
+      ids.data(), exps.data(), mods.data(), ids.size(), reduce, turbo);
   if (matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -235,8 +235,8 @@ void REmatch2AutomataEngine::compile_test(const std::vector<Rule>& rules) const
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto testMatcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                      ids.size(), reduce, turbo);
+  auto testMatcher = rematch2_compile_with_shortcuts(
+      ids.data(), exps.data(), mods.data(), ids.size(), reduce, turbo);
   if (testMatcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
@@ -260,8 +260,8 @@ void REmatch2AutomataEngine::update_test(const std::vector<Rule>& rules)
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
   }
-  auto tmp_matcher = rematch2_compile(ids.data(), exps.data(), mods.data(),
-                                      ids.size(), reduce, turbo);
+  auto tmp_matcher = rematch2_compile_with_shortcuts(
+      ids.data(), exps.data(), mods.data(), ids.size(), reduce, turbo);
   if (tmp_matcher == nullptr) {
     throw std::runtime_error("Could not build REmatch2 matcher.");
   }
