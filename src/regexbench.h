@@ -40,12 +40,8 @@ struct Arguments {
   std::vector<size_t> cores;
   bool reduce = {false};
   bool quiet = {false};
-#ifdef USE_TURBO
   bool turbo = {false};
   char paddings[5];
-#else
-  char paddings[6];
-#endif
 };
 
 namespace regexbench {
@@ -62,7 +58,7 @@ struct ResultInfo {
 };
 
 struct MatchResult {
-  MatchResult() : endtime({0,0}), stop(false) {}
+  MatchResult() : endtime({0, 0}), stop(false) {}
   MatchResult(const MatchResult& s)
   {
     udiff = s.udiff;

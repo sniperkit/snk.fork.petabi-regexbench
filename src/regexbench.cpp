@@ -160,13 +160,8 @@ regexbench::loadEngine(Arguments& args, std::string& prefix, size_t nsessions)
           std::make_unique<regexbench::REmatch2AutomataEngine>(args.nmatch);
       engine->load(args.rule_file, args.num_threads);
     } else {
-      engine = std::make_unique<regexbench::REmatch2AutomataEngine>(args.nmatch,
-                                                                    args.reduce
-#ifdef USE_TURBO
-                                                                    ,
-                                                                    args.turbo
-#endif
-                                                                    );
+      engine = std::make_unique<regexbench::REmatch2AutomataEngine>(
+          args.nmatch, args.reduce, args.turbo);
       engine->compile(regexbench::loadRules(args.rule_file), args.num_threads);
     }
     break;
@@ -324,9 +319,7 @@ Arguments regexbench::parse_options(int argc, const char* argv[])
   optargs.add_options()(
       "update,u", po::value<std::string>(&args.update_pipe)->default_value(""),
       "Pipe for signaling online update");
-#ifdef USE_TURBO
   optargs.add_options()("turbo", "Turbo processing mode for rematch2");
-#endif
   optargs.add_options()("match_num,m",
                         po::value<uint32_t>(&args.nmatch)->default_value(0),
                         "Match number");
@@ -347,10 +340,8 @@ Arguments regexbench::parse_options(int argc, const char* argv[])
     std::exit(EXIT_SUCCESS);
   }
 
-#ifdef USE_TURBO
   if (vm.count("turbo"))
     args.turbo = true;
-#endif
   if (vm.count("quiet"))
     args.quiet = true;
 

@@ -105,8 +105,8 @@ static struct ResultInfo total(std::vector<MatchResult>& results)
 }
 
 static std::map<std::string, size_t>
-make_statistic(const uint32_t sec, const size_t usec, const struct ResultInfo& stat,
-               const struct ResultInfo& total)
+make_statistic(const uint32_t sec, const size_t usec,
+               const struct ResultInfo& stat, const struct ResultInfo& total)
 {
   std::map<std::string, size_t> m;
 
