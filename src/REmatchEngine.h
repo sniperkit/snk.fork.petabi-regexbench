@@ -15,6 +15,13 @@
 
 namespace regexbench {
 
+constexpr unsigned REMATCH_VERSION_MAJOR_REQ = 1;
+constexpr unsigned REMATCH_VERSION_MINOR_REQ = 10;
+static_assert(REMATCH_VERSION_MAJOR > REMATCH_VERSION_MAJOR_REQ ||
+                  REMATCH_VERSION_MAJOR == REMATCH_VERSION_MAJOR_REQ &&
+                      REMATCH_VERSION_MINOR >= REMATCH_VERSION_MINOR_REQ,
+              "rematch>=1.10 is required.");
+
 class REmatchAutomataEngine : public Engine {
 public:
   REmatchAutomataEngine(uint32_t nm = 1, bool red = false);
