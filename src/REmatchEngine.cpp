@@ -1,5 +1,8 @@
 #include <dlfcn.h>
 
+#include <sys/resource.h>
+#include <sys/time.h>
+
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -243,32 +246,56 @@ void REmatch2AutomataEngine::compile_test(const std::vector<Rule>& rules) const
   rematch2Free(testMatcher);
 }
 
-void REmatch2AutomataEngine::update_test(const std::vector<Rule>& rules)
+double
+REmatch2AutomataEngine::update_test(const std::vector<Rule>& rules,
+                                    const std::vector<Rule>& update_rules)
 {
   std::vector<const char*> exps;
   std::vector<unsigned> mods;
   std::vector<unsigned> ids;
-  for (const auto& rule : rules) {
-    exps.push_back(rule.getRegexp().data());
-    ids.push_back(static_cast<unsigned>(rule.getID()));
+  auto disassemble_rule = [&exps, &mods, &ids](const Rule& r) {
+    exps.push_back(r.getRegexp().data());
+    ids.push_back(static_cast<unsigned>(r.getID()));
     uint32_t opt = 0;
-    if (rule.isSet(MOD_CASELESS))
+    if (r.isSet(MOD_CASELESS))
       opt |= REMATCH_MOD_CASELESS;
-    if (rule.isSet(MOD_MULTILINE))
+    if (r.isSet(MOD_MULTILINE))
       opt |= REMATCH_MOD_MULTILINE;
-    if (rule.isSet(MOD_DOTALL))
+    if (r.isSet(MOD_DOTALL))
       opt |= REMATCH_MOD_DOTALL;
     mods.push_back(opt);
-  }
-  auto tmp_matcher = rematch2_compile_with_shortcuts(
-      ids.data(), exps.data(), mods.data(), ids.size(), reduce, turbo);
-  if (tmp_matcher == nullptr) {
-    throw std::runtime_error("Could not build REmatch2 matcher.");
+  };
+  for (const auto& rule : rules) {
+    disassemble_rule(rule);
   }
 
-  matchers[version + 1] = tmp_matcher;
-  version++;
-  std::cout << "Rule update soon to be applied" << std::endl;
+  auto testMatcher = rematch2_compile_with_dynamic_update(
+      ids.data(), exps.data(), mods.data(), ids.size(), &reserved_space);
+  if (testMatcher == nullptr) {
+    throw std::runtime_error("Could not build REmatch2 matcher.");
+  }
+  exps.clear();
+  mods.clear();
+  ids.clear();
+  for (auto rule : update_rules) {
+    disassemble_rule(rule);
+  }
+
+  struct rusage updateBegin, updateEnd;
+  getrusage(RUSAGE_SELF, &updateBegin);
+  auto update_result = rematch2_update(ids.data(), exps.data(), mods.data(),
+                                       ids.size(), testMatcher);
+  if (!update_result) {
+    throw std::runtime_error("Could not update matcher.");
+  }
+  getrusage(RUSAGE_SELF, &updateEnd);
+  struct timeval udiff, sdiff;
+  timersub(&(updateEnd.ru_utime), &(updateBegin.ru_utime), &udiff);
+  timersub(&(updateEnd.ru_stime), &(updateBegin.ru_stime), &sdiff);
+  auto compileTime =
+      (udiff.tv_sec + sdiff.tv_sec + (udiff.tv_usec + sdiff.tv_usec) * 1e-6);
+  rematch2Free(testMatcher);
+  return compileTime;
 }
 
 void REmatch2AutomataEngine::load(const std::string& file, size_t numThr)

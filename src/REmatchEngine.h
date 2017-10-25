@@ -91,7 +91,8 @@ public:
 
   void compile(const std::vector<Rule>& rules, size_t = 1) override;
   void compile_test(const std::vector<Rule>&) const override;
-  void update_test(const std::vector<Rule>&) override;
+  double update_test(const std::vector<Rule>&,
+                     const std::vector<Rule>&) override;
   void load(const std::string& file, size_t = 1) override;
   size_t match(const char* pkt, size_t len, size_t, size_t = 0,
                size_t* = nullptr) override;
@@ -106,6 +107,7 @@ private:
   std::vector<rematch_scratch_t*> scratches;
   std::vector<int> versions;
   const uint32_t nmatch;
+  rematch2_reserved_stat_t reserved_space{200, 200000, 200, 200000};
   std::atomic_int version;
   bool reduce = false;
   bool turbo = false;
