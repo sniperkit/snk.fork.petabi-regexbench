@@ -68,16 +68,10 @@ void BackgroundJobs::compileTest()
 
 void BackgroundJobs::doUpdate(const std::string& update_file)
 {
-  std::ifstream origIs(rule_file);
-  std::ifstream updateIs(update_file);
-  std::string combined_rule_file = "tempmerge.rule";
-  std::ofstream combinedOs(combined_rule_file);
-
-  combinedOs << origIs.rdbuf() << std::endl << updateIs.rdbuf();
-  combinedOs.flush();
-  combinedOs.close();
-
-  engine->update_test(regexbench::loadRules(combined_rule_file));
+  update_time +=
+      engine->update_test(regexbench::loadRules(rule_file),
+                          std::vector<Rule>{Rule(update_file, 10000000)});
+  update_cnt++;
 }
 
 void BackgroundJobs::onlineUpdateTest()

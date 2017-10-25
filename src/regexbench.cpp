@@ -60,6 +60,7 @@ int regexbench::exec(Arguments& args, realtimeFunc func, void* p)
     auto engine = regexbench::loadEngine(args, prefix, nsessions);
 
     getrusage(RUSAGE_SELF, &compileEnd);
+
     args.compile_time =
         compileReport(compileBegin, compileEnd, pcap, args.quiet);
 
@@ -77,6 +78,8 @@ int regexbench::exec(Arguments& args, realtimeFunc func, void* p)
     report(prefix, pcap, args, results);
 
     bgj.stop();
+    if (!args.update_pipe.empty())
+      std::cerr << "Update : " << bgj.get_update_time() << "sec / rule\n";
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;

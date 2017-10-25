@@ -19,6 +19,7 @@ public:
 
   void start();
   void stop();
+  double get_update_time() { return update_time / update_cnt; }
 
 private:
   // thread functions
@@ -41,6 +42,8 @@ private:
   Engine* engine;
   int fifo_fd = -1;
   uint32_t compile_cnt = 0;
+  size_t update_cnt = 0;
+  double update_time = 0.0;
 };
 } // namespace regexbench
 
