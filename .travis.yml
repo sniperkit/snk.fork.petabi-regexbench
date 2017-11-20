@@ -1,11 +1,16 @@
+dist: trusty
+sudo: false
 language: cpp
 
-before_script:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y g++-5
-  - sudo apt-get install -y libboost-program-options-dev libpcap-dev
-  - mkdir build
-  - cd build
-  - env CC=gcc-5 CXX=g++-5 cmake ..
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
+      - libboost-program-options-dev
+      - libpcap-dev
 
-script: make
+script:
+  - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
+  - cmake --build .
