@@ -9,6 +9,8 @@ addons:
     packages:
       - g++-6
       - libboost-program-options-dev
+      - libboost-regex-dev
+      - libboost-system-dev
       - libpcap-dev
 
 script:
