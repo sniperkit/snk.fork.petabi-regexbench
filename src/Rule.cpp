@@ -1,3 +1,4 @@
+#include <cstdint>
 #ifndef NDEBUG
 #include <iostream>
 #endif
@@ -5,8 +6,14 @@
 #include <string>
 
 #include <boost/algorithm/string/trim.hpp>
+#ifdef HAVE_PCRE2
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#else
+constexpr uint32_t PCRE2_CASELESS = 0x00000008u;
+constexpr uint32_t PCRE2_DOTALL = 0x00000020u;
+constexpr uint32_t PCRE2_MULTILINE = 0x00000400u;
+#endif
 
 #include "Rule.h"
 
