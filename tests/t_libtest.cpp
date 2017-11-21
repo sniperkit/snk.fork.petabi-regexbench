@@ -5,6 +5,7 @@
 
 using namespace regexbench;
 
+#ifdef HAVE_REMATCH
 static void report(const std::map<std::string, size_t>& m, void* /* p */)
 {
   std::ostringstream buf;
@@ -30,6 +31,7 @@ static void report(const std::map<std::string, size_t>& m, void* /* p */)
 
   outputFile << buf.str();
 }
+#endif
 
 ATF_TEST_CASE_WITHOUT_HEAD(lib_test);
 ATF_TEST_CASE_BODY(lib_test)
@@ -44,9 +46,11 @@ ATF_TEST_CASE_BODY(lib_test)
   // id: 6 Possessive quantifiers are not supported. rule:abc?+c
   ATF_REQUIRE_EQ(1, result);
 
+#ifdef HAVE_REMATCH
   args.engine = EngineType::rematch2;
   result = regexbench::exec(args, report, nullptr);
   ATF_REQUIRE_EQ(0, result);
+#endif
 }
 
 ATF_INIT_TEST_CASES(tcs) { ATF_ADD_TEST_CASE(tcs, lib_test); }

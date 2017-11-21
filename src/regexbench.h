@@ -14,12 +14,20 @@
 enum class EngineType : uint64_t {
   boost,
   std_regex,
+#ifdef HAVE_HYPERSCAN
   hyperscan,
+#endif
+#ifdef HAVE_PCRE2
   pcre2,
   pcre2_jit,
+#endif
+#ifdef HAVE_RE2
   re2,
+#endif
+#ifdef HAVE_REMATCH
   rematch,
   rematch2,
+#endif
   unknown
 };
 
@@ -134,6 +142,6 @@ void statistic(const uint32_t sec, timeval& begin,
                void* p = nullptr);
 std::unique_ptr<Engine> loadEngine(Arguments& args, std::string& prefix,
                                    size_t nsessions);
-}
+} // namespace regexbench
 
 #endif // REGEXBENCH_H
