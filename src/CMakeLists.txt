@@ -27,6 +27,7 @@ add_library(engines OBJECT ${ENGINE_SRCS})
 
 set(REGEXBENCH_SRCS match.cpp report.cpp PcapSource.cpp regexbench.cpp Rule.cpp Session.cpp BackgroundJobs.cpp statistic.cpp)
 add_library(rebench $<TARGET_OBJECTS:engines> ${REGEXBENCH_SRCS})
+target_link_libraries(rebench ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(regexbench main.cpp)
 target_link_libraries(regexbench
