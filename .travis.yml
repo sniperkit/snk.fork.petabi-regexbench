@@ -12,6 +12,7 @@ addons:
       - libboost-regex-dev
       - libboost-system-dev
       - libpcap-dev
+      - libpcre2-dev
 
 script:
   - CXX=/usr/bin/g++-6 CC=/usr/bin/gcc-6 cmake .
