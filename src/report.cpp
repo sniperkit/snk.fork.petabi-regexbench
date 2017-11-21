@@ -68,9 +68,11 @@ void regexbench::report(std::string& prefix, const PcapSource& pcap,
   std::string rulePrefix = prefix + "Rule.";
   pt.put(rulePrefix + "File", args.rule_file);
   pt.put(rulePrefix + "CompileTime", args.compile_time);
+#ifdef HAVE_REMATCH
   if (args.reduce && (args.engine == EngineType::rematch ||
                       args.engine == EngineType::rematch2))
     pt.put(rulePrefix + "Reduce", "On");
+#endif
   std::string pcapPrefix = prefix + "Pcap.";
   pt.put(pcapPrefix + "File", args.pcap_file);
   pt.put(pcapPrefix + "TotalBytes", pcap.getNumberOfBytes());
