@@ -3,23 +3,23 @@ unset(CMAKE_C_FLAGS)
 set_directory_properties(PROPERTIES INCLUDE_DIRECTORIES "")
 
 if (MSVC)
-  option(LITESQL_MSVC_MT "link with /MT instead of /MD (use dlls versus static linked, change also wxWidgets_LIB_DIR)" ON) 
-  # see http://msdn.microsoft.com/en-us/library/2kzt1wy3%28VS.71%29.aspx   
+  option(LITESQL_MSVC_MT "link with /MT instead of /MD (use dlls versus static linked, change also wxWidgets_LIB_DIR)" ON)
+  # see http://msdn.microsoft.com/en-us/library/2kzt1wy3%28VS.71%29.aspx
   if (LITESQL_MSVC_MT)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
   endif (LITESQL_MSVC_MT)
-  
+
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W4")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W4")
-  
+
   set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS   _CRT_SECURE_NO_WARNINGS)
 else(MSVC)
   list(APPEND CMAKE_CXX_FLAGS "-Wall -Wunused-variable -Wno-long-long")
-   #-pedantic 
+   #-pedantic
   list(APPEND CMAKE_C_FLAGS "-Wall -Wunused-variable -Wno-long-long")
 endif(MSVC)
 
@@ -69,12 +69,12 @@ if (LITESQL_WITH_MYSQL AND MYSQL_FOUND)
   list(APPEND BACKEND_INCLUDES ${MYSQL_INCLUDE_DIR})
   list(APPEND BACKEND_LIBRARIES litesql_mysql ${MYSQL_LIBRARIES})
   list(APPEND BACKEND_DEFINITIONS ${MYSQL_DEFINITIONS})
-  
+
   if (MSVC)
-    # the precompiled mysql client libraries are compiled with libcmt 
+    # the precompiled mysql client libraries are compiled with libcmt
     # - this causes duplicate symbols
     # if MySQL Connector is older than this then LIBCMT will be disabled
-    # C Connector 6.1 works fine with VS 2013 WITH LIBCMT, 
+    # C Connector 6.1 works fine with VS 2013 WITH LIBCMT,
     # I haven't tested older versions
     set(deprecated_connector_threshold "MySQL Connector C 6.0")
     # now to figure out the mysql C connector version number
@@ -86,7 +86,7 @@ if (LITESQL_WITH_MYSQL AND MYSQL_FOUND)
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
     endif(${curr_version} STRGREATER ${deprecated_connector_threshold})
   endif (MSVC)
-  
+
 else(LITESQL_WITH_MYSQL AND MYSQL_FOUND)
   message("can not use mysql")
   set(LITESQL_WITH_MYSQL OFF)
@@ -136,9 +136,9 @@ if (LITESQL_WITH_SAX_PARSER)
     set (EXPAT_DEFINITIONS XML_STATIC)
     set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS ${EXPAT_DEFINITIONS})
   endif (MSVC AND NOT EXPAT_FOUND)
-  message(EXPAT_LIBRARIES= ${EXPAT_LIBRARIES})
-  message(EXPAT_INCLUDE_DIRS=${EXPAT_INCLUDE_DIRS})
-  message(EXPAT_DEFINITIONS=${EXPAT_DEFINITIONS})
+  message(EXPAT_LIBRARIES = ${EXPAT_LIBRARIES})
+  message(EXPAT_INCLUDE_DIRS = ${EXPAT_INCLUDE_DIRS})
+  message(EXPAT_DEFINITIONS = ${EXPAT_DEFINITIONS})
 
 endif (LITESQL_WITH_SAX_PARSER)
 
@@ -154,7 +154,7 @@ if(MSVC)
   set(CMAKE_EXECUTABLE_SUFFIX ".exe")         # .exe
   set(CMAKE_LINK_LIBRARY_SUFFIX ".lib")
   set(CMAKE_DL_LIBS "")
-  set(CMAKE_DEBUG_POSTFIX "d") 
+  set(CMAKE_DEBUG_POSTFIX "d")
     link_directories(${CMAKE_CURRENT_SOURCE_DIR}/win32/lib/)
 endif(MSVC)
 
@@ -179,22 +179,22 @@ check_function_exists(localtime_r HAVE_LOCALTIME_R)
 
 
 # create config.h
-configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake 
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 # set include directories
 get_filename_component(CONFIG_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/config.h PATH)
 include_directories(include ${CONFIG_INCLUDE} ${BACKEND_INCLUDES})
 
-install(DIRECTORY include DESTINATION . 
-                          COMPONENT devel 
+install(DIRECTORY include DESTINATION .
+                          COMPONENT devel
                           FILES_MATCHING PATTERN "*.hpp"
-                          PATTERN .svn EXCLUDE 
+                          PATTERN .svn EXCLUDE
 )
-install(DIRECTORY include DESTINATION . 
-                          COMPONENT devel 
+install(DIRECTORY include DESTINATION .
+                          COMPONENT devel
                           FILES_MATCHING PATTERN "*.h"
-                          PATTERN .svn EXCLUDE 
+                          PATTERN .svn EXCLUDE
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/litesql
