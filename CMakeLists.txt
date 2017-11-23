@@ -11,8 +11,7 @@ set(CPACK_SOURCE_GENERATOR "TBZ2")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME
   "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
 set(CPACK_SOURCE_IGNORE_FILES
-  "/build(-Debug|-Release)?/;/install/;/.git/;.DS_Store;~$;${CPACK_SOURCE_IGNORE_FILES}")
-
+  "/build(-.*)?/;/.git/;/.vscode/;.DS_Store;~$;${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
 
 option(WITH_SESSION "Test REmatch with session" ON)
