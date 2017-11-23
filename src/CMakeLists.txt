@@ -30,9 +30,7 @@ target_link_libraries(rebench ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS
 add_executable(regexbench main.cpp)
 target_link_libraries(regexbench
    ${Boost_LIBRARIES} ${PCAP_LIB} ${CMAKE_THREAD_LIBS_INIT} rebench)
-if (OS_IS_LINUX)
-  target_link_libraries(regexbench ${CMAKE_DL_LIBS})
-endif()
+target_link_libraries(regexbench ${CMAKE_DL_LIBS})
 
 if(HYPERSCAN_LIB)
   target_link_libraries(regexbench ${HYPERSCAN_LIB})
