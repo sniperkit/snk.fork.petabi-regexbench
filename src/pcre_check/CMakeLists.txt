@@ -58,9 +58,6 @@ target_link_libraries(pcre_checker
   ${PCRE2_LIB} ${REMATCHCOMP_LIB} ${REMATCHEXEC_LIB} ${HYPERSCAN_LIB}
   ${EDITLINE_LIB} ${JSONCPP_LIBRARIES} ${PCAP_LIB}
 )
-
-if (OS_IS_LINUX)
-  target_link_libraries(pcre_checker ${CMAKE_DL_LIBS})
-endif()
+target_link_libraries(pcre_checker ${CMAKE_DL_LIBS})
 
 endif()
