@@ -18,8 +18,8 @@
 #include "CheckerShell.h"
 #include "PcreChecker.h"
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
 using std::string;
 using std::vector;

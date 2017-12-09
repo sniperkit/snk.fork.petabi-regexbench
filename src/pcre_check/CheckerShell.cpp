@@ -14,8 +14,8 @@
 #include "PcreChecker.h"
 #include "litesql_helper.h"
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
 using std::string;
 
@@ -24,24 +24,24 @@ using std::vector;
 // pcre_check namespace aliases
 using pcre_check::PcreCheckDb;
 using DbRule = pcre_check::Rule;
-using pcre_check::Pattern;
-using pcre_check::Grammar;
 using pcre_check::Engine;
+using pcre_check::Grammar;
+using pcre_check::Pattern;
 using pcre_check::Result;
 using pcre_check::Test;
 using pcre_check::TestGrammar;
 using pcre_check::TestResult;
 
 // litesql namespace aliases
-using litesql::select;
+using litesql::And;
 using litesql::Blob;
+using litesql::Eq;
 using litesql::Except;
 using litesql::Expr;
-using litesql::And;
-using litesql::NotFound;
-using litesql::Eq;
 using litesql::NotEq;
+using litesql::NotFound;
 using litesql::Split;
+using litesql::select;
 
 using CS = CheckerShell;
 

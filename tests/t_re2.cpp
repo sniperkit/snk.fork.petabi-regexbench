@@ -17,9 +17,8 @@ ATF_TEST_CASE_BODY(rule_compile)
 {
 #ifdef HAVE_RE2
   RE2Engine engine;
-  ATF_REQUIRE_THROW(
-      std::runtime_error,
-      engine.compile(regexbench::loadRules(DATA_DIR "/rule/malformat.re")););
+  ATF_REQUIRE_THROW(std::runtime_error, engine.compile(regexbench::loadRules(
+                                            DATA_DIR "/rule/malformat.re")););
 #endif
 }
 

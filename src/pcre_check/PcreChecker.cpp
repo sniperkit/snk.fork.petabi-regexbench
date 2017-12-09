@@ -23,8 +23,8 @@
 #include "PcreChecker.h"
 #include "litesql_helper.h"
 
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
 using std::string;
 using std::vector;
@@ -36,20 +36,20 @@ namespace po = boost::program_options;
 // pcre_check namespace aliases
 using pcre_check::PcreCheckDb;
 using DbRule = pcre_check::Rule;
-using pcre_check::Pattern;
-using pcre_check::Grammar;
 using pcre_check::Engine;
+using pcre_check::Grammar;
+using pcre_check::Pattern;
 using pcre_check::Result;
 using pcre_check::Test;
 using pcre_check::TestGrammar;
 using pcre_check::TestResult;
 
 // litesql namespace aliases
-using litesql::select;
 using litesql::Blob;
+using litesql::Eq;
 using litesql::Except;
 using litesql::NotFound;
-using litesql::Eq;
+using litesql::select;
 
 const std::string PcreChecker::DB_PREFIX = "database=";
 const char* PcreChecker::TMP_TEMPLATE = "tmpdbfilXXXXXX";
@@ -411,9 +411,8 @@ void PcreChecker::jsonTests2DbTables(const Json::Value& root)
 
     for (auto gid : grammar_ids) {
       try {
-        select<TestGrammar>(*pDb,
-                            TestGrammar::Testid == test_id &&
-                                TestGrammar::Grammarid == gid)
+        select<TestGrammar>(*pDb, TestGrammar::Testid == test_id &&
+                                      TestGrammar::Grammarid == gid)
             .one();
       } catch (NotFound) {
         TestGrammar tg(*pDb);
@@ -444,11 +443,11 @@ void PcreChecker::jsonTests2DbTables(const Json::Value& root)
 
     for (auto e2V : verdictMap) {
       try {
-        auto resEntry = *(
-            select<TestResult>(*pDb,
-                               TestResult::Testid == test_id &&
-                                   TestResult::Engineid == engineMap[e2V.first])
-                .cursor());
+        auto resEntry =
+            *(select<TestResult>(*pDb, TestResult::Testid == test_id &&
+                                           TestResult::Engineid ==
+                                               engineMap[e2V.first])
+                  .cursor());
 
         resEntry.resultid = resultMap[e2V.second];
         resEntry.update();
@@ -594,9 +593,8 @@ int PcreChecker::checkRematch(const regexbench::Rule* singleRule,
       for (const auto& p : rule2TestMap) {
         try {
           auto cur =
-              *(select<TestResult>(*pDb,
-                                   TestResult::Testid == p.second.first &&
-                                       TestResult::Engineid == engineId)
+              *(select<TestResult>(*pDb, TestResult::Testid == p.second.first &&
+                                             TestResult::Engineid == engineId)
                     .cursor());
           cur.resultid =
               (p.second.second ? dbMeta.resMatchId : dbMeta.resNomatchId);
@@ -752,10 +750,10 @@ int PcreChecker::checkHyperscan(const regexbench::Rule* singleRule,
   // cout << "Hyper scan result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = *(select<TestResult>(*pDb,
-                                       TestResult::Testid == p.first &&
-                                           TestResult::Engineid == engineId)
-                        .cursor());
+      auto curT =
+          *(select<TestResult>(*pDb, TestResult::Testid == p.first &&
+                                         TestResult::Engineid == engineId)
+                .cursor());
       curT.resultid = p.second;
       curT.update();
     } catch (NotFound) {
@@ -873,10 +871,10 @@ int PcreChecker::checkPcre(const regexbench::Rule* singleRule,
   // cout << "PCRE match result" << endl << endl;
   for (const auto& p : test2ResMap) {
     try {
-      auto curT = *(select<TestResult>(*pDb,
-                                       TestResult::Testid == p.first &&
-                                           TestResult::Engineid == engineId)
-                        .cursor());
+      auto curT =
+          *(select<TestResult>(*pDb, TestResult::Testid == p.first &&
+                                         TestResult::Engineid == engineId)
+                .cursor());
       curT.resultid = p.second;
       curT.update();
     } catch (NotFound) {
