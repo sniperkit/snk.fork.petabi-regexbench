@@ -49,9 +49,6 @@ find_library(PCAP_LIB pcap)
 
 find_library(ATF_LIB atf-c++)
 
-if(ATF_LIB)
-  subdirs(tests)
-endif()
 
 find_path(HYPERSCAN_INCLUDE_DIR hs/hs_compile.h HINTS ${CMAKE_INSTALL_PREFIX}/include)
 find_library(HYPERSCAN_LIB
@@ -111,4 +108,7 @@ if(Boost_INCLUDE_DIR)
   include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 endif()
 
-subdirs(src)
+add_subdirectory(src)
+if(ATF_LIB)
+  add_subdirectory(tests)
+endif()
