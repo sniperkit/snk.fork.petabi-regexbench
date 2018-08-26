@@ -1,3 +1,6 @@
+# Sniperkit-Bot
+# - Status: analyzed
+
 # - Find OCILIB
 # Find the OCILIB includes and client library
 # This module defines

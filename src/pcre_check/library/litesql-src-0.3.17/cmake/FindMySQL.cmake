@@ -1,3 +1,6 @@
+# Sniperkit-Bot
+# - Status: analyzed
+
 # - Find MySQL
 # Find the MySQL includes and client library
 # This module defines

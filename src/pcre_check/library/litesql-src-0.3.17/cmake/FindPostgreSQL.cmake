@@ -1,3 +1,6 @@
+# Sniperkit-Bot
+# - Status: analyzed
+
 # - Find PostgreSQL
 # Find the PostgreSQL includes and client library
 # This module defines

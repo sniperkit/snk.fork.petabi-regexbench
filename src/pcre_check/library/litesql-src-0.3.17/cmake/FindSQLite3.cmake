@@ -1,3 +1,6 @@
+# Sniperkit-Bot
+# - Status: analyzed
+
 # - Try to find sqlite3 
 # Find sqlite3 headers, libraries and the answer to all questions.
 #

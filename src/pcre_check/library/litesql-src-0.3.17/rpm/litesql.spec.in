@@ -1,3 +1,6 @@
+# Sniperkit-Bot
+# - Status: analyzed
+
 # General RPM Spec File for LiteSQL
 
 %define name	    @PACKAGE_TARNAME@
